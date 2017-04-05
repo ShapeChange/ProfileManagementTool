@@ -11,7 +11,7 @@ return {
     ],
     output: {
         filename: '[name].js',
-        path: resolve(__dirname, 'dist')
+        path: resolve(__dirname, 'dist/app')
     },
 
     devtool: 'eval',
@@ -78,6 +78,7 @@ return {
         new HtmlWebpackPlugin({
             title: 'ProfileManagementTool',
             //favicon: 'assets/img/favicon.png',
+            //filename: 'app/index.html',
             template: 'index.html'
         }),
 
