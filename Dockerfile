@@ -6,15 +6,21 @@ WORKDIR /usr/src/app
 
 EXPOSE 8000
 ENV NODE_ENV=production
-CMD [ "node", "dist/server.js" ]
+CMD [ "node", "server.js" ]
 
+# Build inside container
 # Install app dependencies and build app
-COPY . /usr/src/app/
-RUN npm --only=dev install && \
-	npm --production run build && \
-	npm --production prune && \
-	npm --production install && \
-	npm cache clear
+#COPY . /usr/src/app/
+#RUN npm --only=dev install && \
+#	npm --production run build && \
+#	npm --production prune && \
+#	npm --production install && \
+#	npm cache clear
 
+# Build outside of container
+# Install app dependencies
+COPY dist /usr/src/app/
+RUN npm --production install && \
+	npm cache clear
 
 

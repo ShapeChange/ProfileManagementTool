@@ -1,0 +1,19 @@
+sudo: required
+services:
+  - docker
+language: node_js
+node_js:
+  - "6"
+cache:
+  directories:
+  - node_modules
+install:
+  - npm --only=dev install
+script: 
+  - npm --production run build
+after_success:
+  - docker build -t iide/pmt .
+#  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+#    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+#    docker push iide/pmt;
+#    fi
