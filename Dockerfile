@@ -20,7 +20,9 @@ CMD [ "node", "server.js" ]
 # Build outside of container
 # Install app dependencies
 COPY dist /usr/src/app/
-RUN npm --production install && \
-	npm cache clear
+RUN apk add --no-cache python make g++ && \
+    npm --production install && \
+	npm cache clear && \
+	apk del --no-cache python make g++
 
 
