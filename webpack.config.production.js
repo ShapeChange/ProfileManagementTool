@@ -46,6 +46,10 @@ return webpackMerge(commonConfig(), {
                 to: '../'
             },
             {
+                from: '../server/db.js',
+                to: '../'
+            },
+            {
                 from: '../../package.json',
                 to: '../'
             }
