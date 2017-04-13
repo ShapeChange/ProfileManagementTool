@@ -34,7 +34,7 @@ return {
                 exclude: /(node_modules)/
             },
             {
-                test: /\.less$/,
+                test: /\.css$/,
                 use: [
                     {
                         loader: 'style-loader'
@@ -45,12 +45,12 @@ return {
                         }*/
                     }, /*{
               loader: 'postcss-loader'
-            },*/ {
+            },*/ /*{
                         loader: 'less-loader',
                         options: {
                             includePaths: [resolve(__dirname, 'src/app/less')]
                         }
-                    }
+                    }*/
                 ],
             },
             {

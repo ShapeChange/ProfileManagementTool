@@ -1,4 +1,4 @@
-var MongoClient = require('mongodb').MongoClient;
+var db = require('../db');
 var assert = require('assert');
 
 var url;
@@ -10,133 +10,103 @@ url = config.db.url;
 io.on('connection', function(sock) {
     socket = sock;
 
-    socket.on('test/start', startTest);
+    //socket.on('test/start', startTest);
 
     socket.on('action', (action) => {
-        if (action.type === 'test/start') {
+        /*if (action.type === 'test/start') {
             startTest();
-        }
+        }*/
+
+        dispatch(action);
     });
 });
 
 };
 
-function startTest() {
-    socket.emit('action', {
-        type: 'test/backend'
-    });
+const actions = {
+    'app/init': fetchPackages,
+    'app/package/select': selectPackage,
+    'app/class/select': fetchClass
+}
 
-    MongoClient.connect(url, function(err, db) {
-        if (err === null) {
+function dispatch(action) {
+    console.log(action);
 
-            var failed = false;
+    if (actions[action.type])
+        actions[action.type](action.payload);
+}
 
-            insertDocuments(db, function(err) {
-                if (err !== null) {
-                    console.log(err);
-                    failed = true;
-                }
-                findDocuments(db, function(err) {
-                    if (err !== null) {
-                        console.log(err);
-                        failed = true;
-                    }
-                    updateDocument(db, function(err) {
-                        if (err !== null) {
-                            console.log(err);
-                            failed = true;
-                        }
-                        removeDocument(db, function(err) {
-                            if (err !== null) {
-                                console.log(err);
-                                failed = true;
-                            }
-
-                            if (!failed) {
-                                socket.emit('action', {
-                                    type: 'test/db'
-                                });
-                            }
-
-                            db.close();
-
-                            socket.emit('action', {
-                                type: 'test/end'
-                            });
-                        });
-                    });
-                });
-            });
-        } else {
-            console.log(err);
-
+function fetchPackages() {
+    return db.connect(url)
+        .then(db.getPackages)
+        .then(function(cursor) {
+            return cursor.toArray();
+        })
+        .then(function(pkgs) {
             socket.emit('action', {
-                type: 'test/end'
+                type: 'packages/fetched',
+                payload: pkgs
             });
-        }
-    });
+        })
+/*.then(function() {
+    db.close();
+})*/
 }
 
-function insertDocuments(db, callback) {
-    // Get the documents collection
-    var collection = db.collection('documents');
-    // Insert some documents
-    collection.insertMany([
-        {
-            a: 3
-        }
-    ], function(err, result) {
-        if (err === null) {
-            console.log("Inserted 1 document into the collection");
-        }
-        callback(err, result);
-    });
+function selectPackage(pkg) {
+    return fetchClasses(pkg)
+        .then(function() {
+            return fetchPackage(pkg);
+        })
 }
 
-function findDocuments(db, callback) {
-    // Get the documents collection
-    var collection = db.collection('documents');
-    // Find some documents
-    collection.find({
-        'a': 3
-    }).toArray(function(err, docs) {
-        if (err === null) {
-            console.log("Found the following records");
-            console.log(docs);
-        }
-        callback(err, docs);
-    });
+function fetchClasses(pkg) {
+    return db.connect(url)
+        .then(function() {
+            return db.getClassesForPackage(pkg);
+        })
+        .then(function(cursor) {
+            return cursor.toArray();
+        })
+        .then(function(classes) {
+            return socket.emit('action', {
+                type: 'classes/fetched',
+                payload: classes
+            });
+        })
+/*.then(function() {
+    db.close();
+})*/
 }
 
-function updateDocument(db, callback) {
-    // Get the documents collection
-    var collection = db.collection('documents');
-    // Update document where a is 2, set b equal to 1
-    collection.updateOne({
-        a: 3
-    }
-        , {
-            $set: {
-                b: 1
-            }
-        }, function(err, result) {
-            if (err === null) {
-                console.log("Updated the document with the field a equal to 3");
-            }
-            callback(err, result);
-        });
+function fetchPackage(id) {
+    return db.connect(url)
+        .then(function() {
+            return db.getDetails(id);
+        })
+        .then(function(details) {
+            return socket.emit('action', {
+                type: 'package/fetched',
+                payload: details
+            });
+        })
+/*.then(function() {
+    db.close();
+})*/
 }
 
-function removeDocument(db, callback) {
-    // Get the documents collection
-    var collection = db.collection('documents');
-    // Delete document where a is 3
-    collection.deleteOne({
-        a: 3
-    }, function(err, result) {
-        if (err === null) {
-            console.log("Removed the document with the field a equal to 3");
-        }
-        callback(err, result);
-    });
+function fetchClass(id) {
+    return db.connect(url)
+        .then(function() {
+            return db.getDetails(id);
+        })
+        .then(function(details) {
+            return socket.emit('action', {
+                type: 'class/fetched',
+                payload: details
+            });
+        })
+/*.then(function() {
+    db.close();
+})*/
 }

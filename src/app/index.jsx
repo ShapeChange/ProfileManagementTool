@@ -4,8 +4,7 @@ import { Provider } from 'react-redux'
 import { AppContainer } from 'react-hot-loader';
 import createStore from './create-store'
 import App from './components/container/App'
-
-require('./less/app.less')
+import { actions } from './reducers/app'
 
 const render = (Component, store) => {
     ReactDOM.render(
@@ -20,6 +19,7 @@ const render = (Component, store) => {
 
 
 const store = createStore();
+store.dispatch(actions.initApp());
 
 render(App, store);
 

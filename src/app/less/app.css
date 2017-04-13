@@ -1,0 +1,8 @@
+html, body, #app-wrapper, #app-wrapper > div {
+height: 100%;
+}
+
+.list-group-item.active.nofocus {
+    -webkit-filter: opacity(60%); 
+    filter: opacity(60%);
+}

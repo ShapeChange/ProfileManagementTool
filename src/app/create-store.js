@@ -9,7 +9,7 @@ export default function(data) {
         ...reducers
     })
 
-    var socketIoMiddleware = createSocketIoMiddleware(io(), ['test/']);
+    var socketIoMiddleware = createSocketIoMiddleware(io(), ['app/' /*, 'packages/'*/ ]);
 
     // Be sure to ONLY add this middleware in development!
     const middleware = process.env.NODE_ENV !== 'production' ?
