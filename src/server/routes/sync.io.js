@@ -2,13 +2,13 @@ var db = require('../db');
 var assert = require('assert');
 
 var url;
-var socket;
+//var socket;
 
 exports.addRoutes = function(app, io, config) {
 url = config.db.url;
 
-io.on('connection', function(sock) {
-    socket = sock;
+io.on('connection', function(socket) {
+    //socket = sock;
 
     //socket.on('test/start', startTest);
 
@@ -17,35 +17,47 @@ io.on('connection', function(sock) {
             startTest();
         }*/
 
-        dispatch(action);
+        dispatch(socket, action);
     });
 });
 
 };
 
 const actions = {
-    'app/init': fetchPackages,
-    'app/package/select': selectPackage,
-    'app/class/select': fetchClass
+    'model/fetch': fetchModel,
+    'package/fetch': fetchPackage,
+    'class/fetch': fetchClass
 }
 
-function dispatch(action) {
+function dispatch(socket, action) {
     console.log(action);
 
     if (actions[action.type])
-        actions[action.type](action.payload);
+        actions[action.type](socket, action.payload);
 }
 
-function fetchPackages() {
+function fetchModel(socket, model) {
     return db.connect(url)
-        .then(db.getPackages)
+        .then(function() {
+            return db.getPackages(model);
+        })
         .then(function(cursor) {
             return cursor.toArray();
         })
         .then(function(pkgs) {
+            return db.getModel(model)
+                .then(function(details) {
+                    return {
+                        fetchedModel: model,
+                        packages: pkgs,
+                        model: details
+                    }
+                })
+        })
+        .then(function(payload) {
             socket.emit('action', {
-                type: 'packages/fetched',
-                payload: pkgs
+                type: 'model/fetched',
+                payload: payload
             });
         })
 /*.then(function() {
@@ -53,14 +65,14 @@ function fetchPackages() {
 })*/
 }
 
-function selectPackage(pkg) {
-    return fetchClasses(pkg)
+function fetchPackage(socket, pkg) {
+    return fetchClasses(socket, pkg)
         .then(function() {
-            return fetchPackage(pkg);
+            return fetchPackageDetails(socket, pkg);
         })
 }
 
-function fetchClasses(pkg) {
+function fetchClasses(socket, pkg) {
     return db.connect(url)
         .then(function() {
             return db.getClassesForPackage(pkg);
@@ -79,7 +91,7 @@ function fetchClasses(pkg) {
 })*/
 }
 
-function fetchPackage(id) {
+function fetchPackageDetails(socket, id) {
     return db.connect(url)
         .then(function() {
             return db.getDetails(id);
@@ -87,7 +99,10 @@ function fetchPackage(id) {
         .then(function(details) {
             return socket.emit('action', {
                 type: 'package/fetched',
-                payload: details
+                payload: {
+                    fetchedPackage: id,
+                    details: details
+                }
             });
         })
 /*.then(function() {
@@ -95,17 +110,25 @@ function fetchPackage(id) {
 })*/
 }
 
-function fetchClass(id) {
+function fetchClass(socket, id) {
     return db.connect(url)
         .then(function() {
             return db.getDetails(id);
         })
         .then(function(details) {
-            return socket.emit('action', {
+            socket.emit('action', {
                 type: 'class/fetched',
-                payload: details
+                payload: {
+                    fetchedClass: id,
+                    details: details
+                }
             });
+            return details;
         })
+        .then(function(details) {
+            return fetchPackage(socket, details.parent);
+        })
+
 /*.then(function() {
     db.close();
 })*/

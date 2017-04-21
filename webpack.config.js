@@ -29,7 +29,8 @@ return webpackMerge.strategy({
         contentBase: resolve(__dirname, 'dist'),
         publicPath: '/',
         proxy: {
-            "/rest": "http://localhost:7080"
+            "/rest": "http://localhost:7080",
+            "/socket.io": "http://localhost:8000"
         },
         overlay: {
             warnings: true,

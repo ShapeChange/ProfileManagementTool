@@ -2,7 +2,10 @@ html, body, #app-wrapper, #app-wrapper > div {
 height: 100%;
 }
 
-.list-group-item.active.nofocus {
+.list-group-item.active.nofocus, .text-really-muted {
     -webkit-filter: opacity(60%); 
     filter: opacity(60%);
+}
+.rounded-0 {
+    border-radius: 0!important;
 }

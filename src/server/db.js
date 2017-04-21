@@ -26,18 +26,18 @@ return MongoClient
     .then(setConnection);
 }
 
-exports.getPackages = function() {
+exports.getPackages = function(modelId) {
 return model
     .find({
-        type: 'pkg'
+        type: 'pkg',
+        model: modelId
     })
     .project({
-        depth: 1,
         parent: 1,
-        name: 1
+        name: 1,
+        type: 1
     })
     .sort({
-        depth: 1,
         name: 1
     })
 }
@@ -49,7 +49,8 @@ return model
     })
     .project({
         parent: 1,
-        name: 1
+        name: 1,
+        type: 1
     })
 // TODO: does not work
 /*.sort({
@@ -66,7 +67,8 @@ return model
     })
     .project({
         parent: 1,
-        name: 1
+        name: 1,
+        type: 1
     })
     .sort({
         name: 1
@@ -77,6 +79,13 @@ exports.getDetails = function(id) {
 return model
     .findOne({
         _id: new ObjectID(id)
+    })
+}
+
+exports.getModel = function(id) {
+return model
+    .findOne({
+        _id: id
     })
 }
 

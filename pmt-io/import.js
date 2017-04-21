@@ -42,6 +42,14 @@ var ObjectID = require('mongodb').ObjectID;
 //jsonStream.pipe(out);
 //classStream.pipe(classOutFile);
 
+var model = {
+    _id: 'DGIF_IV_2016-2_Stand_Stewardbearbeitung',
+    name: 'DGIF_IV_2016-2_Stand_Stewardbearbeitung',
+    fileName: 'DGIF_IV_2016-2_Stand_Stewardbearbeitung.xml',
+    modelName: '',
+    type: 'mdl'
+}
+
 var profiles = []
 var packages = {}
 var numPackages = 0
@@ -116,7 +124,8 @@ xmlStream.on('tag:sc:Package', function(node) {
         //path: path.substr(0, path.length - 1),
         _id: id,
         parent: parentId,
-        depth: depth,
+        //depth: depth,
+        model: model._id,
         type: 'pkg',
         name: node.children[0].children[0].value,
         element: node
@@ -127,10 +136,14 @@ xmlStream.on('tag:sc:Package', function(node) {
     //}
 
     numPackages++;
-/*if (packages === 1) {
-    //console.log(node);
-    jsonStream.write(node);
-}*/
+    /*if (packages === 1) {
+        //console.log(node);
+        jsonStream.write(node);
+    }*/
+
+    if (!parentId) {
+        model.modelName = pkg.name;
+    }
 });
 
 xmlStream.on('tag:sc:classes', function(node) {
@@ -183,6 +196,7 @@ xmlStream.on('tag:sc:Class', function(node) {
         //path: path.substr(0, path.length - 1),
         _id: id,
         parent: parentId,
+        model: model._id,
         type: 'cls',
         name: node.children[0].children[0].value,
         //id: node.children[1].children[0].value,
@@ -237,6 +251,9 @@ xmlStream.on('tag:sc:Property', function(node) {
 var start = Date.now();
 
 xmlStream.on("done", function(data) {
+    model.profiles = profiles;
+    mongoStream.write(model);
+
     //jsonStream.write(data);
     //jsonStream.end();
     mongoStream.end();
