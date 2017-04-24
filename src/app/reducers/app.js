@@ -24,7 +24,8 @@ export const actions = {
     selectClass: createAction('app/class/select'),
     selectProperty: createAction('app/property/select'),
     setView: createAction('view/set'),
-    setFont: createAction('font/set')
+    setFont: createAction('font/set'),
+    toggleMenu: createAction('menu/toggle')
 };
 
 // state
@@ -35,7 +36,8 @@ const initialState = {
     selectedProperty: null,
     focus: null,
     useThreePaneView: false,
-    useSmallerFont: false
+    useSmallerFont: false,
+    menuOpen: false
 }
 
 // reducer
@@ -45,7 +47,8 @@ export default handleActions({
     [actions.selectClass]: selectClass,
     [actions.selectProperty]: selectProperty,
     [actions.setView]: setView,
-    [actions.setFont]: setFont
+    [actions.setFont]: setFont,
+    [actions.toggleMenu]: toggleMenu
 }, initialState);
 
 
@@ -110,6 +113,13 @@ function setFont(state, action) {
     }
 }
 
+function toggleMenu(state) {
+    return {
+        ...state,
+        menuOpen: !state.menuOpen
+    }
+}
+
 // selectors
 export const getSelectedModel = (state) => state.app.selectedModel
 export const getSelectedPackage = (state) => state.app.selectedPackage
@@ -120,6 +130,7 @@ export const isFocusOnClass = (state) => state.app.focus === ItemType.CLS
 export const isFocusOnProperty = (state) => state.app.focus === ItemType.PRP
 export const useThreePaneView = (state) => state.app.useThreePaneView
 export const useSmallerFont = (state) => state.app.useSmallerFont
+export const isMenuOpen = (state) => state.app.menuOpen
 
 // is backend sync needed
 const doesChangeSelectedPackage = (state, action) => state.app.selectedPackage !== action.payload

@@ -189,6 +189,25 @@ xmlStream.on('tag:sc:Class', function(node) {
     var id = node._id || new ObjectID();
     var parentId = parent && parent['_id'] ? parent['_id'].toHexString() : null
 
+    var nameIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:name'
+    })
+    var localIdIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:id'
+    })
+    var stereotypeIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:stereotypes'
+    })
+    var baseClassIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:baseClassId'
+    })
+    var supertypesIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:supertypes'
+    })
+    var propertiesIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:properties'
+    })
+
     delete node.parent;
     delete node._id
 
@@ -198,8 +217,16 @@ xmlStream.on('tag:sc:Class', function(node) {
         parent: parentId,
         model: model._id,
         type: 'cls',
-        name: node.children[0].children[0].value,
-        //id: node.children[1].children[0].value,
+        name: nameIndex > -1 && node.children[nameIndex].children[0].value,
+        localid: localIdIndex > -1 && node.children[localIdIndex].children[0].value,
+        stereotypes: stereotypeIndex > -1 && node.children[stereotypeIndex].children.map(function(st) {
+                return st.children[0].value
+            }),
+        baseclass: baseClassIndex > -1 && node.children[baseClassIndex].children[0].value,
+        supertypes: supertypesIndex > -1 && node.children[supertypesIndex].children.map(function(st) {
+                return st.children[0].value
+            }),
+        properties: propertiesIndex > -1 && _reduceProperties(node.children[propertiesIndex], id),
         element: node
     }
 
@@ -287,4 +314,24 @@ inFile
         xmlStream.parse(chunk)
     })
 
-    // archiver, node-stream-zip
+// archiver, node-stream-zip
+
+
+function _reduceProperties(properties, id) {
+    return properties && properties.children ? properties.children.map(function(prop) {
+        let p = prop.children.reduce(function(attrs, attr) {
+            let key = attr.name.substr(3);
+            key = key === 'id' ? '_id' : key
+
+            attrs[key] = attr.children && attr.children[0] ? attr.children[0].value : ''
+
+            return attrs
+        }, {});
+        p.parent = id;
+        p.element = prop;
+        p.type = 'prp'
+        return p;
+    }).sort(function(a, b) {
+        return a.name > b.name ? 1 : -1
+    }) : null;
+}

@@ -1,11 +1,29 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux';
-import { Card, CardHeader } from 'reactstrap';
+import { Card, CardHeader, Badge } from 'reactstrap';
 import FontAwesome from 'react-fontawesome';
 
 import { useThreePaneView, useSmallerFont, Font, View, actions } from '../../reducers/app'
 import { getSelectedModel, getSelectedPackage, getSelectedClass, getSelectedProperty, getSelectedTab, getDetails, getPackages, getClasses, getProperties, getExpandedItems } from '../../reducers/model'
+
+
+import { StereoType } from '../../reducers/model'
+import { ItemType } from '../../reducers/app'
+
+const Icons = {
+    [StereoType.FT]: 'FT',
+    [StereoType.T]: 'T',
+    [StereoType.DT]: 'DT',
+    [StereoType.CL]: 'CL',
+    [StereoType.E]: 'E',
+    [StereoType.U]: 'U',
+    [StereoType.AT]: 'AT',
+    [StereoType.AR]: 'exchange',
+    [ItemType.PKG]: 'folder-o',
+    [ItemType.CLS]: 'list-alt',
+    [ItemType.PRP]: 'hashtag'
+}
 
 import ModelBrowserPanes from '../presentational/ModelBrowserPanes'
 import ModelBrowserTree from '../presentational/ModelBrowserTree'
@@ -112,24 +130,45 @@ class ModelBrowser extends Component {
     }
 
     _renderDetails = () => {
-        const {details, selectedTab} = this.props;
-
-        const Icons = {
-            pkg: 'folder-o',
-            cls: 'list-alt',
-            prp: 'hashtag',
-        };
+        const {details, selectedTab, selectedPackage, selectedClass, classes, properties, baseUrls} = this.props;
 
         const detailTitle = details ? details.name : '';
-        const detailIcon = Icons[details.type] ? Icons[details.type] : '' //isFocusOnPackage ? 'folder-o' : isFocusOnClass ? 'list-alt' : isFocusOnProperty ? 'cube' : '';
+        //const detailIcon = Icons[details.type] ? Icons[details.type] : '' //isFocusOnPackage ? 'folder-o' : isFocusOnClass ? 'list-alt' : isFocusOnProperty ? 'cube' : '';
+
+        let detailIcon
+        if (details && details.infos && details.infos.stereotypes) {
+            let iconClassNames = 'mr-1 px-0 align-self-center tree-list-icon'
+            let iconName = Icons[details.infos.stereotypes]
+            detailIcon = iconName && <Badge color="default" className={ iconClassNames }>
+                                         { iconName }
+                                     </Badge>;
+        }
+        if (details && details.infos && !detailIcon) {
+            let iconName = Icons[details.type]
+            if (details.infos.isAttribute && details.infos.isAttribute === 'false')
+                iconName = Icons[StereoType.AR]
+            detailIcon = iconName && <FontAwesome name={ iconName } fixedWidth={ true } className="mr-1 align-self-center" />
+        //= leaf.type === 'prp' ? 'hashtag' : leaf.type === 'cls' ? 'list-alt' : isExpanded ? 'folder-open' : 'folder'
+        }
+
+        let items
+        if (details.type === 'pkg') {
+            items = classes.filter(cls => cls.parent === selectedPackage)
+        } else if (details.type === 'cls' && properties) {
+            items = properties.filter(prp => prp.parent === selectedClass)
+        }
 
         return (
             <Card className="h-100 border-0">
-                <CardHeader className="text-nowrap" style={ { minHeight: '50px', height: '50px' } }>
-                    <FontAwesome name={ detailIcon } fixedWidth={ true } className="pr-4" />
+                <CardHeader className="text-nowrap d-flex flex-row" style={ { minHeight: '50px', height: '50px' } }>
+                    { detailIcon }
                     { detailTitle }
                 </CardHeader>
-                <ModelBrowserDetails selectedTab={ selectedTab } {...details}/>
+                { details._id &&
+                  <ModelBrowserDetails selectedTab={ selectedTab }
+                      items={ items }
+                      baseUrls={ baseUrls }
+                      {...details}/> }
             </Card>
         );
     }

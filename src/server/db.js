@@ -68,7 +68,8 @@ return model
     .project({
         parent: 1,
         name: 1,
-        type: 1
+        type: 1,
+        stereotypes: 1
     })
     .sort({
         name: 1
@@ -79,6 +80,29 @@ exports.getDetails = function(id) {
 return model
     .findOne({
         _id: new ObjectID(id)
+    })
+    .then(function(details) {
+        if (details.supertypes) {
+            return model
+                .find({
+                    type: 'cls',
+                    localid: {
+                        $in: details.supertypes
+                    }
+                })
+                .project({
+                    name: 1
+                })
+                .sort({
+                    name: 1
+                })
+                .toArray()
+                .then(function(supertypes) {
+                    details.supertypes = supertypes
+                    return details
+                })
+        } else
+            return details;
     })
 }
 

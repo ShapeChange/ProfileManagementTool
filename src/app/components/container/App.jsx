@@ -5,12 +5,13 @@ import { connect } from 'react-redux'
 //import { ConnectedRouter } from 'react-router-redux'
 import { Fragment } from 'redux-little-router';
 
-import { Navbar, NavbarBrand, Container } from 'reactstrap';
+import { Navbar, NavbarBrand, Container, Button } from 'reactstrap';
 import FontAwesome from 'react-fontawesome';
 
 import { getPackages } from '../../reducers/model'
-import { useThreePaneView, useSmallerFont, Font, View, actions } from '../../reducers/app'
+import { useThreePaneView, useSmallerFont, isMenuOpen, Font, View, actions } from '../../reducers/app'
 import ModelBrowser from '../container/ModelBrowser'
+//import SideMenu from '../presentational/SideMenu'
 
 
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -53,6 +54,7 @@ const mapStateToProps = (state, props) => {
         packages: getPackages(state),
         useThreePaneView: useThreePaneView(state),
         useSmallerFont: useSmallerFont(state),
+        isMenuOpen: isMenuOpen(state),
         model: state.model.mdl ? state.model.mdl.name : '',
         profile: state.model.mdl && state.router.params ? state.router.params.profileId : '',
     }
@@ -65,7 +67,7 @@ const mapDispatchToProps = (dispatch) => ({
 class App extends Component {
 
     render() {
-        const {packages, useThreePaneView, useSmallerFont, model, profile} = this.props;
+        const {packages, useThreePaneView, useSmallerFont, isMenuOpen, toggleMenu, model, profile} = this.props;
 
         const rootPackage = packages.find(leaf => leaf.parent === null);
         const title = rootPackage ? rootPackage.name : 'ProfileManagementTool';
@@ -80,6 +82,7 @@ class App extends Component {
                         <NavbarBrand tag="span">
                             PMT
                         </NavbarBrand>
+                        { /*<Button color="inverse" onClick={ toggleMenu } className="mr-4 text-white" tag="a" href=""><FontAwesome name="bars" /></Button>*/ }
                         <div className="navbar-text px-3">
                             <FontAwesome name="sitemap" className="pr-2" />
                             <span>{ model }</span>
@@ -97,6 +100,7 @@ class App extends Component {
                             </Fragment>
                         </Fragment>
                     </Container>
+                    { /*<SideMenu/>*/ }
                 </div>
             </Fragment>
         );
@@ -104,16 +108,6 @@ class App extends Component {
 }
 ;
 
-
-
 const ConnectedApp = connect(mapStateToProps, mapDispatchToProps)(App)
 
 export default ConnectedApp
-
-/*<Button color="primary"
-    style={ { marginTop: '1rem' } }
-    size="large"
-    disabled={ running }
-    onClick={ () => this._startTest() }>
-    { running ? 'Testing...' : 'Start Test' }
-</Button>*/

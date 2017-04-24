@@ -9,3 +9,95 @@ height: 100%;
 .rounded-0 {
     border-radius: 0!important;
 }
+
+ a.card-header:hover, a.card-header:focus {
+	text-decoration: none;
+}
+
+.modal-menu {
+    top: 54px
+}
+
+.modal-menu.modal .modal-dialog {
+  -webkit-transition: -webkit-transform 0.3s ease-out;
+  transition: -webkit-transform 0.3s ease-out;
+  -o-transition: -o-transform 0.3s ease-out;
+  transition: transform 0.3s ease-out;
+  transition: transform 0.3s ease-out, -webkit-transform 0.3s ease-out, -o-transform 0.3s ease-out;
+}
+
+.modal-menu.left.modal.fade .modal-dialog {
+  -webkit-transform: translate(-100%, 0);
+       -o-transform: translate(-100%, 0);
+          transform: translate3d(-100%, 0, 0);
+}
+
+.modal-menu.right.modal.fade .modal-dialog {
+  -webkit-transform: translate(100%, 0);
+       -o-transform: translate(100%, 0);
+          transform: translate3d(100%, 0, 0);
+}
+
+.modal-menu.left.modal.show .modal-dialog, .modal-menu.right.modal.show .modal-dialog {
+  -webkit-transform: translate(0, 0);
+       -o-transform: translate(0, 0);
+          transform: translate3d(0, 0, 0);
+}
+
+
+.sidemenu {
+	background-color: #3e4041;
+}
+
+.sidemenu > .card.card-inverse > .sidemenu-header.card-header {
+	background-color: rgba(0,0,0,0.2) !important;
+	border-left: 5px solid transparent !important;
+	border-bottom: 0px solid !important;
+}
+
+.sidemenu .card.card-inverse, .sidemenu .card.card-inverse .card-header, .sidemenu .card.card-inverse .card-block {
+	background: transparent;
+	color: rgba(255,255,255,.65);
+}
+
+.sidemenu .list-group-item-action {
+	background-color: transparent;
+	border-left: 5px solid rgba(0,0,0,0.2) !important;
+	color: rgba(255,255,255,.65);
+}
+
+.sidemenu .list-group-item-action.active, .sidemenu .list-group-item-action:hover {
+	background-color: rgba(0,0,0,0.2);
+	border-left: 5px solid #5bc0de !important;
+	color: white;
+}
+
+
+.sidemenu .list-group-item-action.active .card.card-inverse, .sidemenu .list-group-item-action.active .card.card-inverse .card-header, .sidemenu .list-group-item-action.active .card.card-inverse .card-block {
+	background: transparent;
+	color: white;
+}
+
+
+.sidemenu .list-group-item-action:hover .card.card-inverse, .sidemenu .list-group-item-action:hover .card.card-inverse .card-header, .sidemenu .list-group-item-action:hover .card.card-inverse .card-block {
+	background: transparent;
+	color: white;
+}
+
+
+.badge.tree-list-icon {
+	display: inline-block;
+	text-align: center;
+	/*match fa-fw*/
+	width: 1.71429em;
+	border: 1px solid;
+}
+
+
+.badge.tree-list-icon.active {
+	background-color: white;
+}
+
+a:focus, a:hover {
+    text-decoration: none;
+}
