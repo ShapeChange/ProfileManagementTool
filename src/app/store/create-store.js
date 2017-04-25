@@ -7,7 +7,8 @@ import createSyncIoMiddleware from './sync.io.js';
 
 export default function(routes, data) {
     const {reducer: routerReducer, middleware: routerMiddleware, enhancer: routerEnhancer} = routerForBrowser({
-        routes
+        routes,
+        basename: '/pmt'
     })
 
     const reducer = combineReducers({

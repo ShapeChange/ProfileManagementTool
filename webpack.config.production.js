@@ -9,7 +9,7 @@ module.exports = function(env) {
 return webpackMerge(commonConfig(), {
     output: {
         filename: '[name].[chunkhash].js',
-	publicPath: '/'
+        publicPath: '/pmt'
     },
 
     devtool: 'eval',
