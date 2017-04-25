@@ -45,7 +45,7 @@ export default function(routes, data) {
 
     // ...after creating your store
     const initialLocation = store.getState().router;
-    console.log(initialLocation)
+    //console.log(initialLocation)
     if (initialLocation) {
         if (!initialLocation.params || !initialLocation.params.profileId)
             store.dispatch(push('/profile/DGIF_IV_2016-2_Stand_Stewardbearbeitung/HG/'));

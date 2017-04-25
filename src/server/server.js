@@ -6,7 +6,9 @@ var config = require('./cfg/config.js');
 
 var app = express();
 var server = http.createServer(app);
-var io = socketio(server);
+var io = socketio(server, {
+    path: (config.server.path || '') + '/socket.io'
+});
 
 syncio.addRoutes(app, io, config);
 

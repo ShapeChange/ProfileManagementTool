@@ -4,7 +4,9 @@ import { doesChangeState } from '../reducers/app'
 import { actions, getPendingModel, getPendingPackage, getPendingClass } from '../reducers/model'
 
 export default function createSyncIoMiddleware() {
-    const socket = io();
+    const socket = io({
+        path: '/pmt/socket.io'
+    });
 
     return createSocketIoMiddleware(socket, ['ROUTER_LOCATION_CHANGED'], {
         execute: conditionalExecute
