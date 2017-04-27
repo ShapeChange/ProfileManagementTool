@@ -12,7 +12,7 @@ return webpackMerge.strategy({
         'react-hot-loader/patch'
     ],
     output: {
-        publicPath: '/'
+        publicPath: '/pmt/'
     },
 
     devtool: 'eval',
@@ -23,20 +23,19 @@ return webpackMerge.strategy({
     ],
 
     devServer: {
-        port: 7090,
-        hot: true,
+        //port: 7090,
+        //hot: true,
         stats: 'normal',
         contentBase: resolve(__dirname, 'dist'),
-        publicPath: '/',
-        proxy: {
-            "/rest": "http://localhost:7080",
-            "/socket.io": "http://localhost:8000"
-        },
+        publicPath: '/pmt/',
+        //proxy: {
+        //    "/pmt/socket.io": "http://localhost:8000"
+        //},
         overlay: {
             warnings: true,
             errors: true
         },
-        historyApiFallback: true
+    //historyApiFallback: true
     }
 })
 }

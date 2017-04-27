@@ -36,25 +36,26 @@ return webpackMerge(commonConfig(), {
         new CopyWebpackPlugin([
             {
                 from: '../server/cfg/config.docker.js',
-                to: '../cfg/config.js'
+                to: '../../cfg/config.js'
             },
             {
                 from: '../server/routes',
-                to: '../routes'
+                to: '../../routes'
             },
             {
                 from: '../server/server.js',
-                to: '../'
+                to: '../../'
             },
             {
                 from: '../server/db.js',
-                to: '../'
+                to: '../../'
             },
             {
                 from: '../../package.json',
-                to: '../'
+                to: '../../'
             }
         ])
+
     ]
 })
 }

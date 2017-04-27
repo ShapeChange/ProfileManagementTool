@@ -1,5 +1,6 @@
 var express = require('express');
 var http = require('http');
+var compression = require('compression');
 var socketio = require('socket.io');
 var syncio = require('./routes/sync.io');
 var config = require('./cfg/config.js');
@@ -9,10 +10,19 @@ var server = http.createServer(app);
 var io = socketio(server, {
     path: (config.server.path || '') + '/socket.io'
 });
+app.use(compression());
 
 syncio.addRoutes(app, io, config);
 
-require('./routes/static').addRoutes(app, config);
+if (config.devEnv) {
+    // TODO: this should not be reachable in production env, needs separate start file
+    console.log('DEV');
+    require('./routes/webpack-dev').addRoutes(app, config);
+} else {
+    require('./routes/static').addRoutes(app, config);
+}
+
+//require('./routes/static').addRoutes(app, config);
 
 server.listen(config.server.port);
 

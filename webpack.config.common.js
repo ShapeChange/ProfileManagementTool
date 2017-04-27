@@ -1,6 +1,12 @@
 const resolve = require('path').resolve;
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+
+const extractSass = new ExtractTextPlugin({
+    filename: "[name].[contenthash].css",
+    disable: process.env.NODE_ENV !== "production"
+});
 
 module.exports = function() {
 return {
@@ -11,7 +17,7 @@ return {
     ],
     output: {
         filename: '[name].js',
-        path: resolve(__dirname, 'dist/app')
+        path: resolve(__dirname, 'dist/app/assets')
     },
 
     devtool: 'eval',
@@ -21,7 +27,7 @@ return {
     },
 
     resolve: {
-        extensions: [".js", ".jsx", ".json", ".css", ".less"]
+        extensions: [".js", ".jsx", ".json", ".scss"]
     },
 
     module: {
@@ -34,24 +40,29 @@ return {
                 exclude: /(node_modules)/
             },
             {
-                test: /\.css$/,
-                use: [
+                test: /\.scss$/,
+                /*use: [
                     {
                         loader: 'style-loader'
                     }, {
-                        loader: 'css-loader' /*,
+                        loader: 'css-loader'
+                    },
+                    {
+                        loader: 'sass-loader',
                         options: {
-                            modules: true
-                        }*/
-                    }, /*{
-              loader: 'postcss-loader'
-            },*/ /*{
-                        loader: 'less-loader',
-                        options: {
-                            includePaths: [resolve(__dirname, 'src/app/less')]
+                            includePaths: [resolve(__dirname, 'src/app/less'), resolve(__dirname, 'node_modules')]
                         }
-                    }*/
-                ],
+                    }
+                ],*/
+                use: extractSass.extract({
+                    use: [{
+                        loader: "css-loader"
+                    }, {
+                        loader: "sass-loader"
+                    }],
+                    // use style-loader in development
+                    fallback: "style-loader"
+                })
             },
             {
                 test: /\.(woff|woff2|ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
@@ -67,8 +78,7 @@ return {
         new webpack.optimize.CommonsChunkPlugin({
             name: 'vendor',
             minChunks: function(module) {
-                // this assumes your vendor imports exist in the node_modules directory
-                return module.context && module.context.indexOf('node_modules') !== -1;
+                return module.context && (module.context.indexOf('node_modules') !== -1 || module.context.indexOf('vendor') !== -1);
             }
         }),
         new webpack.optimize.CommonsChunkPlugin({
@@ -78,9 +88,11 @@ return {
         new HtmlWebpackPlugin({
             title: 'ProfileManagementTool',
             //favicon: 'assets/img/favicon.png',
-            //filename: 'app/index.html',
+            filename: '../index.html',
             template: 'index.html'
         }),
+
+        extractSass
 
     ],
 }

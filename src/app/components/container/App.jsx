@@ -13,10 +13,9 @@ import { useThreePaneView, useSmallerFont, isMenuOpen, Font, View, actions } fro
 import ModelBrowser from '../container/ModelBrowser'
 //import SideMenu from '../presentational/SideMenu'
 
-
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'font-awesome/css/font-awesome.min.css';
-import '../../less/app.css';
+import "bootstrap/scss/bootstrap";
+import "../../scss/vendor/font-awesome-woff-only";
+import '../../scss/pmt';
 
 /*
 * icons
