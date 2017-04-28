@@ -3,13 +3,14 @@ const webpack = require('webpack');
 const webpackMerge = require('webpack-merge');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const commonConfig = require('./webpack.config.common');
 
 module.exports = function(env) {
 return webpackMerge(commonConfig(), {
     output: {
         filename: '[name].[chunkhash].js',
-        publicPath: '/pmt'
+        publicPath: '/pmt/'
     },
 
     devtool: 'eval',
@@ -30,10 +31,21 @@ return webpackMerge(commonConfig(), {
             }
         }),
 
-        new webpack.optimize.UglifyJsPlugin({
+        //new webpack.optimize.UglifyJsPlugin({
+        //}),
+
+        new HtmlWebpackPlugin({
+            title: 'ProfileManagementTool',
+            filename: '../index.html',
+            template: 'index.html',
+            faviconPath: 'favicon/'
         }),
 
         new CopyWebpackPlugin([
+            {
+                from: 'assets/favicon',
+                to: '../../app/assets/favicon'
+            },
             {
                 from: '../server/cfg/config.docker.js',
                 to: '../../cfg/config.js'

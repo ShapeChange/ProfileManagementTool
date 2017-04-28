@@ -1,5 +1,6 @@
 const resolve = require('path').resolve;
 const webpack = require('webpack');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpackMerge = require('webpack-merge');
 const commonConfig = require('./webpack.config.common');
 
@@ -9,6 +10,7 @@ return webpackMerge.strategy({
 }
 )(commonConfig(), {
     entry: [
+        'webpack-hot-middleware/client?reload=true',
         'react-hot-loader/patch'
     ],
     output: {
@@ -19,23 +21,18 @@ return webpackMerge.strategy({
 
     plugins: [
         new webpack.HotModuleReplacementPlugin(),
-        new webpack.NamedModulesPlugin()
+        new webpack.NamedModulesPlugin(),
+
+        new HtmlWebpackPlugin({
+            title: 'ProfileManagementTool [DEV]',
+            template: 'index.html',
+            faviconPath: 'assets/favicon/'
+        }),
     ],
 
     devServer: {
-        //port: 7090,
-        //hot: true,
-        stats: 'normal',
-        contentBase: resolve(__dirname, 'dist'),
         publicPath: '/pmt/',
-        //proxy: {
-        //    "/pmt/socket.io": "http://localhost:8000"
-        //},
-        overlay: {
-            warnings: true,
-            errors: true
-        },
-    //historyApiFallback: true
+        stats: 'normal'
     }
 })
 }

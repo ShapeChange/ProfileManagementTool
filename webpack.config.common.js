@@ -85,13 +85,6 @@ return {
             name: 'manifest',
         }),
 
-        new HtmlWebpackPlugin({
-            title: 'ProfileManagementTool',
-            //favicon: 'assets/img/favicon.png',
-            filename: '../index.html',
-            template: 'index.html'
-        }),
-
         extractSass
 
     ],
