@@ -16,8 +16,45 @@ var xml3 = '<sc:alias><sc:descriptorValues><sc:DescriptorValue>leaf</sc:Descript
 
 describe('XML Writer', function() {
 
+it('should preserve order', function(done) {
 
-it('with aync handlers should preserve order', function(done) {
+    var writer;
+    var written = [];
+
+    var toXml = through2.obj(function(obj, enc, cb) {
+        if (!writer) {
+            writer = xmlWriter.create(this);
+        }
+
+        writer.print(obj).then(cb);
+    });
+
+    var toMem = through2.obj(function(chunk, enc, cb) {
+        written.push(chunk.toString());
+        cb();
+    }, function(cb) {
+        written = written.join('');
+        cb();
+
+        written.should.equal(xml)
+
+        done();
+    });
+
+    var xmlStream = xmlParser.create({
+        stream: false,
+        parentNodes: false
+    });
+
+    xmlStream.on('done', function(ast) {
+        intoStream.obj(ast).pipe(toXml).pipe(toMem);
+    });
+
+    xmlStream.parse(xml);
+
+});
+
+it('should preserve order with async handlers ', function(done) {
 
     var writer;
     var written = [];
@@ -76,44 +113,6 @@ it('with aync handlers should preserve order', function(done) {
     });
 
     xmlStream.parse(xml2);
-
-});
-
-it('should preserve order', function(done) {
-
-    var writer;
-    var written = [];
-
-    var toXml = through2.obj(function(obj, enc, cb) {
-        if (!writer) {
-            writer = xmlWriter.create(this);
-        }
-
-        writer.print(obj).then(cb);
-    });
-
-    var toMem = through2.obj(function(chunk, enc, cb) {
-        written.push(chunk.toString());
-        cb();
-    }, function(cb) {
-        written = written.join('');
-        cb();
-
-        written.should.equal(xml)
-
-        done();
-    });
-
-    var xmlStream = xmlParser.create({
-        stream: false,
-        parentNodes: false
-    });
-
-    xmlStream.on('done', function(ast) {
-        intoStream.obj(ast).pipe(toXml).pipe(toMem);
-    });
-
-    xmlStream.parse(xml);
 
 });
 });

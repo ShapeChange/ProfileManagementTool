@@ -54,7 +54,7 @@ function parseOptions(options, modelName) {
         pkgs: []
     }
 
-    if (options.setStats)
+    if (options && options.setStats)
         options.setStats(stats);
 
     var opts = Object.assign({

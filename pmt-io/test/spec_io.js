@@ -71,17 +71,17 @@ describe('Export', function() {
         var toxml = toXml.createStream(model._id, {
             getPackages: function(parent) {
                 return mem.filter(function(el) {
-                    return el.type === 'pkg' && el.parent === parent;
+                    return el.type === 'pkg' && ('' + el.parent) === ('' + parent);
                 })
             },
             getClasses: function(parent) {
                 return mem.filter(function(el) {
-                    return el.type === 'cls' && el.parent === parent;
+                    return el.type === 'cls' && ('' + el.parent) === ('' + parent);
                 })
             },
             getAssociations: function(parent) {
                 return mem.filter(function(el) {
-                    return el.type === 'asc' && el.parent === parent;
+                    return el.type === 'asc' && ('' + el.parent) === ('' + parent);
                 })
             }
         });
