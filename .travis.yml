@@ -9,9 +9,9 @@ cache:
   directories:
   - node_modules
 install:
-- npm --only=dev install
+- npm install
 script:
-- npm --production run build
+- npm test && npm run build
 after_success:
 - docker build -t $REPO:$COMMIT .
 - docker login -u $DOCKER_USER -p $DOCKER_PASS
