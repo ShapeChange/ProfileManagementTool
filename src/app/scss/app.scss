@@ -1,0 +1,64 @@
+@import "~bootstrap/scss/variables";
+
+/*html, body {
+	height: 100%;
+}*/
+
+.list-group-item.active.nofocus, .text-really-muted {
+    -webkit-filter: opacity(60%); 
+    filter: opacity(60%);
+}
+.rounded-0 {
+    border-radius: 0!important;
+}
+
+
+a:focus, a:hover {
+    text-decoration: none;
+}
+
+/*
+ a.card-header:hover, a.card-header:focus {
+	text-decoration: none;
+}
+*/
+
+
+
+.menu-button {
+	cursor: pointer;
+	background-color: $gray-dark !important;
+	color: white !important;
+	border: 0 solid !important;
+	box-shadow: none !important;
+
+	&.active, &:hover {
+		color: $brand-info !important;
+	}
+}
+
+
+.truncate {
+	white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.error-count {
+	position: absolute; 
+	margin-top: -7px;
+	margin-left: -10px;
+}
+
+.badge-fw {
+	display: inline-block;
+	text-align: center;
+	/*match fa-fw*/
+	width: 1.71429em;
+	border: 1px solid;
+}
+
+.badge-muted {
+	background-color: $text-muted;
+	color: $white;
+}

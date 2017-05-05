@@ -1,0 +1,97 @@
+@import "~bootstrap/scss/variables";
+
+$darken: $gray-dark;//rgba(0,0,0,0.2);
+$muted: rgba(255,255,255,.65);
+$really-muted: rgba(255,255,255,.10);
+
+
+.sidemenu.modal-menu {
+    top: 54px
+}
+
+.sidemenu-inactive {
+	//background: transparent;
+	background-color: $darken !important;
+	color: $muted !important;
+}
+
+.sidemenu-active {
+	background-color: $darken !important;
+	color: white !important;
+}
+
+.sidemenu-content {		
+
+	.card.card-inverse {
+		background-color: $gray;
+
+		.sidemenu-header {
+			@extend .sidemenu-active;
+			border-left: 5px solid $brand-info !important;
+			border-bottom: 0px solid !important;
+			//margin-top: 5px;
+		}
+	}
+
+	.list-group-item-action {
+		border-left: 5px solid $darken !important;
+
+		.card.card-inverse {
+
+			.card-header, .card-block {
+				@extend .sidemenu-inactive;
+			}
+		}
+
+		&.active, &:hover {
+			border-left: 5px solid $brand-info !important;
+
+			.card.card-inverse {
+
+				.card-header, .card-block {
+					@extend .sidemenu-active;		
+				}
+			}
+		}
+	}
+
+	.has-success .form-control-feedback, .has-success .form-control-label, .has-success .col-form-label, .has-success .form-check-label, .has-success .custom-control {
+		color: $brand-info;
+	}
+
+	.has-success .form-control {
+		border-color: $brand-info;
+	}
+
+	// TODO: to change application wide, could also set $form-icon-success-color
+	.has-success .form-control-success {
+		background-image: str-replace(url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='#{$brand-info}' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3E%3C/svg%3E"), "#", "%23");
+	}
+
+	a {
+		&:not(.btn) {
+			color: white;
+
+			&:visited, &:focus {
+				color: white;
+			}
+
+			&:hover {
+				color: $brand-info !important;
+			}
+		}
+	}
+}
+
+.file-browser-item {
+		border-top: 1px solid $really-muted !important;
+		margin-bottom: 0px !important;
+
+		&.active, &:hover {
+			color: $brand-info !important;
+			//font-weight: bold;
+		}
+		&.active {
+			font-weight: bold;
+		}
+	}

@@ -25,7 +25,17 @@ export const actions = {
     selectProperty: createAction('app/property/select'),
     setView: createAction('view/set'),
     setFont: createAction('font/set'),
-    toggleMenu: createAction('menu/toggle')
+    toggleMenu: createAction('menu/toggle'),
+    setSubmenusOpen: createAction('submenus/set'),
+    createFileImport: createAction('file/import/create'),
+    startFileImport: createAction('file/import/start'),
+    endFileImport: createAction('file/import/done'),
+    clearFileImport: createAction('file/import/clear'),
+    progressFileImport: createAction('file/import/stats'),
+    startFileExport: createAction('file/export/start'),
+    endFileExport: createAction('file/export/done'),
+    clearFileExport: createAction('file/export/clear'),
+    progressFileExport: createAction('file/export/stats')
 };
 
 // state
@@ -37,7 +47,10 @@ const initialState = {
     focus: null,
     useThreePaneView: false,
     useSmallerFont: false,
-    menuOpen: false
+    menuOpen: false,
+    submenusOpen: {},
+    fileImport: {},
+    fileExport: {}
 }
 
 // reducer
@@ -48,7 +61,17 @@ export default handleActions({
     [actions.selectProperty]: selectProperty,
     [actions.setView]: setView,
     [actions.setFont]: setFont,
-    [actions.toggleMenu]: toggleMenu
+    [actions.toggleMenu]: toggleMenu,
+    [actions.setSubmenusOpen]: setSubmenusOpen,
+    [actions.createFileImport]: createFileImport,
+    [actions.startFileImport]: startFileImport,
+    [actions.endFileImport]: endFileImport,
+    [actions.clearFileImport]: clearFileImport,
+    [actions.progressFileImport]: progressFileImport,
+    [actions.startFileExport]: startFileExport,
+    [actions.endFileExport]: endFileExport,
+    [actions.clearFileExport]: clearFileExport,
+    [actions.progressFileExport]: progressFileExport,
 }, initialState);
 
 
@@ -120,6 +143,114 @@ function toggleMenu(state) {
     }
 }
 
+
+function setSubmenusOpen(state, action) {
+    return {
+        ...state,
+        submenusOpen: action.payload
+    }
+}
+
+function createFileImport(state, action) {
+    return {
+        ...state,
+        fileImport: {
+            pending: false,
+            name: action.payload.name,
+            valid: action.payload.valid
+        }
+    }
+}
+
+function startFileImport(state, action) {
+    return {
+        ...state,
+        fileImport: {
+            pending: true,
+            name: action.payload.metadata.name,
+            stats: {
+                size: action.payload.metadata.size,
+                written: 0
+            }
+        }
+    }
+}
+
+function endFileImport(state, action) {
+    if (state.fileImport.pending && state.fileImport.name === action.payload.metadata.name) {
+
+        return {
+            ...state,
+            fileImport: {
+                ...state.fileImport,
+                pending: false,
+                model: action.payload.stats.model,
+                stats: {
+                    ...state.fileImport.stats,
+                    ...action.payload.stats
+                }
+            }
+        }
+    }
+    return state;
+}
+
+function progressFileImport(state, action) {
+    return {
+        ...state,
+        fileImport: {
+            ...state.fileImport,
+            stats: {
+                ...state.fileImport.stats,
+                ...action.payload
+            }
+        }
+    }
+}
+
+function clearFileImport(state) {
+    return {
+        ...state,
+        fileImport: {}
+    }
+}
+
+function startFileExport(state, action) {
+    return {
+        ...state,
+        fileExport: {
+            ...action.payload,
+            pending: true,
+            stats: {
+            }
+        }
+    }
+}
+
+function endFileExport(state, action) {
+    return {
+        ...state,
+        fileExport: {
+            ...state.fileExport,
+            pending: false,
+            data: action.payload
+        }
+    }
+}
+
+function progressFileExport(state) {
+    return {
+        ...state
+    }
+}
+
+function clearFileExport(state) {
+    return {
+        ...state,
+        fileExport: {}
+    }
+}
+
 // selectors
 export const getSelectedModel = (state) => state.app.selectedModel
 export const getSelectedPackage = (state) => state.app.selectedPackage
@@ -131,6 +262,13 @@ export const isFocusOnProperty = (state) => state.app.focus === ItemType.PRP
 export const useThreePaneView = (state) => state.app.useThreePaneView
 export const useSmallerFont = (state) => state.app.useSmallerFont
 export const isMenuOpen = (state) => state.app.menuOpen
+export const getSubmenusOpen = (state) => state.app.submenusOpen
+export const hasFileImport = (state) => state.app.fileImport.name ? true : false
+export const hasPendingFileImport = (state) => state.app.fileImport.pending && state.app.fileImport.stats ? true : false
+export const getFileImport = (state) => state.app.fileImport
+export const hasFileExport = (state) => state.app.fileExport.name ? true : false
+export const hasPendingFileExport = (state) => state.app.fileExport.pending && state.app.fileExport.stats ? true : false
+export const getFileExport = (state) => state.app.fileExport
 
 // is backend sync needed
 const doesChangeSelectedPackage = (state, action) => state.app.selectedPackage !== action.payload

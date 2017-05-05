@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import TreeList from './TreeList'
 
 class TreeListStateful extends Component {
 
@@ -51,21 +52,26 @@ class TreeListStateful extends Component {
     };
 
     _select = (leaf) => {
-        const {tree, onSelect} = this.props;
+        const {onSelect} = this.props;
 
-        this.setState({
-            selected: leaf._id
-        });
+
 
         if (onSelect) {
             onSelect(leaf._id, leaf);
+        } else {
+            this.setState({
+                selected: leaf._id
+            });
         }
     };
 
 
 
     render() {
-        return <TreeList onSelect={ this._select } onExpand={ this._expand } {...this.props}/>
+        return <TreeList {...this.props}
+                   {...this.state}
+                   onSelect={ this._select }
+                   onExpand={ this._expand } />
     }
 }
 

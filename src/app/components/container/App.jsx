@@ -3,19 +3,19 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux'
 //import { Route, BrowserRouter as Router } from 'react-router-dom'
 //import { ConnectedRouter } from 'react-router-redux'
-import { Fragment } from 'redux-little-router';
+import { Fragment, Link } from 'redux-little-router';
 
-import { Navbar, NavbarBrand, Container, Button } from 'reactstrap';
+import { Navbar, NavbarBrand, Container, Button, Badge } from 'reactstrap';
 import FontAwesome from 'react-fontawesome';
 
-import { getPackages } from '../../reducers/model'
+import { getPackages, getSelectedModelName, getSelectedProfile } from '../../reducers/model'
 import { useThreePaneView, useSmallerFont, isMenuOpen, Font, View, actions } from '../../reducers/app'
 import ModelBrowser from '../container/ModelBrowser'
-//import SideMenu from '../presentational/SideMenu'
+import SideMenu from '../presentational/SideMenu'
 
-import "bootstrap/scss/bootstrap";
+import "../../scss/vendor/bootstrap-themed";
 import "../../scss/vendor/font-awesome-woff-only";
-import '../../scss/pmt';
+import '../../scss/app';
 
 /*
 * icons
@@ -54,8 +54,8 @@ const mapStateToProps = (state, props) => {
         useThreePaneView: useThreePaneView(state),
         useSmallerFont: useSmallerFont(state),
         isMenuOpen: isMenuOpen(state),
-        model: state.model.mdl ? state.model.mdl.name : '',
-        profile: state.model.mdl && state.router.params ? state.router.params.profileId : '',
+        model: state.model.models ? getSelectedModelName(state) : null,
+        profile: state.model.models ? getSelectedProfile(state) : null
     }
 }
 
@@ -65,6 +65,18 @@ const mapDispatchToProps = (dispatch) => ({
 
 class App extends Component {
 
+    toggleMenu = (e) => {
+        const {toggleMenu} = this.props;
+
+        toggleMenu();
+
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.blur();
+        }
+    }
+
     render() {
         const {packages, useThreePaneView, useSmallerFont, isMenuOpen, toggleMenu, model, profile} = this.props;
 
@@ -73,22 +85,34 @@ class App extends Component {
 
         return (
             <Fragment forRoute='/'>
-                <div>
+                <div className="h-100">
                     <Navbar color="inverse"
                         inverse
                         fixed="top"
                         className="flex-row">
+                        <Button color="info" onClick={ this.toggleMenu } className={ 'menu-button' + (isMenuOpen ? ' active' : '') }>
+                            <FontAwesome name="bars" />
+                        </Button>
                         <NavbarBrand tag="span">
                             PMT
                         </NavbarBrand>
-                        { /*<Button color="inverse" onClick={ toggleMenu } className="mr-4 text-white" tag="a" href=""><FontAwesome name="bars" /></Button>*/ }
-                        <div className="navbar-text px-3">
-                            <FontAwesome name="sitemap" className="pr-2" />
-                            <span>{ model }</span>
-                        </div>
-                        <div className="navbar-text px-3">
-                            <FontAwesome name="id-card" className="pr-2" />
-                            <span>{ profile }</span>
+                        { model && <div className="navbar-text px-3">
+                                       <FontAwesome name="sitemap" className="pr-2" />
+                                       <span>{ model }</span>
+                                   </div> }
+                        { model && profile && <div className="navbar-text px-3">
+                                                  <FontAwesome name="id-card" className="pr-2" />
+                                                  <span>{ profile }</span>
+                                              </div> }
+                        <div className="navbar-text ml-auto">
+                            <Link href={ '' } title="Show Errors" onClick={ (e) => {
+                                                                                e.preventDefault();
+                                                                            } }>
+                            <FontAwesome name="bell-o" className="text-danger" />
+                            <Badge color="danger" className="rounded-circle error-count">
+                                5
+                            </Badge>
+                            </Link>
                         </div>
                     </Navbar>
                     <Container className="px-0 h-100" fluid style={ { paddingTop: '54px' } }>
@@ -99,7 +123,7 @@ class App extends Component {
                             </Fragment>
                         </Fragment>
                     </Container>
-                    { /*<SideMenu/>*/ }
+                    <SideMenu/>
                 </div>
             </Fragment>
         );

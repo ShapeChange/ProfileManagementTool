@@ -6,7 +6,7 @@ import { Link } from 'redux-little-router';
 class ModelBrowserInfos extends Component {
 
     render() {
-        const {infos, baseUrls, type} = this.props;
+        const {infos, baseUrl, urlSuffix} = this.props;
 
         return (infos &&
             <Table>
@@ -14,8 +14,14 @@ class ModelBrowserInfos extends Component {
                     { Object.keys(infos).map((key, i) => {
                           let value = infos[key]
                           if (key === 'supertypes' && infos[key]) {
-                              value = infos[key].map((st, j) => <span key={ st._id }><Link href={ `${baseUrls[type]}/${st._id}/` }> { st.name } </Link>{ j > 0 && <br/> }</span>
+                              value = infos[key].map((st, j) => <span key={ st._id }><Link href={ `${baseUrl}/${st._id}/${urlSuffix || ''}` }> { st.name } </Link><br/></span>
                               )
+                          } else if (key === 'type' && infos[key]) {
+                              value = <Link href={ `${baseUrl}/${infos[key]._id}/${urlSuffix || ''}` }>
+                                      { infos[key].name }
+                                      </Link>
+                          } else if (key === 'association' && infos[key]) {
+                              value = infos[key].name
                           }
                           return <tr key={ key }>
                                      <th scope="row" className={ 'pl-0' + (i === 0 ? ' border-top-0' : '') }>

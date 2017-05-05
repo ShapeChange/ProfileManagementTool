@@ -8,6 +8,8 @@ import TreeList from '../common/TreeList'
 import { StereoType } from '../../reducers/model'
 import { ItemType } from '../../reducers/app'
 
+import './ModelTreeList.scss'
+
 const Icons = {
     [StereoType.FT]: 'FT',
     [StereoType.T]: 'T',
@@ -41,7 +43,7 @@ class ModelTreeList extends Component {
     }
 
     _renderLeaf = (leaf, isFirst, isLast, isSelected, isExpanded, hasChildren, depth, onSelect, onExpand) => {
-        const {focus, showExpansionIcons, useSmallerFont, baseUrls} = this.props;
+        const {focus, showExpansionIcons, useSmallerFont, baseUrls, urlSuffix} = this.props;
 
         let classNames = 'border-left-0 border-right-0 rounded-0 list-group-item-action text-nowrap'
         if (isFirst)
@@ -60,7 +62,7 @@ class ModelTreeList extends Component {
             classNames += ' px-2 py-2'
 
         let leafIcon
-        if (leaf.stereotypes) {
+        if (leaf.stereotypes && Icons[leaf.stereotypes[0]]) {
             let iconClassNames = 'mr-1 px-0 align-self-center tree-list-icon' + (isSelected ? ' text-primary active' : '')
             leafIcon = <Badge color="primary" className={ iconClassNames }>
                            { Icons[leaf.stereotypes[0]] }
@@ -81,7 +83,7 @@ class ModelTreeList extends Component {
         const expansionIcon = showExpansionIcons ? <FontAwesome name={ expansionIconType } fixedWidth={ true } className="" /> : null
 
         return <ListGroupItem tag={ Link }
-                   href={ `${baseUrls[leaf.type]}/${leaf._id}/${isExpanded ? '?closed=true' : ''}` }
+                   href={ `${baseUrls[leaf.type]}/${leaf._id}/${urlSuffix ? urlSuffix : ''}${isExpanded && hasChildren ? '?closed=true' : ''}` }
                    key={ leaf._id }
                    title={ leaf.name }
                    className={ classNames } /*onClick={

@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
-import { Table } from 'reactstrap';
+import { Table, Badge } from 'reactstrap';
 import FontAwesome from 'react-fontawesome';
 import { Link } from 'redux-little-router';
 import Toggle from '../common/Toggle'
+import ModelElement from './ModelElement'
 
 
 class ModelBrowserItems extends Component {
@@ -25,20 +26,35 @@ class ModelBrowserItems extends Component {
         });
     }
 
+    // TODO: create component for element links with icon
     render() {
-        const {items, baseUrls} = this.props;
+        const {items, baseUrls, urlSuffix} = this.props;
 
         return (
             <div>
                 <div className="font-weight-bold py-1">
                     Included in profile
                 </div>
-                { items.map(item => <Toggle key={ item._id }
-                                        name={ item._id }
-                                        checked={ this.state.checked[item._id] || false }
-                                        onToggle={ this._toggle }>
-                                        <span className="align-self-center d-flex w-100 font-italic">{ item.name } <Link href={ `${baseUrls[item.type]}/${item._id}/` } className="ml-auto text-primary align-self-center"> <FontAwesome name="share" fixedWidth={ true } /> </Link></span>
-                                    </Toggle>) }
+                { items && items.map(item => <div key={ item._id } className="d-flex flex-row w-100 align-items-center">
+                                                 <Toggle name={ item._id } checked={ this.state.checked[item._id] || false } onToggle={ this._toggle }>
+                                                 </Toggle>
+                                                 <ModelElement tag={ Link }
+                                                     element={ item }
+                                                     color={ this.state.checked[item._id] ? 'primary' : 'muted' }
+                                                     href={ `${baseUrls[item.type]}/${item._id}/${urlSuffix ? urlSuffix : ''}` }
+                                                     className="mr-1" />
+                                                 { item.type === 'prp' && item.cardinality && <Badge color="primary" className="mx-1">
+                                                                                                  { item.cardinality }
+                                                                                              </Badge> }
+                                                 { item.type === 'prp' && item.typeId && <Badge color="primary" className="truncate mx-1">
+                                                                                             <Link href={ `${baseUrls['cls']}/${item.typeId._id}/${urlSuffix ? urlSuffix : ''}` } title={ item.typeName } className="text-white">
+                                                                                             { item.typeName }
+                                                                                             </Link>
+                                                                                         </Badge> }
+                                                 { /*<Link href={ `${baseUrls[item.type]}/${item._id}/${urlSuffix ? urlSuffix : ''}` } className="ml-auto text-primary">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          <FontAwesome name="share" fixedWidth={ true } />
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </Link>*/ }
+                                             </div>) }
             </div>
         );
     }

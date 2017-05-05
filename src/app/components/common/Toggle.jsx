@@ -6,7 +6,7 @@ import FontAwesome from 'react-fontawesome';
 class Toggle extends Component {
 
     render() {
-        const {name, label, children, checked, onToggle, size} = this.props;
+        const {name, label, children, checked, onToggle, size, color, className} = this.props;
 
         const icon = checked ? 'toggle-on' : 'toggle-off'
 
@@ -19,9 +19,9 @@ class Toggle extends Component {
                         onChange={ onToggle }
                         className="hidden-xl-down" />
                     <FontAwesome name={ icon }
-                        size={ size }
+                        size={ size === '1x' ? null : size }
                         fixedWidth={ true }
-                        className="mr-2 text-primary align-self-center" />
+                        className={ `${className} mr-2 text-${color} align-self-center` } />
                     { children
                       ? children
                       : <span className="align-self-center">{ label }</span> }
@@ -33,11 +33,15 @@ class Toggle extends Component {
 ;
 
 Toggle.propTypes = {
-    size: PropTypes.string
+    size: PropTypes.string,
+    color: PropTypes.string,
+    className: PropTypes.string
 };
 
 Toggle.defaultProps = {
-    size: 'lg'
+    size: 'lg',
+    color: 'primary',
+    className: ''
 };
 
 export default Toggle

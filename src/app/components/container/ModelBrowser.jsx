@@ -28,6 +28,7 @@ const Icons = {
 import ModelBrowserPanes from '../presentational/ModelBrowserPanes'
 import ModelBrowserTree from '../presentational/ModelBrowserTree'
 import ModelBrowserDetails from '../presentational/ModelBrowserDetails'
+import ModelElement from '../presentational/ModelElement'
 
 const mapStateToProps = (state, props) => {
     return {
@@ -45,13 +46,14 @@ const mapStateToProps = (state, props) => {
         isFocusOnProperty: getDetails(state).type === 'prp', //isFocusOnProperty(state),
         useThreePaneView: useThreePaneView(state),
         useSmallerFont: useSmallerFont(state),
-        expanded: getExpandedItems(state, getSelectedPackage(state), getSelectedClass(state), getSelectedProperty(state)),
+        expanded: getExpandedItems(state),
         // TODO: normalize urls in LOCATION_CHANGE handler, use relative Links
         baseUrls: {
             pkg: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/package`,
             cls: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/class`,
             prp: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/property/${state.model.fetchedClass}`
         },
+        query: state.router.search,
         title: state.model.mdl ? state.model.mdl.name : ''
     }
 }
@@ -99,16 +101,9 @@ class ModelBrowser extends Component {
     _getSeparateTrees = () => {
         const {packages, classes, properties, selectedPackage, selectedClass} = this.props;
 
-        const classTree = selectedPackage && classes ? [{
-            _id: selectedPackage,
-            parent: null
-        }].concat(classes.filter(cls => cls.parent === selectedPackage)) : null;
+        const classTree = selectedPackage && classes ? classes.filter(cls => cls.parent === selectedPackage) : null;
 
-
-        const propertyTree = selectedClass && properties ? [{
-            _id: selectedClass,
-            parent: null
-        }].concat(properties.sort((a, b) => a.name > b.name ? 1 : -1)) : null;
+        const propertyTree = selectedClass && properties ? properties.filter(prp => prp.parent === selectedClass) : null;
 
         return {
             packageTree: packages,
@@ -130,7 +125,7 @@ class ModelBrowser extends Component {
     }
 
     _renderDetails = () => {
-        const {details, selectedTab, selectedPackage, selectedClass, classes, properties, baseUrls} = this.props;
+        const {details, selectedTab, selectedPackage, selectedClass, classes, properties, baseUrls, query} = this.props;
 
         const detailTitle = details ? details.name : '';
         //const detailIcon = Icons[details.type] ? Icons[details.type] : '' //isFocusOnPackage ? 'folder-o' : isFocusOnClass ? 'list-alt' : isFocusOnProperty ? 'cube' : '';
@@ -161,20 +156,20 @@ class ModelBrowser extends Component {
         return (
             <Card className="h-100 border-0">
                 <CardHeader className="text-nowrap d-flex flex-row" style={ { minHeight: '50px', height: '50px' } }>
-                    { detailIcon }
-                    { detailTitle }
+                    { details.name && <ModelElement element={ details } color="default" /> }
                 </CardHeader>
                 { details._id &&
                   <ModelBrowserDetails selectedTab={ selectedTab }
                       items={ items }
                       baseUrls={ baseUrls }
+                      urlSuffix={ query }
                       {...details}/> }
             </Card>
         );
     }
 
     render() {
-        const {useThreePaneView} = this.props;
+        const {useThreePaneView, selectedModel} = this.props;
 
         const tree = useThreePaneView ? this._getSeparateTrees() : this._getSingleTree()
 

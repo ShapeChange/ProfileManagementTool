@@ -11,7 +11,7 @@ class ModelBrowserTree extends Component {
     }
 
     render() {
-        const {packageTree, selectedPackage, selectedClass, selectedProperty, isFocusOnPackage, isFocusOnClass, isFocusOnProperty, expanded, baseUrls, title} = this.props;
+        const {packageTree, selectedModel, selectedPackage, selectedClass, selectedProperty, selectedTab, isFocusOnPackage, isFocusOnClass, isFocusOnProperty, expanded, baseUrls, title} = this.props;
         const {useThreePaneView, onSetThreePaneView, onSetSinglePaneView, useSmallerFont, onSetNormalFont, onSetSmallFont} = this.props;
 
         const selected = isFocusOnPackage ? selectedPackage : isFocusOnClass ? selectedClass : isFocusOnProperty ? selectedProperty : null;
@@ -29,7 +29,7 @@ class ModelBrowserTree extends Component {
                                 <Input placeholder="" disabled/>
                             </InputGroup>
                             <ButtonGroup>
-                                <Button color="secondary"
+                                <Button color="primary"
                                     size="sm"
                                     outline
                                     title="Single Column Layout"
@@ -37,7 +37,7 @@ class ModelBrowserTree extends Component {
                                     onClick={ onSetSinglePaneView }>
                                     <FontAwesome name="align-left" />
                                 </Button>
-                                <Button color="secondary"
+                                <Button color="primary"
                                     size="sm"
                                     outline
                                     title="Three Column Layout"
@@ -46,8 +46,8 @@ class ModelBrowserTree extends Component {
                                     <FontAwesome name="columns" />
                                 </Button>
                             </ButtonGroup>
-                            <ButtonGroup className="pl-4">
-                                <Button color="secondary"
+                            <ButtonGroup className="pl-3">
+                                <Button color="primary"
                                     size="sm"
                                     outline
                                     title="Normal Font Size"
@@ -55,7 +55,7 @@ class ModelBrowserTree extends Component {
                                     onClick={ onSetNormalFont }>
                                     <FontAwesome name="font" />
                                 </Button>
-                                <Button color="secondary"
+                                <Button color="primary"
                                     size="sm"
                                     outline
                                     title="Small Font Size"
@@ -69,10 +69,12 @@ class ModelBrowserTree extends Component {
                     </CardHeader>
                     <div style={ { overflowY: 'auto', overflowX: 'hidden' } }>
                         <ModelTreeList tree={ packageTree }
+                            parent={ selectedModel }
                             selected={ selected }
                             expanded={ expanded }
                             useSmallerFont={ useSmallerFont }
                             baseUrls={ baseUrls }
+                            urlSuffix={ selectedTab }
                             doRenderRoot={ true } />
                     </div>
                 </Card>

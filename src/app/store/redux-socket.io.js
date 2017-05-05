@@ -11,7 +11,7 @@ export default function createSocketIoMiddleware(socket, criteria = [], {eventNa
         socket.on(eventName, store.dispatch);
         return next => (action) => {
             if (evaluate(action, criteria)) {
-                return execute(action, emitBound, next, store);
+                return execute(action, emitBound, next, store, socket);
             }
             return next(action);
         };

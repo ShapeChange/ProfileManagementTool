@@ -7,7 +7,7 @@ import ModelTreeList from './ModelTreeList'
 class ModelBrowserPanes extends Component {
 
     render() {
-        const {packageTree, classTree, propertyTree, selectedPackage, selectedClass, selectedProperty, isFocusOnPackage, isFocusOnClass, isFocusOnProperty, expanded, baseUrls, title} = this.props;
+        const {packageTree, classTree, propertyTree, selectedModel, selectedPackage, selectedClass, selectedProperty, selectedTab, isFocusOnPackage, isFocusOnClass, isFocusOnProperty, expanded, baseUrls, title} = this.props;
         const {useThreePaneView, onSetThreePaneView, onSetSinglePaneView, useSmallerFont, onSetNormalFont, onSetSmallFont} = this.props;
 
         return (
@@ -23,7 +23,7 @@ class ModelBrowserPanes extends Component {
                                 <Input placeholder="" disabled/>
                             </InputGroup>
                             <ButtonGroup>
-                                <Button color="secondary"
+                                <Button color="primary"
                                     size="sm"
                                     outline
                                     title="Single Column Layout"
@@ -31,7 +31,7 @@ class ModelBrowserPanes extends Component {
                                     onClick={ onSetSinglePaneView }>
                                     <FontAwesome name="align-left" />
                                 </Button>
-                                <Button color="secondary"
+                                <Button color="primary"
                                     size="sm"
                                     outline
                                     title="Three Column Layout"
@@ -40,8 +40,8 @@ class ModelBrowserPanes extends Component {
                                     <FontAwesome name="columns" />
                                 </Button>
                             </ButtonGroup>
-                            <ButtonGroup className="pl-4">
-                                <Button color="secondary"
+                            <ButtonGroup className="pl-3">
+                                <Button color="primary"
                                     size="sm"
                                     outline
                                     title="Normal Font Size"
@@ -49,7 +49,7 @@ class ModelBrowserPanes extends Component {
                                     onClick={ onSetNormalFont }>
                                     <FontAwesome name="font" />
                                 </Button>
-                                <Button color="secondary"
+                                <Button color="primary"
                                     size="sm"
                                     outline
                                     title="Small Font Size"
@@ -66,11 +66,13 @@ class ModelBrowserPanes extends Component {
                         <Card className="h-100 border-top-0 border-bottom-0 border-left-0 rounded-0">
                             <div style={ { overflowY: 'auto', overflowX: 'hidden' } }>
                                 <ModelTreeList tree={ packageTree }
+                                    parent={ selectedModel }
                                     selected={ selectedPackage }
                                     expanded={ expanded }
                                     focus={ isFocusOnPackage }
                                     useSmallerFont={ useSmallerFont }
                                     baseUrls={ baseUrls }
+                                    urlSuffix={ selectedTab }
                                     doRenderRoot={ true }
                                     placeHolder='No Packages' />
                             </div>
@@ -80,11 +82,13 @@ class ModelBrowserPanes extends Component {
                         <Card className="h-100 border-top-0 border-bottom-0 border-left-0 rounded-0">
                             <div style={ { overflowY: 'auto', overflowX: 'hidden' } }>
                                 <ModelTreeList tree={ classTree }
+                                    parent={ selectedPackage }
                                     selected={ selectedClass }
                                     expanded={ expanded }
                                     focus={ isFocusOnClass }
                                     useSmallerFont={ useSmallerFont }
                                     baseUrls={ baseUrls }
+                                    urlSuffix={ selectedTab }
                                     placeHolder='No Classes' />
                             </div>
                         </Card>
@@ -93,11 +97,13 @@ class ModelBrowserPanes extends Component {
                         <Card className="h-100 border-0">
                             <div style={ { overflowY: 'auto', overflowX: 'hidden' } }>
                                 <ModelTreeList tree={ propertyTree }
+                                    parent={ selectedClass }
                                     selected={ selectedProperty }
                                     expanded={ expanded }
                                     focus={ isFocusOnProperty }
                                     useSmallerFont={ useSmallerFont }
                                     baseUrls={ baseUrls }
+                                    urlSuffix={ selectedTab }
                                     placeHolder='No Properties' />
                             </div>
                         </Card>

@@ -17,6 +17,8 @@ export const StereoType = {
 
 // action creators
 export const actions = {
+    fetchModels: createAction('models/fetch'),
+    fetchedModels: createAction('models/fetched'),
     fetchModel: createAction('model/fetch'),
     fetchedModel: createAction('model/fetched'),
     fetchPackage: createAction('package/fetch'),
@@ -30,6 +32,7 @@ export const actions = {
 
 // state
 const initialState = {
+    models: [],
     packages: [],
     classes: [],
     mdl: null,
@@ -47,6 +50,7 @@ const initialState = {
 // reducer
 export default handleActions({
     [LOCATION_CHANGED]: onLocationChange,
+    [actions.fetchedModels]: fetchedModels,
     [actions.fetchedModel]: fetchedModel,
     [actions.fetchedPackage]: fetchedPackage,
     [actions.fetchedClass]: fetchedClass,
@@ -107,6 +111,14 @@ function syncClass(state, action) {
 }
 
 
+function fetchedModels(state, action) {
+    return {
+        ...state,
+        models: action.payload
+    }
+}
+
+
 function fetchedModel(state, action) {
     return state.pendingModel !== action.payload.fetchedModel
         ? state
@@ -152,6 +164,7 @@ function fetchedClasses(state, action) {
 }
 
 //selectors
+export const getModels = (state) => state.model.models
 export const getPackages = (state) => state.model.packages
 export const getClasses = (state) => state.model.classes
 export const getProperties = (state) => getClass(state) && _extractProperties(getClass(state).properties) //_reduceProperties(_extractProperties(getClass(state)), getClass(state))
@@ -161,11 +174,13 @@ export const getProperty = (state) => _extractProperty(getProperties(state), get
 export const getPackageDetails = (state) => _extractDetails(getPackage(state))
 export const getClassDetails = (state) => _extractDetails(getClass(state))
 export const getPropertyDetails = (state, selectedProperty) => _extractDetails(getProperty(state, selectedProperty))
-export const getExpandedItems = (state, selectedPackage, selectedClass, selectedProperty) => _getExpandedItems(state, selectedPackage, selectedClass, selectedProperty)
+export const getExpandedItems = (state) => _getExpandedItems(state)
 export const getPendingModel = (state) => state.model.pendingModel
 export const getPendingPackage = (state) => state.model.pendingPackage
 export const getPendingClass = (state) => state.model.pendingClass
 export const getSelectedModel = (state) => state.router.params.modelId //state.model.pendingModel || state.model.fetchedModel
+export const getSelectedModelName = (state) => getModels(state).length && getSelectedModel(state) ? getModels(state).find(mdl => mdl._id == getSelectedModel(state)).name : null
+export const getSelectedProfile = (state) => state.router.params.profileId
 export const getSelectedPackage = (state) => state.model.pendingPackage || state.model.fetchedPackage
 export const getSelectedClass = (state) => state.router.params.classId //state.model.pendingClass || state.model.fetchedClass
 export const getSelectedProperty = (state) => state.router.params.propertyId
@@ -176,23 +191,23 @@ export const isFocusOnProperty = (state) => state.router.params.propertyId
 export const isItemClosed = (state) => state.router.query && state.router.query.closed === 'true'
 export const getDetails = (state) => isFocusOnProperty(state) ? _extractDetails(getProperty(state)) : isFocusOnClass(state) ? _extractDetails(getClass(state)) : isFocusOnPackage(state) ? _extractDetails(getPackage(state)) : {}
 
-const _getExpandedItems = (state, selectedPackage, selectedClass, selectedProperty) => {
-    const rootPackage = state.model.packages.find(pkg => pkg.parent === null)
-    const expanded = rootPackage ? [rootPackage._id] : [];
+const _getExpandedItems = (state) => {
+    const rootPackages = state.model.packages.filter(pkg => pkg.parent === getSelectedModel(state))
+    const expanded = rootPackages.map(pkg => pkg._id);
 
-    let current = selectedPackage
+    let current = getSelectedPackage(state)
 
     while (current !== null) {
-        if (current !== selectedPackage || !(isFocusOnPackage(state) && isItemClosed(state)))
+        if (current !== getSelectedPackage(state) || !(isFocusOnPackage(state) && isItemClosed(state)))
             expanded.push(current)
 
         let next = state.model.packages.find(pkg => pkg._id === current)
         current = next ? next.parent : null
     }
 
-    if (selectedClass && !isItemClosed(state))
-        expanded.push(selectedClass)
-    let cls = state.model.details //state.model.classes.find(cls => cls._id === selectedClass)
+    if (getSelectedClass(state) && !isItemClosed(state))
+        expanded.push(getSelectedClass(state))
+    let cls = state.model.details //state.model.classes.find(cls => cls._id === getSelectedClass(state))
     if (cls && cls.type === 'cls') {
         current = cls.parent
 
@@ -228,8 +243,11 @@ const _extractDetails = (details) => {
 
     let d = {}
     if (details && details.type === 'prp') {
-        if (details.typeName) {
-            d.type = details.typeName
+        if (details.typeId) {
+            d.type = details.typeId
+        }
+        if (details.associationId) {
+            d.association = details.associationId
         }
         if (details.cardinality) {
             d.cardinality = details.cardinality
