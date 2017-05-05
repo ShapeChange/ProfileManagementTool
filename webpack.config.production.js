@@ -63,6 +63,10 @@ return webpackMerge(commonConfig(), {
                 to: '../../lib'
             },
             {
+                from: '../../pmt-io',
+                to: '../../node_modules/pmt-io'
+            },
+            {
                 from: '../../package.json',
                 to: '../../'
             }

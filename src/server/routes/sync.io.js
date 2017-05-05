@@ -1,8 +1,8 @@
 var ss = require('socket.io-stream');
 var path = require('path');
 var fs = require('fs');
-var mongoImport = require('../../../pmt-io/mongo-import');
-var mongoExport = require('../../../pmt-io/mongo-export');
+var mongoImport = process.env.NODE_ENV === 'production' ? require('pmt-io/mongo-import') : require('../../../pmt-io/mongo-import');
+var mongoExport = process.env.NODE_ENV === 'production' ? require('pmt-io/mongo-export') : require('../../../pmt-io/mongo-export');
 
 var db;
 
