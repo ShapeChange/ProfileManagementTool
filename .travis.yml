@@ -11,7 +11,7 @@ cache:
 install:
 - npm --only=dev install
 script:
-- npm --production run build
+- npm --production test && npm --production run build
 after_success:
 - docker build -t $REPO:$COMMIT .
 - docker login -u $DOCKER_USER -p $DOCKER_PASS

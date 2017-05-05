@@ -59,8 +59,8 @@ return webpackMerge(commonConfig(), {
                 to: '../../'
             },
             {
-                from: '../server/db.js',
-                to: '../../'
+                from: '../server/lib',
+                to: '../../lib'
             },
             {
                 from: '../../package.json',

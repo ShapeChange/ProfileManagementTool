@@ -1,184 +1,253 @@
-var fs = require('fs'),
-    XmlReader = require('xml-reader'),
-    inFile = fs.createReadStream("../test/res/DGIF_IV_2016-2_Stand_Stewardbearbeitung.xml"),
-    //inFile = fs.createReadStream("../test/res/PMT_UnitTest_Model.xml"),
-    xmlStream = XmlReader.create({
-        stream: true,
-        parentNodes: true
-    });
-    /*,JSONStream = require("JSONStream"),
-    jsonStream = JSONStream.stringify(),
-    out = fs.createWriteStream('model.json'),
-    classStream = JSONStream.stringify(),
-    classOutFile = fs.createWriteStream('classes.json'),
-    util = require('util');*/
+var through2 = require('through2');
+var multipipe = require('multipipe');
+var xmlDecoder = require('read-xml');
+var xmlLexer = require('xml-lexer');
+var xmlParser = require('xml-reader');
 
-// 1: 94s, 185MB
-    // 5: 77s, 167MB
-    // 10: 71s, 235MB
-    // 25: 65s, 197MB
-    // 50: 62s, 230MB
-    // 100: 59s, 317MB
-    // 1000: 56s, 567MB
+exports.createStream = function(modelName, options) {
+var xmlTransformer;
+var opts = parseOptions(options, modelName);
 
-var batchSize = 5;
-//var collection = 'classes';
-//var collection = 'packages';
-var collection = 'models';
-
-var streamToMongoDB = require("stream-to-mongo-db").streamToMongoDB;
-var mongoStream = new streamToMongoDB({
-    dbURL: "mongodb://localhost:27017/pmt01",
-    collection: collection,
-    batchSize: batchSize
+var attrName;
+var lexer = xmlLexer.create();
+lexer.on('data', function(data) {
+    if (!opts.nsPrefix) {
+        if (data.type === 'attribute-name') {
+            attrName = data.value;
+        } else if (data.type === 'attribute-value' && data.value === 'http://shapechange.net/model') {
+            opts.nsPrefix = attrName.substr(6) + ':';
+        }
+    }
 });
-var ObjectID = require('mongodb').ObjectID;
-/*var pkgStream = new streamToMongoDB({
-    dbURL: "mongodb://localhost:27017/pmt01",
-    collection: "packages",
-    batchSize: batchSize
-});*/
 
-//jsonStream.pipe(out);
-//classStream.pipe(classOutFile);
+var toObjects = through2({
+    readableObjectMode: true,
+    highWaterMark: opts.batchSize
+}, function(chunkBuf, enc, cb) {
+    var chunk = chunkBuf.toString();
+    if (!opts.nsPrefix)
+        lexer.write(chunk);
 
-var model = {
-    _id: 'DGIF_IV_2016-2_Stand_Stewardbearbeitung',
-    name: 'DGIF_IV_2016-2_Stand_Stewardbearbeitung',
-    fileName: 'DGIF_IV_2016-2_Stand_Stewardbearbeitung.xml',
-    modelName: '',
-    type: 'mdl'
+    if (!xmlTransformer)
+        xmlTransformer = createXmlTransformer(this, opts);
+
+    xmlTransformer.parse(chunk);
+
+    cb();
+})
+
+var toUtf = xmlDecoder.createStream();
+
+return multipipe(toUtf, toObjects)
+};
+
+function parseOptions(options, modelName) {
+    var i = 1;
+
+    var stats = {
+        packages: 0,
+        classes: 0,
+        associations: 0,
+        properties: 0,
+        maxMemory: 0,
+        duration: 0,
+        pkgs: []
+    }
+
+    if (options.setStats)
+        options.setStats(stats);
+
+    var opts = Object.assign({
+        batchSize: 5,
+        generateId: function() {
+            return i++;
+        },
+        resolveId: function(id) {
+            return id;
+        },
+        modelName: modelName,
+        nsPrefix: '',
+        stats: stats
+    }, options);
+
+    opts.modelId = opts.generateId();
+    opts.modelIdResolved = opts.resolveId(opts.modelId);
+    stats.model = opts.modelIdResolved;
+
+    return opts;
 }
 
-var profiles = []
-var packages = {}
-var numPackages = 0
-var classes = 0
-var classesWritten = 0
-var properties = 0
-var maxMemory = 0;
 
-// TODO: use parent to analyze structure and find splitting points in big file
-// one option would be to save classes with packages as materialized path
-// also analyze possible read and write queries
+function createXmlTransformer(outStream, options) {
 
-xmlStream.on('tag:sc:Profile', function(profile) {
-    //console.log(profile);
+    var profiles = []
 
-    if (profiles.indexOf(profile.attributes.name) === -1) {
-        profiles.push(profile.attributes.name);
+    var tags = {
+        Model: null,
+        Profile: null,
+        Package: null,
+        Class: null,
+        Property: null,
+        Association: null,
+        packages: null,
+        classes: null,
+        associations: null
     }
-});
 
-xmlStream.on('tag:sc:Model', function(node) {
-    //jsonStream.write(node);
-});
-
-xmlStream.on('tag', function(name, node) {
-    //console.log(name)
-    //console.log(process.memoryUsage());
-    delete node.parent;
-
-    for (var i = 0; i < node.children.length; i++) {
-        if (node.children[i])
-            delete node.children[i].parent;
+    for (var key in tags) {
+        tags[key] = 'tag:' + options.nsPrefix + key
     }
-});
 
-xmlStream.on('tag:sc:Package', function(node) {
-    //console.log(node.children[0].children[0].value);
 
-    /*if (packages.indexOf(node.attributes.name) === -1) {
-        packages[profile.attributes.name] = {
-            name: profile.attributes.name,
-            classes: 0,
-            properties: 0
-        };
-    }*/
+    var xmlStream = xmlParser.create({
+        stream: false,
+        parentNodes: true
+    });
 
-    var path = '';
-    var depth = 0;
+
+
+    xmlStream.on(tags.Profile, function(profile) {
+        //console.log(profile);
+
+        if (profiles.indexOf(profile.attributes.name) === -1) {
+            profiles.push(profile.attributes.name);
+        }
+    });
+
+    xmlStream.on(tags.Model, function(node) {
+        parseModel(outStream, node, options, profiles);
+    });
+
+    xmlStream.on(tags.Package, function(node) {
+        parsePackage(outStream, node, options);
+
+        options.stats.packages++;
+    });
+
+    xmlStream.on(tags.Class, function(node) {
+        parseClass(outStream, node, options);
+
+        options.stats.classes++;
+
+        if (options.stats.classes % options.batchSize == 0) {
+            console.log(options.stats.classes + ': ' + process.memoryUsage().heapUsed);
+            options.stats.maxMemory = Math.max(options.stats.maxMemory, process.memoryUsage().heapUsed)
+        }
+    });
+
+    xmlStream.on(tags.Property, function(node) {
+        options.stats.properties++;
+    });
+
+    xmlStream.on(tags.Association, function(node) {
+        parseAssociation(outStream, node, options);
+
+        options.stats.associations++;
+    });
+
+    // split here, free memory
+    xmlStream.on(tags.packages, function(node) {
+        node.children = [];
+    });
+
+    // split here, free memory
+    xmlStream.on(tags.classes, function(node) {
+        node.children = [];
+    });
+
+    // split here, free memory
+    xmlStream.on(tags.associations, function(node) {
+        node.children = [];
+    });
+
+    // cleanup parent references, is called after specific tag events
+    xmlStream.on('tag', function(name, node) {
+        delete node.parent;
+        for (var i = 0; i < node.children.length; i++) {
+            if (node.children[i])
+                delete node.children[i].parent;
+        }
+    });
+
+
+    var start = Date.now();
+
+    xmlStream.on("done", function(data) {
+        outStream.end();
+
+        options.stats.duration = Date.now() - start;
+        options.stats.pkgs.sort()
+    })
+
+    return xmlStream;
+}
+
+
+
+function parseModel(outStream, node, options, profiles) {
+    var model = {
+        _id: options.modelId,
+        name: options.modelName,
+        type: 'mdl',
+        owner: 'unknown',
+        created: Date.now(),
+        profiles: profiles,
+        element: node
+    }
+
+    if (model.element.attributes.encoding) {
+        model.element.attributes.encoding = 'UTF-8';
+    }
+
+    outStream.push(model);
+}
+
+function parseProfile(outStream, node) {
+
+}
+
+function parsePackage(outStream, node, options) {
     var parent;
     var current = node.parent;
+
     while (current !== null) {
         if (current.name === 'sc:Package') {
-            //path = parent.children[0].children[0].value + '.' + path
             if (!current['_id'])
-                current._id = new ObjectID();
+                current._id = options.generateId();
             if (!parent)
                 parent = current;
-            depth++;
         }
         current = current.parent;
     }
 
-    var id = node._id || new ObjectID();
-    var parentId = parent && parent['_id'] ? parent['_id'].toHexString() : null
+    var id = node._id || options.generateId();
+    var parentId = parent && parent['_id'] ? options.resolveId(parent['_id']) : options.modelIdResolved
 
-    //if (packages[node.children[0].children[0].value] && packages[node.children[0].children[0].value].depth === 0) {
-    //console.log(packages[node.children[0].children[0].value].classes + ' ' + path)
     delete node.parent;
     delete node._id
-    //console.log(util.inspect(node, false, null))
+
     var pkg = {
-        //path: path.substr(0, path.length - 1),
         _id: id,
         parent: parentId,
-        //depth: depth,
-        model: model._id,
+        model: options.modelIdResolved,
         type: 'pkg',
         name: node.children[0].children[0].value,
         element: node
     }
 
+    options.stats.pkgs.push(pkg.name)
 
-    mongoStream.write(pkg);
-    //}
+    outStream.push(pkg);
+}
 
-    numPackages++;
-    /*if (packages === 1) {
-        //console.log(node);
-        jsonStream.write(node);
-    }*/
-
-    if (!parentId) {
-        model.modelName = pkg.name;
-    }
-});
-
-xmlStream.on('tag:sc:classes', function(node) {
-    var i = node.parent.children.indexOf(node)
-    if (i !== -1) {
-        delete node.parent.children[i];
-    //node.parent.children.splice(i, 1);
-    //console.log(node.parent.children[0].children[0].value)
-    }
-//jsonStream.write(node);
-});
-
-xmlStream.on('tag:sc:Class', function(node) {
-    /*var path = '';
-    var parent = node.parent;
-    var depth = 0;
-    while (parent !== null) {
-        if (parent.name === 'sc:Package') {
-            savePkg(parent.children[0].children[0].value, depth++);
-            path = parent.children[0].children[0].value + '.' + path
-        }
-        parent = parent.parent;
-    }
-
-    delete node.parent;*/
-    //console.log(util.inspect(node, false, null))
-
-
+function parseClass(outStream, node, options) {
     var parent;
     var current = node.parent;
+
     while (current !== null) {
         if (current.name === 'sc:Package') {
-            //path = parent.children[0].children[0].value + '.' + path
             if (!current['_id'])
-                current._id = new ObjectID();
+                current._id = options.generateId();
             if (!parent)
                 parent = current;
             break;
@@ -186,8 +255,8 @@ xmlStream.on('tag:sc:Class', function(node) {
         current = current.parent;
     }
 
-    var id = node._id || new ObjectID();
-    var parentId = parent && parent['_id'] ? parent['_id'].toHexString() : null
+    var id = node._id || options.generateId();
+    var parentId = parent && parent['_id'] ? options.resolveId(parent['_id']) : null
 
     var nameIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:name'
@@ -212,10 +281,9 @@ xmlStream.on('tag:sc:Class', function(node) {
     delete node._id
 
     var cls = {
-        //path: path.substr(0, path.length - 1),
         _id: id,
         parent: parentId,
-        model: model._id,
+        model: options.modelIdResolved,
         type: 'cls',
         name: nameIndex > -1 && node.children[nameIndex].children[0].value,
         localid: localIdIndex > -1 && node.children[localIdIndex].children[0].value,
@@ -230,91 +298,36 @@ xmlStream.on('tag:sc:Class', function(node) {
         element: node
     }
 
-    if (classes % batchSize == 0) {
-        inFile.pause();
-    }
-    mongoStream.write(cls, function(cls) {
-        classesWritten++;
-        if (classes == classesWritten) {
-            inFile.resume();
-        }
-    });
 
-    //console.log(" - " + node.children[0].children[0].value + ' (' + path + ')');
-    classes++;
-    if (classes === 1) {
-        //console.log(node);
-        //jsonStream.write(node);
-    }
+    outStream.push(cls);
+}
 
+function parseAssociation(outStream, node, options) {
+    var id = node._id || options.generateId();
 
-
-    if (classes % batchSize == 0) {
-        console.log(classes + ': ' + process.memoryUsage().heapUsed);
-        maxMemory = Math.max(maxMemory, process.memoryUsage().heapUsed)
-    }
-
-
-//savePkg(path, depth);
-});
-
-/*function savePkg(pkg, depth) {
-    if (packages[pkg]) {
-        packages[pkg].classes++;
-    } else {
-        packages[pkg] = {
-            name: pkg,
-            classes: 1,
-            depth: depth
-        };
-    }
-}*/
-
-xmlStream.on('tag:sc:Property', function(node) {
-    //console.log("   - " + node.children[0].children[0].value);
-    properties++;
-});
-
-var start = Date.now();
-
-xmlStream.on("done", function(data) {
-    model.profiles = profiles;
-    mongoStream.write(model);
-
-    //jsonStream.write(data);
-    //jsonStream.end();
-    mongoStream.end();
-    //pkgStream.end();
-
-    /*for (var i = 0; i < profiles.length; i++) {
-        console.log(profiles[i]);
-    }*/
-
-    var maxDepth = 0;
-    Object.keys(packages).map(function(key) {
-        maxDepth = Math.max(maxDepth, packages[key].depth);
+    var nameIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:name'
+    })
+    var localIdIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:id'
     })
 
-    /*Object.keys(packages).map(function(key) {
-        console.log(key + ' (' + packages[key].classes + ')' + ' (' + packages[key].depth + ')');
-    })*/
+    delete node.parent;
+    delete node._id
 
-    //console.log("maxDepth: ", maxDepth);
-    console.log("packages: ", numPackages);
-    console.log("classes: ", classes);
-    console.log("properties: ", properties);
-    console.log("maxMemory: ", maxMemory);
-    console.log("took: ", Date.now() - start);
+    var asc = {
+        _id: id,
+        parent: options.modelIdResolved,
+        model: options.modelIdResolved,
+        type: 'asc',
+        name: nameIndex > -1 && node.children[nameIndex].children[0].value,
+        localid: localIdIndex > -1 && node.children[localIdIndex].children[0].value,
+        element: node
+    }
 
-})
+    outStream.push(asc);
+}
 
-inFile
-    .setEncoding('utf8')
-    .on('data', function(chunk) {
-        xmlStream.parse(chunk)
-    })
-
-// archiver, node-stream-zip
 
 
 function _reduceProperties(properties, id) {

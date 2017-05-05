@@ -1,32 +1,52 @@
-var db = require('../db');
-var assert = require('assert');
+var ss = require('socket.io-stream');
+var path = require('path');
+var fs = require('fs');
+var mongoImport = require('../../../pmt-io/mongo-import');
+var mongoExport = require('../../../pmt-io/mongo-export');
 
-var url;
-//var socket;
+var db;
 
-exports.addRoutes = function(app, io, config) {
-url = config.db.url;
+exports.addRoutes = function(app, config, dbs, io) {
+
+db = dbs;
 
 io.on('connection', function(socket) {
-    //socket = sock;
-
-    //socket.on('test/start', startTest);
-
-    socket.on('action', (action) => {
-        /*if (action.type === 'test/start') {
-            startTest();
-        }*/
-
+    socket.on('action', function(action) {
         dispatch(socket, action);
+    });
+
+    ss(socket).on('import', function(stream, metadata) {
+        dispatch(socket, {
+            type: 'file/import',
+            payload: {
+                owner: 'unknown',
+                stream: stream,
+                metadata: metadata
+            }
+        });
+    });
+
+    ss(socket).on('export', function(stream, metadata) {
+        dispatch(socket, {
+            type: 'file/export',
+            payload: {
+                owner: 'unknown',
+                stream: stream,
+                metadata: metadata
+            }
+        });
     });
 });
 
 };
 
 const actions = {
+    'models/fetch': fetchModels,
     'model/fetch': fetchModel,
     'package/fetch': fetchPackage,
-    'class/fetch': fetchClass
+    'class/fetch': fetchClass,
+    'file/import': importFile,
+    'file/export': exportFile
 }
 
 function dispatch(socket, action) {
@@ -36,11 +56,67 @@ function dispatch(socket, action) {
         actions[action.type](socket, action.payload);
 }
 
-function fetchModel(socket, model) {
-    return db.connect(url)
-        .then(function() {
-            return db.getPackages(model);
+function importFile(socket, file) {
+    console.log(file.metadata);
+
+    return mongoImport.importFile(db.getModelCollection(), file.stream, file.metadata)
+        .then(function(stats) {
+            console.log('DONE', stats);
+
+            stats.pkgs.forEach(function(pkg) {
+                console.log(pkg)
+            })
+
+            socket.emit('action', {
+                type: 'file/import/done',
+                payload: {
+                    success: true,
+                    metadata: file.metadata,
+                    stats: stats
+                }
+            });
         })
+        .then(function() {
+            return fetchModels(socket, file.owner);
+        });
+}
+
+function exportFile(socket, file) {
+
+    return mongoExport.exportFile(db, file.stream, file.metadata.id)
+        .then(function(stats) {
+            console.log('DONE', stats);
+
+            stats.pkgs.forEach(function(pkg) {
+                console.log(pkg)
+            })
+
+        /*socket.emit('action', {
+            type: 'file/export/done',
+            payload: {
+                success: true,
+                metadata: file.metadata,
+                stats: stats
+            }
+        });*/
+        })
+}
+
+function fetchModels(socket, owner) {
+    return db.getModels(owner)
+        .then(function(cursor) {
+            return cursor.toArray();
+        })
+        .then(function(models) {
+            socket.emit('action', {
+                type: 'models/fetched',
+                payload: models
+            });
+        })
+}
+
+function fetchModel(socket, model) {
+    return db.getPackages(model)
         .then(function(cursor) {
             return cursor.toArray();
         })
@@ -60,9 +136,6 @@ function fetchModel(socket, model) {
                 payload: payload
             });
         })
-/*.then(function() {
-    db.close();
-})*/
 }
 
 function fetchPackage(socket, pkg) {
@@ -73,10 +146,7 @@ function fetchPackage(socket, pkg) {
 }
 
 function fetchClasses(socket, pkg) {
-    return db.connect(url)
-        .then(function() {
-            return db.getClassesForPackage(pkg);
-        })
+    return db.getClassesForPackage(pkg)
         .then(function(cursor) {
             return cursor.toArray();
         })
@@ -86,16 +156,10 @@ function fetchClasses(socket, pkg) {
                 payload: classes
             });
         })
-/*.then(function() {
-    db.close();
-})*/
 }
 
 function fetchPackageDetails(socket, id) {
-    return db.connect(url)
-        .then(function() {
-            return db.getDetails(id);
-        })
+    return db.getDetails(id)
         .then(function(details) {
             return socket.emit('action', {
                 type: 'package/fetched',
@@ -105,16 +169,10 @@ function fetchPackageDetails(socket, id) {
                 }
             });
         })
-/*.then(function() {
-    db.close();
-})*/
 }
 
 function fetchClass(socket, id) {
-    return db.connect(url)
-        .then(function() {
-            return db.getDetails(id);
-        })
+    return db.getDetails(id)
         .then(function(details) {
             socket.emit('action', {
                 type: 'class/fetched',
@@ -128,8 +186,4 @@ function fetchClass(socket, id) {
         .then(function(details) {
             return fetchPackage(socket, details.parent);
         })
-
-/*.then(function() {
-    db.close();
-})*/
 }
