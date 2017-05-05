@@ -1,0 +1,14 @@
+{
+    "name": "pmt-win",
+    "version": "1.0.0",
+    "description": "",
+    "private": true,
+    "scripts": {
+    },
+    "author": "interactive instruments GmbH",
+    "license": "GPL-3.0",
+    "devDependencies": {
+    },
+    "dependencies": {
+    }
+}

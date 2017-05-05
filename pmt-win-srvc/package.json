@@ -1,0 +1,17 @@
+{
+    "name": "pmt-win-srvc",
+    "version": "1.0.0",
+    "description": "",
+    "private": true,
+    "bin": {
+        "start-service": "start-service.js",
+        "stop-service": "stop-service.js",
+        "install-service": "install-service.js",
+        "uninstall-service": "uninstall-service.js"
+    },
+    "author": "interactive instruments GmbH",
+    "license": "GPL-3.0",
+    "dependencies": {
+        "node-windows": "^0.1.14"
+    }
+}
