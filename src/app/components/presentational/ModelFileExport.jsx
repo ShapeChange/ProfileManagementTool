@@ -98,6 +98,7 @@ class ModelFileExport extends Component {
                                                <Button tag="a"
                                                    href={ url }
                                                    download={ `${exportStats.name}.zip` }
+                                                   type="application/zip"
                                                    size="sm"
                                                    color="info"
                                                    outline
