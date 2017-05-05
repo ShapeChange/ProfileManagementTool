@@ -22,6 +22,7 @@ CMD [ "node", "server.js" ]
 COPY dist /usr/src/app/
 RUN apk add --no-cache python make g++ && \
     npm --production install && \
+	npm test && \
 	npm cache clear && \
 	apk del --no-cache python make g++
 
