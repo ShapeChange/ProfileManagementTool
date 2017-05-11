@@ -1,5 +1,6 @@
 var Promise = require("bluebird");
-var http = Promise.promisifyAll(require('http'));
+var http = require('http');
+var httpShutdown = require('http-shutdown');
 var express = require('express');
 var compression = require('compression');
 //var logger = require('morgan');
@@ -12,10 +13,14 @@ var app = express();
 app.use(compression());
 
 var server = http.createServer(app);
+server = httpShutdown(server);
+server = Promise.promisifyAll(server);
 
 var io = socketio(server, {
     path: (config.server.path || '') + '/socket.io'
 });
+
+var devMid;
 
 db.connect(config.db.url)
     .then(function() {
@@ -24,7 +29,7 @@ db.connect(config.db.url)
         if (config.devEnv) {
             // TODO: this should not be reachable in production env, needs separate start file
             console.log('DEV');
-            require('./routes/webpack-dev').addRoutes(app, config);
+            devMid = require('./routes/webpack-dev').addRoutes(app, config);
         } else {
             require('./routes/static').addRoutes(app, config);
         }
@@ -41,7 +46,15 @@ process.on('SIGHUP', shutdown);
 process.on('SIGQUIT', shutdown);
 
 function shutdown() {
-    return server.closeAsync()
+    var pr = Promise.resolve();
+    if (config.devEnv && devMid) {
+        pr = devMid.closeAsync();
+    }
+
+    return pr
+        .then(function() {
+            return server.shutdownAsync();
+        })
         .then(function() {
             return db.close(true);
         })
