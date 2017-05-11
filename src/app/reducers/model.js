@@ -1,3 +1,5 @@
+//import { List, Map, fromJS } from 'immutable';
+import update from 'immutability-helper';
 import { createAction, createActions, handleActions } from 'redux-actions';
 import { LOCATION_CHANGED } from 'redux-little-router';
 
@@ -25,9 +27,9 @@ export const actions = {
     fetchedPackage: createAction('package/fetched'),
     fetchClass: createAction('class/fetch'),
     fetchedClass: createAction('class/fetched'),
-
-    //fetchedPackages: createAction('packages/fetched'),
-    fetchedClasses: createAction('classes/fetched')
+    fetchedClasses: createAction('classes/fetched'),
+    updateProfile: createAction('profile/update'),
+    updatedProfile: createAction('profile/new')
 };
 
 // state
@@ -54,9 +56,8 @@ export default handleActions({
     [actions.fetchedModel]: fetchedModel,
     [actions.fetchedPackage]: fetchedPackage,
     [actions.fetchedClass]: fetchedClass,
-    //[actions.fetchedPackages]: fetchedPackages,
     [actions.fetchedClasses]: fetchedClasses,
-//[actions.fetchedPackage]: fetchedPackage
+    [actions.updatedProfile]: updatedProfile
 }, initialState);
 
 function onLocationChange(state, action) {
@@ -154,13 +155,96 @@ function fetchedClass(state, action) {
         }
 }
 
-
-
 function fetchedClasses(state, action) {
     return {
         ...state,
         classes: action.payload
     }
+}
+
+function updateProfile(state, action) {
+
+    const mutation = action.payload.include
+        ? {
+            profiles: {
+                $push: [action.payload.profile]
+            }
+        }
+        : {
+            profiles: {
+                $apply: prf => prf.filter(i => i !== action.payload.profile)
+            }
+        }
+
+    if (action.payload.type === 'prp') {
+        const index = state.cls.properties.findIndex(prp => prp._id === action.payload.id)
+
+        return update(state, {
+            cls: {
+                properties: {
+                    [index]: mutation
+                }
+            }
+        })
+    } else if (action.payload.type === 'cls') {
+        const index = state.classes.findIndex(cls => cls._id === action.payload.id)
+
+        return update(state, {
+            classes: {
+                [index]: mutation
+            }
+        })
+    }
+
+    return state;
+}
+
+function updatedProfile(state, action) {
+
+    var current = state;
+
+    action.payload.forEach(elem => {
+        if (elem.type === 'prp') {
+
+        } else if (elem.type === 'cls') {
+            const index = state.classes.findIndex(cls => cls._id === elem._id)
+
+            if (index > -1) {
+                let clsUpdate = {};
+                if (state.cls && state.cls._id === elem._id) {
+                    clsUpdate = {
+                        profiles: {
+                            $set: elem.profiles
+                        }
+                    }
+
+                    if (elem.properties) {
+                        clsUpdate.properties = elem.properties.reduce((upd, prp, i) => {
+                            upd[i] = {
+                                profiles: {
+                                    $set: prp.profiles
+                                }
+                            }
+                            return upd
+                        }, {})
+                    }
+                }
+
+                current = update(current, {
+                    classes: {
+                        [index]: {
+                            profiles: {
+                                $set: elem.profiles
+                            }
+                        }
+                    },
+                    cls: clsUpdate
+                })
+            }
+        }
+    })
+
+    return current;
 }
 
 //selectors
@@ -237,9 +321,9 @@ const _extractProperty = (properties, selectedProperty) => {
 // TODO: is called three times, once for every even unrelated action
 // move to backend or check reselect memorization
 const _extractDetails = (details) => {
-    const descriptors = details && details.element && details.element.children ? _reduceDescriptors(details.element.children.find(child => child.name === 'sc:descriptors')) : {}
-    const taggedValues = details && details.element && details.element.children ? _reduceTaggedValues(details.element.children.find(child => child.name === 'sc:taggedValues')) : {}
-    const stereotypes = details && details.element && details.element.children ? _reduceStereotypes(details.element.children.find(child => child && child.name === 'sc:stereotypes')) : []
+    const descriptors = details && details.descriptors && details.descriptors //&& details.element && details.element.children ? _reduceDescriptors(details.element.children.find(child => child.name === 'sc:descriptors')) : {}
+    const taggedValues = details && details.taggedValues && details.taggedValues //&& details.element && details.element.children ? _reduceTaggedValues(details.element.children.find(child => child.name === 'sc:taggedValues')) : {}
+    const stereotypes = details && details.stereotypes && details.stereotypes //&& details.element && details.element.children ? _reduceStereotypes(details.element.children.find(child => child && child.name === 'sc:stereotypes')) : []
 
     let d = {}
     if (details && details.type === 'prp') {
@@ -268,11 +352,12 @@ const _extractDetails = (details) => {
         _id: details && details._id,
         type: details && details.type,
         name: details && details.name,
+        profiles: details && details.profiles,
         infos: infos
     }
 }
 
-const _reduceProperties = (properties, parent) => {
+/*const _reduceProperties = (properties, parent) => {
     return properties && properties.children ? properties.children.map(prop => {
         let p = prop.children.reduce((attrs, attr) => {
             let key = attr.name.substr(3);
@@ -321,4 +406,4 @@ const _reduceStereotypes = (details) => {
 
         return attrs
     }, []) : null;
-}
+}*/

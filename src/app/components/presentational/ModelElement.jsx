@@ -26,12 +26,15 @@ class ModelElement extends Component {
 
         let elementIcon;
 
-        if (element.stereotypes && Icons[element.stereotypes[0]]) {
-            let iconClassNames = 'badge-fw mr-1 px-0'
+        if (element.stereotypes) {
+            const iconType = Icons[element.stereotypes[0]] || Icons[element.stereotypes]
+            if (iconType) {
+                let iconClassNames = 'badge-fw mr-1 px-0'
 
-            elementIcon = <Badge color={ color } className={ iconClassNames }>
-                              { Icons[element.stereotypes[0]] }
-                          </Badge>;
+                elementIcon = <Badge color={ color || 'primary' } className={ iconClassNames }>
+                                  { iconType }
+                              </Badge>;
+            }
         }
 
         if (!elementIcon) {
@@ -47,11 +50,11 @@ class ModelElement extends Component {
             expansionIconType = isExpanded ? 'angle-down' : 'angle-right'
         const expansionIcon = showExpansionIcons ? <FontAwesome name={ expansionIconType } fixedWidth={ true } className="" /> : null
 
-        return <Tag {...attributes} className={ `d-flex flex-row align-items-center text-nowrap text-${color} ${className}` }>
+        return <Tag {...attributes} className={ `model-element d-flex flex-row align-items-center text-nowrap ${color && 'text-'+color} ${className}` }>
                    { expansionIcon }
                    { depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }
                    { elementIcon }
-                   { element.name }
+                   <span className="model-element-name">{ element.name }</span>
                </Tag>
     }
 }
@@ -65,7 +68,7 @@ ModelElement.propTypes = {
 
 ModelElement.defaultProps = {
     depth: 0,
-    color: 'primary',
+    color: null,
     tag: 'div',
     className: ''
 };

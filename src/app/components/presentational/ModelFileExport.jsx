@@ -77,7 +77,7 @@ class ModelFileExport extends Component {
         setTimeout(function() {
             clearFileExport();
             window.URL.revokeObjectURL(url);
-        }, 500)
+        }, 50)
     }
 
     render() {

@@ -9,6 +9,20 @@ import ModelBrowserInfos from './ModelBrowserInfos'
 
 class ModelBrowserDetails extends Component {
 
+    _updateProfile = (item) => {
+        const {updateProfile, selectedModel, selectedProfile} = this.props;
+
+        updateProfile({
+            id: item._id,
+            modelId: selectedModel,
+            type: item.type,
+            parent: item.parent,
+            //index: index,
+            include: item.profiles.indexOf(selectedProfile) === -1,
+            profile: selectedProfile
+        });
+    }
+
     render() {
         const {_id, name, type, items, infos, parameters, selectedTab, baseUrls, urlSuffix} = this.props;
 
@@ -49,11 +63,11 @@ class ModelBrowserDetails extends Component {
                       </NavItem> }
                 </Nav>
                 { isProfile &&
-                  <ModelBrowserActions {...this.props}/> }
+                  <ModelBrowserActions {...this.props} updateProfile={ this._updateProfile } /> }
                 { isInfo &&
                   <ModelBrowserInfos infos={ infos } baseUrl={ baseUrls['cls'] } urlSuffix={ selectedTab } /> }
                 { isItems &&
-                  <ModelBrowserItems items={ items } baseUrls={ baseUrls } urlSuffix={ selectedTab } /> }
+                  <ModelBrowserItems {...this.props} urlSuffix={ selectedTab } updateProfile={ this._updateProfile } /> }
                 { isParameters &&
                   <ModelBrowserParameters parameters={ parameters } /> }
             </div>

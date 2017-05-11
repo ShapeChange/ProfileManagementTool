@@ -1,14 +1,17 @@
 var Promise = require("bluebird");
 var MongoClient = require("mongodb").MongoClient;
 var ObjectID = require('mongodb').ObjectID;
-//var dbStream = require('./db-stream')
+var dbProfile = require('./db-profile');
 
+var MODELS = 'models';
 var db;
 var model;
+var dbEdit;
 
 function setConnection(connection) {
     db = connection;
-    model = db.collection('models');
+    model = db.collection(MODELS);
+    dbEdit = dbProfile.create(model);
 
     return db;
 }
@@ -104,10 +107,12 @@ return Promise.resolve(
             parent: pkg
         })
         .project({
+            localId: 1,
             parent: 1,
             name: 1,
             type: 1,
-            stereotypes: 1
+            stereotypes: 1,
+            profiles: 1
         })
         .sort({
             name: 1
@@ -116,10 +121,18 @@ return Promise.resolve(
 }
 
 exports.getDetails = function(id) {
+var query = id.length === 24 ? {
+    _id: ObjectID(id)
+} : {
+    localId: id
+}
+
 return model
-    .findOne({
-        _id: new ObjectID(id)
+    .findOne(query, {
+        element: 0,
+        'properties.element': 0
     })
+    // TODO: aggregate ???
     .then(function(details) {
         var localids = [];
 
@@ -127,7 +140,7 @@ return model
             localids = localids.concat(details.supertypes);
         if (details && details.properties)
             details.properties.reduce(function(ids, prp) {
-                if (prp.typeId) ids.push(prp.typeId)
+                //if (prp.typeId) ids.push(prp.typeId)
                 if (prp.associationId) ids.push(prp.associationId)
                 return ids;
             }, localids);
@@ -139,31 +152,31 @@ return model
                         $in: ["cls", "asc"]
                     },
                     model: details.model,
-                    localid: {
+                    localId: {
                         $in: localids
                     }
                 })
                 .project({
                     name: 1,
-                    localid: 1
+                    localId: 1
                 })
                 .toArray()
                 .then(function(resolvedIds) {
                     if (details.supertypes)
                         details.supertypes = details.supertypes.map(function(st) {
                             return resolvedIds.find(function(tid) {
-                                return tid.localid === st;
+                                return tid.localId === st;
                             });
                         });
                     if (details.properties)
                         details.properties = details.properties.map(function(prp) {
-                            if (prp.typeId)
+                            /*if (prp.typeId)
                                 prp.typeId = resolvedIds.find(function(tid) {
                                     return tid.localid === prp.typeId;
-                                });
+                                });*/
                             if (prp.associationId)
                                 prp.associationId = resolvedIds.find(function(tid) {
-                                    return tid.localid === prp.associationId;
+                                    return tid.localId === prp.associationId;
                                 });
                             return prp;
                         });
@@ -182,9 +195,27 @@ return model
     })
 }
 
-/*exports.createStream = function(options) {
-return dbStream.create(model, options);
-}*/
+exports.updateClassProfile = function(clsId, modelId, profile, include) {
+
+var start = Date.now();
+
+return dbEdit.getProfileUpdatesForClass(clsId, modelId, profile, include)
+    .then(function(updatedClasses) {
+        console.log('took', Date.now() - start)
+        return updatedClasses;
+    });
+}
+
+exports.updatePropertyProfile = function(clsId, prpId, modelId, profile, include) {
+
+var start = Date.now();
+
+return dbEdit.getProfileUpdatesForProperty(clsId, prpId, modelId, profile, include)
+    .then(function(updatedClasses) {
+        console.log('took', Date.now() - start)
+        return updatedClasses;
+    });
+}
 
 exports.close = function(force) {
 return db.close(force || false);

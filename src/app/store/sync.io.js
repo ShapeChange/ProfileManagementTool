@@ -10,7 +10,12 @@ export default function createSyncIoMiddleware() {
         path: '/pmt/socket.io'
     });
 
-    return createSocketIoMiddleware(socket, [LOCATION_CHANGED, appActions.startFileImport.toString(), appActions.startFileExport.toString()], {
+    return createSocketIoMiddleware(socket, [
+        LOCATION_CHANGED,
+        appActions.startFileImport.toString(),
+        appActions.startFileExport.toString(),
+        actions.updateProfile.toString()
+    ], {
         execute: conditionalExecute
     });
 }
@@ -21,7 +26,14 @@ function conditionalExecute(action, emit, next, store, socket) {
         emit('action', action);
     }*/
 
-    if (action.type === appActions.startFileImport.toString()) {
+    if (action.type === actions.updateProfile.toString()) {
+
+        //next(action);
+
+        emit('action', action);
+
+
+    } else if (action.type === appActions.startFileImport.toString()) {
 
         next(action);
 
@@ -49,8 +61,6 @@ function conditionalExecute(action, emit, next, store, socket) {
         let fileBuffer = [];
         //let fileLength = 0;
 
-        ss(socket).emit('export', stream, action.payload);
-
         stream.on('data', function(chunk) {
             //fileLength += chunk.length;
             //console.log(fileLength)
@@ -61,6 +71,8 @@ function conditionalExecute(action, emit, next, store, socket) {
 
             store.dispatch(appActions.endFileExport(fileBuffer))
         });
+
+        ss(socket).emit('export', stream, action.payload);
 
     } else {
         // TODO: get owner from auth

@@ -46,7 +46,8 @@ const actions = {
     'package/fetch': fetchPackage,
     'class/fetch': fetchClass,
     'file/import': importFile,
-    'file/export': exportFile
+    'file/export': exportFile,
+    'profile/update': updateProfile
 }
 
 function dispatch(socket, action) {
@@ -56,16 +57,38 @@ function dispatch(socket, action) {
         actions[action.type](socket, action.payload);
 }
 
+function updateProfile(socket, update) {
+    if (update.type === 'cls' || update.type === 'prp') {
+        var pr = update.type === 'cls'
+            ? db.updateClassProfile(update.id, update.modelId, update.profile, update.include)
+            : db.updatePropertyProfile(update.parent, update.id, update.modelId, update.profile, update.include);
+
+        return pr
+            .then(function(updatedClasses) {
+                var uc = updatedClasses.map(function(cls) {
+                    if (cls.ok && cls.value) {
+                        cls.value._id = cls.value.localId;
+                        return cls.value;
+                    } else {
+                        // TODO: error, also in catch, throw here
+                        console.log('ERROR', cls)
+                    }
+                })
+                console.log(uc)
+                socket.emit('action', {
+                    type: 'profile/new',
+                    payload: uc
+                });
+            })
+    }
+}
+
 function importFile(socket, file) {
     console.log(file.metadata);
 
     return mongoImport.importFile(db.getModelCollection(), file.stream, file.metadata)
         .then(function(stats) {
             console.log('DONE', stats);
-
-            stats.pkgs.forEach(function(pkg) {
-                console.log(pkg)
-            })
 
             socket.emit('action', {
                 type: 'file/import/done',
@@ -87,9 +110,7 @@ function exportFile(socket, file) {
         .then(function(stats) {
             console.log('DONE', stats);
 
-            stats.pkgs.forEach(function(pkg) {
-                console.log(pkg)
-            })
+            console.log(JSON.stringify(stats.ids));
 
         /*socket.emit('action', {
             type: 'file/export/done',
@@ -151,6 +172,9 @@ function fetchClasses(socket, pkg) {
             return cursor.toArray();
         })
         .then(function(classes) {
+            classes.forEach(function(cls) {
+                cls._id = cls.localId
+            })
             return socket.emit('action', {
                 type: 'classes/fetched',
                 payload: classes
@@ -174,6 +198,9 @@ function fetchPackageDetails(socket, id) {
 function fetchClass(socket, id) {
     return db.getDetails(id)
         .then(function(details) {
+            if (details.type === 'cls') {
+                details._id = details.localId
+            }
             socket.emit('action', {
                 type: 'class/fetched',
                 payload: {

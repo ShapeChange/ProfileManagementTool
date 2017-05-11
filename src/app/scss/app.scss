@@ -62,3 +62,44 @@ a:focus, a:hover {
 	background-color: $text-muted;
 	color: $white;
 }
+
+.text-muted {
+	
+	.badge-primary.badge-fw {
+		background-color: $text-muted;
+		color: $white;
+	}
+}
+
+.model-element-disabled {
+	.model-element-name {		
+		text-decoration: line-through;
+	}
+}
+
+
+.active {
+	
+	.badge-muted.badge-fw {
+		background-color: $white;
+		color: $text-muted;
+	}
+
+
+	.badge-primary.badge-fw {
+		background-color: $white;
+		color: $brand-primary;
+	}
+}
+
+a.text-primary:focus, a.text-primary:hover {
+	.badge-fw {
+  		background-color: darken($brand-primary, 10%) !important;
+	}
+}
+
+a.text-muted:focus, a.text-muted:hover {
+	.badge-fw {
+  		background-color: darken($text-muted, 10%) !important;
+	}
+}

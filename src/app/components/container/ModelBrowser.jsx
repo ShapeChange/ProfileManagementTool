@@ -1,29 +1,10 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux';
-import { Card, CardHeader, Badge } from 'reactstrap';
-import FontAwesome from 'react-fontawesome';
+import { Card, CardHeader } from 'reactstrap';
 
 import { useThreePaneView, useSmallerFont, Font, View, actions } from '../../reducers/app'
-import { getSelectedModel, getSelectedPackage, getSelectedClass, getSelectedProperty, getSelectedTab, getDetails, getPackages, getClasses, getProperties, getExpandedItems } from '../../reducers/model'
-
-
-import { StereoType } from '../../reducers/model'
-import { ItemType } from '../../reducers/app'
-
-const Icons = {
-    [StereoType.FT]: 'FT',
-    [StereoType.T]: 'T',
-    [StereoType.DT]: 'DT',
-    [StereoType.CL]: 'CL',
-    [StereoType.E]: 'E',
-    [StereoType.U]: 'U',
-    [StereoType.AT]: 'AT',
-    [StereoType.AR]: 'exchange',
-    [ItemType.PKG]: 'folder-o',
-    [ItemType.CLS]: 'list-alt',
-    [ItemType.PRP]: 'hashtag'
-}
+import { getSelectedModel, getSelectedProfile, getSelectedPackage, getSelectedClass, getSelectedProperty, getSelectedTab, getDetails, getPackages, getClasses, getProperties, getExpandedItems, actions as modelActions } from '../../reducers/model'
 
 import ModelBrowserPanes from '../presentational/ModelBrowserPanes'
 import ModelBrowserTree from '../presentational/ModelBrowserTree'
@@ -37,6 +18,7 @@ const mapStateToProps = (state, props) => {
         properties: getProperties(state),
         details: getDetails(state), //isFocusOnPackage(state) ? getPackageDetails(state) : isFocusOnClass(state) ? getClassDetails(state) : isFocusOnProperty(state) ? getPropertyDetails(state, getSelectedProperty(state)) : null,
         selectedModel: getSelectedModel(state),
+        selectedProfile: getSelectedProfile(state),
         selectedPackage: getSelectedPackage(state),
         selectedClass: getSelectedClass(state),
         selectedProperty: getSelectedProperty(state),
@@ -59,7 +41,8 @@ const mapStateToProps = (state, props) => {
 }
 
 const mapDispatchToProps = (dispatch) => ({
-    ...bindActionCreators(actions, dispatch)
+    ...bindActionCreators(actions, dispatch),
+    ...bindActionCreators(modelActions, dispatch)
 });
 
 class ModelBrowser extends Component {
@@ -112,6 +95,25 @@ class ModelBrowser extends Component {
         }
     }
 
+    _getTrees = (separate) => {
+        const {packages, classes, properties, selectedPackage, selectedClass} = this.props;
+
+        const classTree = selectedPackage && classes ? classes.filter(cls => cls.parent === selectedPackage) : [];
+
+        const propertyTree = selectedClass && properties ? properties.filter(prp => prp.parent === selectedClass) : [];
+
+
+        return separate
+            ? {
+                packageTree: packages,
+                classTree: classTree,
+                propertyTree: propertyTree
+            }
+            : {
+                packageTree: packages.concat(classTree).concat(propertyTree)
+            }
+    }
+
     _getSingleTree = () => {
         const {packages, classes, properties, selectedPackage, selectedClass} = this.props;
 
@@ -125,26 +127,7 @@ class ModelBrowser extends Component {
     }
 
     _renderDetails = () => {
-        const {details, selectedTab, selectedPackage, selectedClass, classes, properties, baseUrls, query} = this.props;
-
-        const detailTitle = details ? details.name : '';
-        //const detailIcon = Icons[details.type] ? Icons[details.type] : '' //isFocusOnPackage ? 'folder-o' : isFocusOnClass ? 'list-alt' : isFocusOnProperty ? 'cube' : '';
-
-        let detailIcon
-        if (details && details.infos && details.infos.stereotypes) {
-            let iconClassNames = 'mr-1 px-0 align-self-center tree-list-icon'
-            let iconName = Icons[details.infos.stereotypes]
-            detailIcon = iconName && <Badge color="default" className={ iconClassNames }>
-                                         { iconName }
-                                     </Badge>;
-        }
-        if (details && details.infos && !detailIcon) {
-            let iconName = Icons[details.type]
-            if (details.infos.isAttribute && details.infos.isAttribute === 'false')
-                iconName = Icons[StereoType.AR]
-            detailIcon = iconName && <FontAwesome name={ iconName } fixedWidth={ true } className="mr-1 align-self-center" />
-        //= leaf.type === 'prp' ? 'hashtag' : leaf.type === 'cls' ? 'list-alt' : isExpanded ? 'folder-open' : 'folder'
-        }
+        const {details, selectedModel, selectedProfile, selectedTab, selectedPackage, selectedClass, classes, properties, baseUrls, query, updateProfile} = this.props;
 
         let items
         if (details.type === 'pkg') {
@@ -156,10 +139,13 @@ class ModelBrowser extends Component {
         return (
             <Card className="h-100 border-0">
                 <CardHeader className="text-nowrap d-flex flex-row" style={ { minHeight: '50px', height: '50px' } }>
-                    { details.name && <ModelElement element={ details } color="default" /> }
+                    { details.name && <ModelElement element={ { ...details.infos, ...details } } color="default" /> }
                 </CardHeader>
                 { details._id &&
                   <ModelBrowserDetails selectedTab={ selectedTab }
+                      selectedModel={ selectedModel }
+                      selectedProfile={ selectedProfile }
+                      updateProfile={ updateProfile }
                       items={ items }
                       baseUrls={ baseUrls }
                       urlSuffix={ query }
@@ -168,12 +154,25 @@ class ModelBrowser extends Component {
         );
     }
 
+    _getItems = () => {
+        const {details, selectedPackage, selectedClass, classes, properties} = this.props;
+
+        let items
+        if (details.type === 'pkg') {
+            items = classes.filter(cls => cls.parent === selectedPackage)
+        } else if (details.type === 'cls' && properties) {
+            items = properties.filter(prp => prp.parent === selectedClass)
+        }
+
+        return items
+    }
+
     render() {
-        const {useThreePaneView, selectedModel} = this.props;
+        const {useThreePaneView, details, query} = this.props;
 
-        const tree = useThreePaneView ? this._getSeparateTrees() : this._getSingleTree()
+        //const tree = useThreePaneView ? this._getSeparateTrees() : this._getSingleTree()
 
-        const modelBrowserDetails = this._renderDetails()
+        //const modelBrowserDetails = this._renderDetails()
 
         const handlers = {
             onSetSinglePaneView: this._setSinglePaneView,
@@ -182,7 +181,7 @@ class ModelBrowser extends Component {
             onSetSmallFont: this._setSmallFont
         }
 
-        return (
+        /*return (
         useThreePaneView
             ? <ModelBrowserPanes packageTree={ tree.packageTree }
                   classTree={ tree.classTree }
@@ -194,8 +193,29 @@ class ModelBrowser extends Component {
             : <ModelBrowserTree packageTree={ tree } {...this.props} {...handlers}>
                   { modelBrowserDetails }
               </ModelBrowserTree>
-        )
+        )*/
+
+        const TreeComponent = useThreePaneView ? ModelBrowserPanes : ModelBrowserTree
+
+        const trees = this._getTrees(useThreePaneView)
+
+        const items = this._getItems()
+
+        return this._render(TreeComponent, trees, items, handlers, details, query)
     }
+
+    _render = (TreeComponent, trees, items, handlers, details, query) => <TreeComponent {...this.props} {...handlers} {...trees}>
+                                                                             <Card className="h-100 border-0">
+                                                                                 <CardHeader className="text-nowrap d-flex flex-row" style={ { minHeight: '50px', height: '50px' } }>
+                                                                                     { details.name && <ModelElement element={ { ...details.infos, ...details } } color="default" /> }
+                                                                                 </CardHeader>
+                                                                                 { details._id &&
+                                                                                   <ModelBrowserDetails {...this.props}
+                                                                                       items={ items }
+                                                                                       urlSuffix={ query }
+                                                                                       {...details}/> }
+                                                                             </Card>
+                                                                         </TreeComponent>
 }
 ;
 

@@ -11,7 +11,7 @@ class ModelBrowserTree extends Component {
     }
 
     render() {
-        const {packageTree, selectedModel, selectedPackage, selectedClass, selectedProperty, selectedTab, isFocusOnPackage, isFocusOnClass, isFocusOnProperty, expanded, baseUrls, title} = this.props;
+        const {packageTree, selectedModel, selectedProfile, selectedPackage, selectedClass, selectedProperty, selectedTab, isFocusOnPackage, isFocusOnClass, isFocusOnProperty, expanded, baseUrls, title} = this.props;
         const {useThreePaneView, onSetThreePaneView, onSetSinglePaneView, useSmallerFont, onSetNormalFont, onSetSmallFont} = this.props;
 
         const selected = isFocusOnPackage ? selectedPackage : isFocusOnClass ? selectedClass : isFocusOnProperty ? selectedProperty : null;
@@ -75,7 +75,8 @@ class ModelBrowserTree extends Component {
                             useSmallerFont={ useSmallerFont }
                             baseUrls={ baseUrls }
                             urlSuffix={ selectedTab }
-                            doRenderRoot={ true } />
+                            doRenderRoot={ true }
+                            selectedProfile={ selectedProfile } />
                     </div>
                 </Card>
                 </Col>

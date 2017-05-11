@@ -8,53 +8,33 @@ import ModelElement from './ModelElement'
 
 class ModelBrowserItems extends Component {
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            checked: {}
-        };
-    }
-
-    _toggle = (e) => {
-        const name = e.currentTarget.name
-
-        this.setState({
-            checked: {
-                ...this.state.checked,
-                [name]: !this.state.checked[name]
-            }
-        });
-    }
-
-    // TODO: create component for element links with icon
     render() {
-        const {items, baseUrls, urlSuffix} = this.props;
+        const {items, baseUrls, urlSuffix, selectedProfile, updateProfile} = this.props;
+
+        let itemClassNames = 'd-flex flex-row w-100 align-items-center'
 
         return (
             <div>
                 <div className="font-weight-bold py-1">
                     Included in profile
                 </div>
-                { items && items.map(item => <div key={ item._id } className="d-flex flex-row w-100 align-items-center">
-                                                 <Toggle name={ item._id } checked={ this.state.checked[item._id] || false } onToggle={ this._toggle }>
-                                                 </Toggle>
-                                                 <ModelElement tag={ Link }
-                                                     element={ item }
-                                                     color={ this.state.checked[item._id] ? 'primary' : 'muted' }
-                                                     href={ `${baseUrls[item.type]}/${item._id}/${urlSuffix ? urlSuffix : ''}` }
-                                                     className="mr-1" />
-                                                 { item.type === 'prp' && item.cardinality && <Badge color="primary" className="mx-1">
-                                                                                                  { item.cardinality }
+                { items && items.map((item, i) => <div key={ item._id } className={ itemClassNames + (item.profiles.indexOf(selectedProfile) === -1 ? ' model-element-disabled' : '') }>
+                                                      <Toggle name={ item._id } checked={ item.profiles.indexOf(selectedProfile) > -1 } onToggle={ e => updateProfile(item) }>
+                                                      </Toggle>
+                                                      <ModelElement tag={ Link }
+                                                          element={ item }
+                                                          color={ item.profiles.indexOf(selectedProfile) === -1 ? 'muted' : 'primary' }
+                                                          href={ `${baseUrls[item.type]}/${item._id}/${urlSuffix ? urlSuffix : ''}` }
+                                                          className="mr-1" />
+                                                      { item.type === 'prp' && item.cardinality && <Badge color="primary" className="mx-1">
+                                                                                                       { item.cardinality }
+                                                                                                   </Badge> }
+                                                      { item.type === 'prp' && item.typeId && <Badge color="primary" className="truncate mx-1">
+                                                                                                  <Link href={ `${baseUrls['cls']}/${item.typeId}/${urlSuffix ? urlSuffix : ''}` } title={ item.typeName } className="text-white">
+                                                                                                  { item.typeName }
+                                                                                                  </Link>
                                                                                               </Badge> }
-                                                 { item.type === 'prp' && item.typeId && <Badge color="primary" className="truncate mx-1">
-                                                                                             <Link href={ `${baseUrls['cls']}/${item.typeId._id}/${urlSuffix ? urlSuffix : ''}` } title={ item.typeName } className="text-white">
-                                                                                             { item.typeName }
-                                                                                             </Link>
-                                                                                         </Badge> }
-                                                 { /*<Link href={ `${baseUrls[item.type]}/${item._id}/${urlSuffix ? urlSuffix : ''}` } className="ml-auto text-primary">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          <FontAwesome name="share" fixedWidth={ true } />
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </Link>*/ }
-                                             </div>) }
+                                                  </div>) }
             </div>
         );
     }
