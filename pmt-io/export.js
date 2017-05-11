@@ -11,13 +11,11 @@ var toXml = through2.obj(function(obj, enc, cb) {
     if (!writer) {
         start = Date.now();
         writer = xmlWriter.create(this, opts);
-        this.push('<?xml version="1.0" encoding="UTF-8"?>')
     }
 
     if (obj && obj.type) {
         writer.print(obj).then(function() {
             opts.stats.duration = Date.now() - start;
-            opts.stats.pkgs.sort()
             cb();
         });
     }
@@ -36,20 +34,20 @@ function parseOptions(options, modelId) {
         classes: 0,
         associations: 0,
         duration: 0,
-        pkgs: []
+        ids: []
     }
 
     if (options.setStats)
         options.setStats(stats);
 
-    var serialWrite = function(writer, doNotSetCurrent) {
+    var serialWrite = function(writer, depth, doSetCurrent) {
         return function(elements) {
             return elements.reduce(function(pr, el) {
                 updateStats(el);
                 return pr.then(function() {
-                    if (!doNotSetCurrent)
+                    if (doSetCurrent)
                         current = '' + el._id;
-                    return writer.print(el.element);
+                    return writer.print(el.element, depth);
                 });
             }, Promise.resolve());
         }
@@ -59,29 +57,29 @@ function parseOptions(options, modelId) {
         if (el && el.type) {
             if (el.type === 'pkg') {
                 stats.packages++;
-                stats.pkgs.push(el.name);
-            } else if (el.type === 'cls')
+            } else if (el.type === 'cls') {
                 stats.classes++;
-            else if (el.type === 'asc')
+                stats.ids.push(1);
+            } else if (el.type === 'asc')
                 stats.associations++;
         }
     }
 
-    return {
+    return Object.assign(options, {
         handlers: {
-            'sc:packages': function(node, writer) {
+            'sc:packages': function(node, writer, depth) {
                 return Promise.resolve(options.getPackages(current))
-                    .then(serialWrite(writer));
+                    .then(serialWrite(writer, depth, true));
             },
-            'sc:classes': function(node, writer) {
+            'sc:classes': function(node, writer, depth) {
                 return Promise.resolve(options.getClasses(current))
-                    .then(serialWrite(writer));
+                    .then(serialWrite(writer, depth));
             },
-            'sc:associations': function(node, writer) {
+            'sc:associations': function(node, writer, depth) {
                 return Promise.resolve(options.getAssociations(modelId))
-                    .then(serialWrite(writer, true));
+                    .then(serialWrite(writer, depth));
             }
         },
         stats: stats
-    };
+    });
 }

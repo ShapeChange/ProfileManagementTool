@@ -46,41 +46,60 @@ var serializeAttrs = function serializeAttrs(attributes, escapeValue, quote) {
     return result;
 };
 
+var indent = function indent(stream, opts, depth) {
+    if (opts.pretty) {
+        stream.push('\n' + Array(depth).fill(opts.tab).join(''));
+    }
+}
+
 /**
  * @param  {XmlNode|XmlNode[]} ast
  * @return {string}
  */
-var print = function print(stream, opts, ast) {
+var print = function print(stream, opts, ast, depth) {
+    var depth = depth || 0;
+
+    if (depth === 0)
+        stream.push('<?xml version="1.0" encoding="UTF-8"?>');
+
     return new Promise(function(resolve, reject) {
         if (ast.type === 'text') {
             stream.push('' + (opts.escapeText ? escapeXmlText(ast.value) : ast.value));
-            resolve();
+            resolve(true);
         } else {
 
             var attributes = serializeAttrs(ast.attributes, opts.escapeAttributes, opts.quote);
             var empty = (!ast.children || !ast.children.length) && !opts.handlers[ast.name];
 
             if (empty && opts.selfClose) {
+                indent(stream, opts, depth);
                 stream.push('<' + ast.name + attributes + '/>');
                 resolve();
             } else {
+                indent(stream, opts, depth);
                 stream.push('<' + ast.name + attributes + '>');
 
                 var recurse;
                 if (opts.handlers[ast.name]) {
-                    recurse = opts.handlers[ast.name](ast, this);
+                    recurse = opts.handlers[ast.name](ast, this, depth + 1);
                 } else {
                     recurse = ast.children.reduce(function(pr, astc) {
                         return pr.then(function() {
-                            return print.call(this, stream, opts, astc);
+                            return print.call(this, stream, opts, astc, depth + 1);
                         }.bind(this));
                     }.bind(this), Promise.resolve());
 
                 }
 
                 recurse
-                    .then(function() {
+                    .then(function(noIndent) {
+                        !noIndent && indent(stream, opts, depth);
+
                         stream.push('</' + ast.name + '>');
+
+                        if (depth === 0)
+                            stream.push('\n');
+
                         resolve()
                     })
                     .catch(function(e) {
@@ -98,18 +117,14 @@ function create(stream, options) {
         escapeText: true,
         selfClose: false,
         quote: '"',
+        tab: '\t',
+        pretty: false,
         handlers: {}
     }, options);
 
     var writer = {};
     writer.print = print.bind(writer, stream, opts);
 
-    /* {
-        print: print.bind(this, stream, opts),
-        on: function(tag, handler) {
-            opts.handlers[tag] = handler;
-        }
-    }*/
     return writer;
 }
 

@@ -36,7 +36,9 @@ return db.getDetails(modelId)
                 },
                 setStats: function(stat) {
                     stats = stat;
-                }
+                },
+                pretty: true,
+                selfClose: true
             });
 
             var fileName = {

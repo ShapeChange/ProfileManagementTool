@@ -63,7 +63,7 @@ return new Promise(function(resolve, reject) {
         reject(err);
     })
 
-    pl.on('finish', function() {
+    pl.on('close', function() {
         resolve(stats);
     })
 });

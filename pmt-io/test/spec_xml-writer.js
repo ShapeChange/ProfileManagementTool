@@ -8,9 +8,9 @@ var xmlWriter = require('../xml-writer');
 var should = chai.should();
 var expect = chai.expect;
 
-var xml = '<sc:Model encoding="UTF-8" xmlns:sc="http://shapechange.net/model"><sc:packages><sc:Package><sc:name>Model</sc:name><sc:id>1</sc:id><sc:descriptors></sc:descriptors><sc:packages></sc:packages></sc:Package></sc:packages></sc:Model>';
+var xml = '<?xml version="1.0" encoding="UTF-8"?><sc:Model encoding="UTF-8" xmlns:sc="http://shapechange.net/model"><sc:packages><sc:Package><sc:name>Model</sc:name><sc:id>1</sc:id><sc:descriptors></sc:descriptors><sc:packages></sc:packages></sc:Package></sc:packages></sc:Model>\n';
 
-var xml2 = '<sc:Model encoding="UTF-8" xmlns:sc="http://shapechange.net/model"><sc:packages><sc:Package><sc:name>Model</sc:name><sc:id>1</sc:id><sc:descriptors><sc:alias><sc:descriptorValues><sc:DescriptorValue>leaf</sc:DescriptorValue></sc:descriptorValues></sc:alias></sc:descriptors><sc:packages></sc:packages></sc:Package></sc:packages></sc:Model>';
+var xml2 = '<?xml version="1.0" encoding="UTF-8"?><sc:Model encoding="UTF-8" xmlns:sc="http://shapechange.net/model"><sc:packages><sc:Package><sc:name>Model</sc:name><sc:id>1</sc:id><sc:descriptors><sc:alias><sc:descriptorValues><sc:DescriptorValue>leaf</sc:DescriptorValue></sc:descriptorValues></sc:alias></sc:descriptors><sc:packages></sc:packages></sc:Package></sc:packages></sc:Model>\n';
 
 var xml3 = '<sc:alias><sc:descriptorValues><sc:DescriptorValue>leaf</sc:DescriptorValue></sc:descriptorValues></sc:alias>';
 
@@ -63,7 +63,7 @@ it('should preserve order with async handlers ', function(done) {
         if (!writer) {
             writer = xmlWriter.create(this, {
                 handlers: {
-                    'sc:descriptors': function(node, writer2) {
+                    'sc:descriptors': function(node, writer2, depth) {
                         return new Promise(function(resolve, reject) {
                             var xmlStream2 = xmlParser.create({
                                 stream: false,
@@ -79,7 +79,7 @@ it('should preserve order with async handlers ', function(done) {
                             .then(function(descriptors) {
                                 return descriptors.reduce(function(pr, el) {
                                     return pr.then(function() {
-                                        return writer2.print(el);
+                                        return writer2.print(el, depth);
                                     });
                                 }, Promise.resolve());
                             });
