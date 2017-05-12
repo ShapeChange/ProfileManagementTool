@@ -231,6 +231,7 @@ function parsePackage(outStream, node, options) {
         model: options.modelIdResolved,
         type: 'pkg',
         name: node.children[0].children[0].value,
+        editable: true,
         element: node
     }
 
@@ -366,7 +367,7 @@ function reduceNode(node, id) {
         profiles: profilesIndex > -1 ? node.children[profilesIndex].children.map(function(pr) {
             return pr.attributes.name
         }) : [],
-        cardinality: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value,
+        cardinality: cardinalityIndex > -1 ? node.children[cardinalityIndex].children[0].value : '1..1',
         optional: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value && node.children[cardinalityIndex].children[0].value.indexOf('0') === 0,
         typeId: typeIndex > -1 && node.children[typeIndex].children[0].value,
         typeName: typeNameIndex > -1 && node.children[typeNameIndex].children[0].value,

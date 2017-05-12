@@ -1,4 +1,5 @@
 var Promise = require("bluebird");
+var ObjectID = require('mongodb').ObjectID;
 
 var MODELS = 'models';
 var model;
@@ -8,84 +9,85 @@ model = mdl;
 
 return {
     getProfileUpdatesForProperty: getProfileUpdatesForProperty,
-    getProfileUpdatesForClass: getProfileUpdatesForClass
+    getProfileUpdatesForClass: getProfileUpdatesForClass,
+    getProfileUpdatesForPackage: getProfileUpdatesForPackage
 }
 }
 
+// TODO: doesn't buildClassesUpdate have to call this for the typeId follow-up ??
 function getProfileUpdatesForProperty(clsId, prpId, modelId, profile, include) {
+
+    var propertyFilter = function(prp) {
+        return prpId === prp._id;
+    };
+
+    var propertyHandler = function(update, prp, i) {
+        if (propertyFilter(prp)) {
+            if (include) {
+                update['$addToSet']['properties.' + i + '.profiles'] = profile;
+            } else {
+                update['$pull']['properties.' + i + '.profiles'] = profile;
+            }
+        }
+    };
 
     return getClass(clsId, modelId)
         .then(function(cls) {
-            var typeId;
-            var update = include ? {
-                $addToSet: {}
-            } : {
-                $pull: {}
-            };
-
-            cls.properties.forEach(function(prp, i) {
-                if (prpId === prp._id) {
-                    if (include) {
-                        update['$addToSet']['properties.' + i + '.profiles'] = profile;
-                    } else {
-                        update['$pull']['properties.' + i + '.profiles'] = profile;
-                    }
-                    typeId = prp.typeId;
-                }
-            })
-
-            var updates = Promise.all([updateClass(cls.localId, modelId, update)]);
-
-            if (include && typeId) {
-                updates = Promise.join(updates, getProfileUpdatesForClass(typeId, modelId, profile, include), function(updates1, updates2) {
-                    return updates1.concat(updates2);
-                })
-            }
-
-            return updates;
+            return buildPropertiesUpdate(cls.properties, cls.localId, modelId, profile, include, propertyHandler, propertyFilter);
         })
 }
 
-function getProfileUpdatesForClass(id, modelId, profile, include) {
+function getProfileUpdatesForClass(id, modelId, profile, include, onlyMandatory, onlyChildren) {
+
+    if (onlyChildren) {
+        var propertyHandler = function(update, prp, i) {
+            if (include && onlyMandatory && !prp.optional) {
+                update['$addToSet']['properties.' + i + '.profiles'] = profile;
+            } else if (include && !onlyMandatory) {
+                update['$addToSet']['properties.' + i + '.profiles'] = profile;
+            } else if (!include && onlyMandatory && prp.optional) {
+                update['$pull']['properties.' + i + '.profiles'] = profile;
+            } else if (!include && !onlyMandatory) {
+                update['$pull']['properties.' + i + '.profiles'] = profile;
+            }
+        };
+
+        return getClass(id, modelId)
+            .then(function(cls) {
+                return buildPropertiesUpdate(cls.properties, cls.localId, modelId, profile, include, propertyHandler);
+            })
+    }
+
+    var propertyHandler = function(update, prp, i) {
+        if (include && !prp.optional) {
+            update['$addToSet']['properties.' + i + '.profiles'] = profile;
+        }
+    };
 
     // for include get super classes, for exclude get sub classes
     return getClassGraph(id, modelId, !include)
         .then(function(classes) {
-            var updates = Promise.map(classes, function(cls) {
-                var update = include ? {
-                    $addToSet: {
-                        profiles: profile
-                    }
-                } : {
-                    $pull: {
-                        profiles: profile
-                    }
-                };
+            return buildClassesUpdate(classes, modelId, profile, include, propertyHandler);
+        })
+}
 
-                cls.properties.forEach(function(prp, i) {
-                    if (include && !prp.optional) {
-                        update['$addToSet']['properties.' + i + '.profiles'] = profile;
-                    }
-                })
+function getProfileUpdatesForPackage(id, modelId, profile, include, onlyMandatory, recursive) {
 
-                return updateClass(cls.localId, modelId, update)
-            })
+    var propertyHandler = function(update, prp, i) {
+        if (include && onlyMandatory && !prp.optional) {
+            update['$addToSet']['properties.' + i + '.profiles'] = profile;
+        } else if (include && !onlyMandatory) {
+            update['$addToSet']['properties.' + i + '.profiles'] = profile;
+        } else if (!include) {
+            update['$pull']['properties.' + i + '.profiles'] = profile;
+        }
+    };
 
-            if (!include) {
-                var updatesType = Promise.map(classes, function(cls) {
-                    return getProfileUpdatesForType(cls.localId, modelId, profile, include)
-                })
-                    .then(function(classesOfType) {
-                        return [].concat.apply([], classesOfType);
-                    })
+    var projection = getProjection('parent');
 
-                return Promise.join(updates, updatesType, function(updates1, updates2) {
-                    return updates1.concat(updates2);
-                })
-            }
-
-
-            return updates;
+    return getClassesForPackage(id, modelId, recursive)
+        .then(function(classes) {
+            return buildClassesUpdate(classes, modelId, profile, include, propertyHandler, projection);
         })
 }
 
@@ -107,7 +109,7 @@ function getProfileUpdatesForType(id, modelId, profile, include) {
                         }
                     })
 
-                    return updateClass(cls.localId, modelId, update)
+                    return putClassUpdate(cls.localId, modelId, update)
                 })
             })
     }
@@ -115,22 +117,96 @@ function getProfileUpdatesForType(id, modelId, profile, include) {
     return Promise.resolve([]);
 }
 
-function updateClass(id, modelId, update) {
+function buildPropertiesUpdate(properties, clsId, modelId, profile, include, propertyHandler, propertyFilter) {
+    var update = include ? {
+        $addToSet: {}
+    } : {
+        $pull: {}
+    };
+
+    properties.forEach(propertyHandler.bind(this, update));
+
+    var updates = Promise.all([putClassUpdate(clsId, modelId, update)]);
+
+    if (include) {
+        var filteredProperties = propertyFilter ? properties.filter(propertyFilter) : properties;
+
+        var typeIds = filteredProperties.reduce(function(tids, prp) {
+            if (tids.indexOf(prp.typeId) === -1) {
+                tids.push(prp.typeId);
+            }
+            return tids;
+        }, []);
+
+        var updatesType = Promise.map(typeIds, function(typeId) {
+            return getProfileUpdatesForClass(typeId, modelId, profile, include)
+        })
+            .then(function(classesOfType) {
+                return [].concat.apply([], classesOfType);
+            })
+
+        return Promise.join(updates, updatesType, function(updates1, updates2) {
+            return updates1.concat(updates2);
+        })
+    }
+
+    return updates;
+}
+
+function buildClassesUpdate(classes, modelId, profile, include, propertyHandler, projection) {
+    var updates = Promise.map(classes, function(cls) {
+        var update = include ? {
+            $addToSet: {
+                profiles: profile
+            }
+        } : {
+            $pull: {
+                profiles: profile
+            }
+        };
+
+        cls.properties.forEach(propertyHandler.bind(this, update))
+
+        return putClassUpdate(cls.localId, modelId, update, projection)
+    })
+
+    if (!include) {
+        var updatesType = Promise.map(classes, function(cls) {
+            return getProfileUpdatesForType(cls.localId, modelId, profile, include)
+        })
+            .then(function(classesOfType) {
+                return [].concat.apply([], classesOfType);
+            })
+
+        return Promise.join(updates, updatesType, function(updates1, updates2) {
+            return updates1.concat(updates2);
+        })
+    }
+
+
+    return updates;
+}
+
+var minProjection = ['localId', 'type', 'profiles', 'properties.profiles'];
+
+function getProjection() {
+    return minProjection.concat([].slice.call(arguments)).reduce(function(prj, key) {
+        prj[key] = 1;
+        return prj;
+    }, {})
+}
+
+function putClassUpdate(id, modelId, update, projection) {
     return model
         .findAndModify({
             localId: id,
-            model: modelId
+            model: ObjectID(modelId)
         },
             [],
             update,
             {
                 new: true,
-                fields: {
-                    localId: 1,
-                    type: 1,
-                    profiles: 1,
-                    'properties.profiles': 1
-                }
+                fields: projection || getProjection()
             }
     )
 }
@@ -147,58 +223,97 @@ function getClassGraph(id, modelId, subNotSuper) {
             {
                 $match: {
                     localId: id,
-                    model: modelId
+                    model: ObjectID(modelId)
                 }
             },
             {
-                $facet: {
-
-                    orig: [
-                        {
-                            $project: projection
-                        }
-                    ],
-                    stypes: [
-                        {
-                            $graphLookup: {
-                                from: MODELS,
-                                startWith: subNotSuper ? '$localId' : '$supertypes',
-                                connectFromField: subNotSuper ? 'localId' : 'supertypes',
-                                connectToField: subNotSuper ? 'supertypes' : 'localId',
-                                as: "inheritanceTree",
-                                restrictSearchWithMatch: {
-                                    model: modelId
-                                }
-                            }
-                        },
-                        {
-                            $unwind: "$inheritanceTree"
-                        },
-                        {
-                            $replaceRoot: {
-                                newRoot: "$inheritanceTree"
-                            }
-                        },
-                        {
-                            $project: projection
-                        }
-                    ]
+                $graphLookup: {
+                    from: MODELS,
+                    startWith: subNotSuper ? '$localId' : '$supertypes',
+                    connectFromField: subNotSuper ? 'localId' : 'supertypes',
+                    connectToField: subNotSuper ? 'supertypes' : 'localId',
+                    as: "inheritanceTree",
+                    restrictSearchWithMatch: {
+                        model: ObjectID(modelId)
+                    }
                 }
+            },
+            {
+                $project: {
+                    items: {
+                        $concatArrays: [["$$ROOT"], "$inheritanceTree"]
+                    }
+                }
+            },
+            {
+                $unwind: "$items"
+            },
+            {
+                $replaceRoot: {
+                    newRoot: "$items"
+                }
+            },
+            {
+                $project: projection
+            }
+        ])
+        .toArray();
+}
+
+function getClassesForPackageGraph(id, modelId, projection) {
+    return model
+        .aggregate([
+            {
+                $match: {
+                    _id: ObjectID(id),
+                    model: ObjectID(modelId)
+                }
+            },
+            {
+                $graphLookup: {
+                    from: MODELS,
+                    startWith: "$_id",
+                    connectFromField: "_id",
+                    connectToField: "parent",
+                    as: "elems",
+                    restrictSearchWithMatch: {
+                        model: ObjectID(modelId)
+                    }
+                }
+            },
+            {
+                $project: {
+                    items: {
+                        $filter: {
+                            input: "$elems",
+                            as: "elem",
+                            cond: {
+                                $eq: ["$$elem.type", "cls"]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $unwind: "$items"
+            },
+            {
+                $replaceRoot: {
+                    newRoot: "$items"
+                }
+            },
+            {
+                $project: projection
             }
         ])
         .toArray()
-        .then(function(supertypes) {
-            // TODO: merge in aggregation stage
-            var st = supertypes[0].orig.concat(supertypes[0].stypes);
-            return st;
-        });
 }
 
 function getClass(id, modelId) {
     return model
         .findOne({
             localId: id,
-            model: modelId
+            model: ObjectID(modelId)
         }, {
             localId: 1,
             'properties._id': 1,
@@ -207,11 +322,35 @@ function getClass(id, modelId) {
         })
 }
 
+function getClassesForPackage(id, modelId, recursive) {
+    var query = {
+        parent: ObjectID(id),
+        type: 'cls',
+        model: ObjectID(modelId)
+    };
+
+    var projection = {
+        localId: 1,
+        'properties._id': 1,
+        "properties.typeId": 1,
+        'properties.optional': 1
+    };
+
+    if (recursive) {
+        return getClassesForPackageGraph(id, modelId, projection);
+    }
+
+    return model
+        .find(query)
+        .project(projection)
+        .toArray();
+}
+
 function getAllOfType(typeId, modelId) {
     return model
         .find({
             type: 'cls',
-            model: modelId,
+            model: ObjectID(modelId),
             properties: {
                 $elemMatch: {
                     typeId: typeId,

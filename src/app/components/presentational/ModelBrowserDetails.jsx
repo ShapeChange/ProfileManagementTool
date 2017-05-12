@@ -9,7 +9,25 @@ import ModelBrowserInfos from './ModelBrowserInfos'
 
 class ModelBrowserDetails extends Component {
 
-    _updateProfile = (item) => {
+    _updateProfileForElement = (item) => {
+        const {selectedProfile} = this.props;
+
+        this._updateProfile(item, {
+            include: item.profiles.indexOf(selectedProfile) === -1
+        });
+    }
+
+    _updateProfileForChildren = (item, include, onlyMandatory, recursive) => {
+
+        this._updateProfile(item, {
+            include: include,
+            onlyMandatory: onlyMandatory,
+            recursive: recursive,
+            onlyChildren: true
+        });
+    }
+
+    _updateProfile = (item, update) => {
         const {updateProfile, selectedModel, selectedProfile} = this.props;
 
         updateProfile({
@@ -17,9 +35,8 @@ class ModelBrowserDetails extends Component {
             modelId: selectedModel,
             type: item.type,
             parent: item.parent,
-            //index: index,
-            include: item.profiles.indexOf(selectedProfile) === -1,
-            profile: selectedProfile
+            profile: selectedProfile,
+            ...update
         });
     }
 
@@ -63,11 +80,11 @@ class ModelBrowserDetails extends Component {
                       </NavItem> }
                 </Nav>
                 { isProfile &&
-                  <ModelBrowserActions {...this.props} updateProfile={ this._updateProfile } /> }
+                  <ModelBrowserActions {...this.props} updateProfile={ this._updateProfileForElement } updateProfileForChildren={ this._updateProfileForChildren } /> }
                 { isInfo &&
                   <ModelBrowserInfos infos={ infos } baseUrl={ baseUrls['cls'] } urlSuffix={ selectedTab } /> }
                 { isItems &&
-                  <ModelBrowserItems {...this.props} urlSuffix={ selectedTab } updateProfile={ this._updateProfile } /> }
+                  <ModelBrowserItems {...this.props} urlSuffix={ selectedTab } updateProfile={ this._updateProfileForElement } /> }
                 { isParameters &&
                   <ModelBrowserParameters parameters={ parameters } /> }
             </div>

@@ -56,7 +56,7 @@ return Promise.resolve(
     model
         .find({
             type: 'pkg',
-            model: modelId
+            model: ObjectID(modelId)
         })
         .project({
             parent: 1,
@@ -74,7 +74,7 @@ return Promise.resolve(
     model
         .find({
             type: 'pkg',
-            parent: parent
+            parent: ObjectID(parent)
         })
 );
 }
@@ -84,7 +84,7 @@ return Promise.resolve(
     model
         .find({
             type: 'cls',
-            parent: parent
+            parent: ObjectID(parent)
         })
 );
 }
@@ -94,7 +94,7 @@ return Promise.resolve(
     model
         .find({
             type: 'asc',
-            parent: parent
+            parent: ObjectID(parent)
         })
 );
 }
@@ -104,7 +104,7 @@ return Promise.resolve(
     model
         .find({
             type: 'cls',
-            parent: pkg
+            parent: ObjectID(pkg)
         })
         .project({
             localId: 1,
@@ -191,30 +191,39 @@ return model
 exports.getModel = function(id) {
 return model
     .findOne({
-        _id: id
+        _id: ObjectID(id)
+    }, {
+        element: 0
     })
 }
 
-exports.updateClassProfile = function(clsId, modelId, profile, include) {
+exports.updatePackageProfile = function(clsId, modelId, profile, include, onlyMandatory, recursive) {
 
-var start = Date.now();
 
-return dbEdit.getProfileUpdatesForClass(clsId, modelId, profile, include)
-    .then(function(updatedClasses) {
-        console.log('took', Date.now() - start)
-        return updatedClasses;
-    });
+return measure(dbEdit.getProfileUpdatesForPackage(clsId, modelId, profile, include, onlyMandatory, recursive));
+
+}
+
+exports.updateClassProfile = function(clsId, modelId, profile, include, onlyMandatory, onlyChildren) {
+
+return measure(dbEdit.getProfileUpdatesForClass(clsId, modelId, profile, include, onlyMandatory, onlyChildren));
+
 }
 
 exports.updatePropertyProfile = function(clsId, prpId, modelId, profile, include) {
 
-var start = Date.now();
+return measure(dbEdit.getProfileUpdatesForProperty(clsId, prpId, modelId, profile, include));
 
-return dbEdit.getProfileUpdatesForProperty(clsId, prpId, modelId, profile, include)
-    .then(function(updatedClasses) {
-        console.log('took', Date.now() - start)
-        return updatedClasses;
-    });
+}
+
+function measure(prms) {
+    var start = Date.now();
+
+    return prms
+        .then(function(results) {
+            console.log('took', Date.now() - start)
+            return results;
+        });
 }
 
 exports.close = function(force) {

@@ -40,7 +40,7 @@ return new Promise(function(resolve, reject) {
             return new ObjectID();
         },
         resolveId: function(id) {
-            return id.toHexString();
+            return id; //.toHexString();
         },
         setStats: function(stat) {
             stats = stat;

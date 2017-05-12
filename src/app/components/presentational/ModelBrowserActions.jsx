@@ -26,7 +26,7 @@ class ModelBrowserActions extends Component {
     }
 
     render() {
-        const {_id, name, type, profiles, selectedProfile, updateProfile} = this.props;
+        const {_id, name, type, profiles, selectedProfile, updateProfile, updateProfileForChildren} = this.props;
 
         const isPackage = type === 'pkg'
         const isClass = type === 'cls'
@@ -50,17 +50,17 @@ class ModelBrowserActions extends Component {
                           <span className="align-self-center"><span className="font-italic">{ name }</span> is editable</span>
                       </Toggle> }
                     { /*<Toggle name="includeDirectMandatory" checked={ this.state.checked.includeDirectMandatory || false } onToggle={ this._toggle }>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Include direct child classes with mandatory properties in profile
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </Toggle>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <Toggle name="includeDirectAll" checked={ this.state.checked.includeDirectAll || false } onToggle={ this._toggle }>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Include direct child classes with all properties in profile
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </Toggle>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <Toggle name="includeAllMandatory" checked={ this.state.checked.includeAllMandatory || false } onToggle={ this._toggle }>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Include all classes in subpackages with mandatory properties in profile
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </Toggle>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <Toggle name="includeAllAll" checked={ this.state.checked.includeAllAll || false } onToggle={ this._toggle }>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Include all classes in subpackages with all properties in profile
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </Toggle>*/ }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Include direct child classes with mandatory properties in profile
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </Toggle>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <Toggle name="includeDirectAll" checked={ this.state.checked.includeDirectAll || false } onToggle={ this._toggle }>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Include direct child classes with all properties in profile
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </Toggle>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <Toggle name="includeAllMandatory" checked={ this.state.checked.includeAllMandatory || false } onToggle={ this._toggle }>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Include all classes in subpackages with mandatory properties in profile
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </Toggle>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <Toggle name="includeAllAll" checked={ this.state.checked.includeAllAll || false } onToggle={ this._toggle }>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Include all classes in subpackages with all properties in profile
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </Toggle>*/ }
                 </FormGroup>
                 { (isPackage || isClass) &&
                   <div className="font-weight-bold">
@@ -70,25 +70,37 @@ class ModelBrowserActions extends Component {
                   <div>
                       <div className="d-flex py-1">
                           <span>Add direct child classes with mandatory properties to profile</span>
-                          <Button size="sm" color="primary" className="ml-auto mt-auto">
+                          <Button size="sm"
+                              color="primary"
+                              className="ml-auto mt-auto"
+                              onClick={ e => updateProfileForChildren(this.props, true, true, false) }>
                               Apply
                           </Button>
                       </div>
                       <div className="d-flex py-1">
                           <span>Add direct child classes with all properties to profile</span>
-                          <Button size="sm" color="primary" className="ml-auto mt-auto">
+                          <Button size="sm"
+                              color="primary"
+                              className="ml-auto mt-auto"
+                              onClick={ e => updateProfileForChildren(this.props, true, false, false) }>
                               Apply
                           </Button>
                       </div>
                       <div className="d-flex py-1">
                           <span>Add all classes in subpackages with mandatory properties to profile</span>
-                          <Button size="sm" color="primary" className="ml-auto mt-auto">
+                          <Button size="sm"
+                              color="primary"
+                              className="ml-auto mt-auto"
+                              onClick={ e => updateProfileForChildren(this.props, true, true, true) }>
                               Apply
                           </Button>
                       </div>
                       <div className="d-flex py-1">
                           <span>Add all classes in subpackages with all properties to profile</span>
-                          <Button size="sm" color="primary" className="ml-auto mt-auto">
+                          <Button size="sm"
+                              color="primary"
+                              className="ml-auto mt-auto"
+                              onClick={ e => updateProfileForChildren(this.props, true, false, true) }>
                               Apply
                           </Button>
                       </div>
@@ -103,13 +115,19 @@ class ModelBrowserActions extends Component {
                   <div>
                       <div className="d-flex py-1">
                           <span>Add mandatory properties to profile</span>
-                          <Button size="sm" color="primary" className="ml-auto mt-auto">
+                          <Button size="sm"
+                              color="primary"
+                              className="ml-auto mt-auto"
+                              onClick={ e => updateProfileForChildren(this.props, true, true) }>
                               Apply
                           </Button>
                       </div>
                       <div className="d-flex py-1">
                           <span>Add all properties to profile</span>
-                          <Button size="sm" color="primary" className="ml-auto mt-auto">
+                          <Button size="sm"
+                              color="primary"
+                              className="ml-auto mt-auto"
+                              onClick={ e => updateProfileForChildren(this.props, true, false) }>
                               Apply
                           </Button>
                       </div>
@@ -122,13 +140,19 @@ class ModelBrowserActions extends Component {
                   <div>
                       <div className="d-flex py-1">
                           <span>Remove direct child classes with all properties from profile</span>
-                          <Button size="sm" color="primary" className="ml-auto mt-auto">
+                          <Button size="sm"
+                              color="primary"
+                              className="ml-auto mt-auto"
+                              onClick={ e => updateProfileForChildren(this.props, false, false, false) }>
                               Apply
                           </Button>
                       </div>
                       <div className="d-flex py-1">
                           <span>Remove all classes in subpackages with all properties from profile</span>
-                          <Button size="sm" color="primary" className="ml-auto mt-auto">
+                          <Button size="sm"
+                              color="primary"
+                              className="ml-auto mt-auto"
+                              onClick={ e => updateProfileForChildren(this.props, false, false, true) }>
                               Apply
                           </Button>
                       </div>
@@ -143,13 +167,19 @@ class ModelBrowserActions extends Component {
                   <div>
                       <div className="d-flex py-1">
                           <span>Remove optional properties from profile</span>
-                          <Button size="sm" color="primary" className="ml-auto mt-auto">
+                          <Button size="sm"
+                              color="primary"
+                              className="ml-auto mt-auto"
+                              onClick={ e => updateProfileForChildren(this.props, false, true) }>
                               Apply
                           </Button>
                       </div>
                       <div className="d-flex py-1">
                           <span>Remove all properties from profile</span>
-                          <Button size="sm" color="primary" className="ml-auto mt-auto">
+                          <Button size="sm"
+                              color="primary"
+                              className="ml-auto mt-auto"
+                              onClick={ e => updateProfileForChildren(this.props, false, false) }>
                               Apply
                           </Button>
                       </div>

@@ -58,13 +58,19 @@ function dispatch(socket, action) {
 }
 
 function updateProfile(socket, update) {
-    if (update.type === 'cls' || update.type === 'prp') {
-        var pr = update.type === 'cls'
-            ? db.updateClassProfile(update.id, update.modelId, update.profile, update.include)
-            : db.updatePropertyProfile(update.parent, update.id, update.modelId, update.profile, update.include);
+    var pr;
 
+    if (update.type === 'pkg')
+        pr = db.updatePackageProfile(update.id, update.modelId, update.profile, update.include, update.onlyMandatory, update.recursive);
+    else if (update.type === 'cls')
+        pr = db.updateClassProfile(update.id, update.modelId, update.profile, update.include, update.onlyMandatory, update.onlyChildren);
+    else if (update.type === 'prp')
+        pr = db.updatePropertyProfile(update.parent, update.id, update.modelId, update.profile, update.include);
+
+    if (pr) {
         return pr
             .then(function(updatedClasses) {
+                console.log('UPD0', updatedClasses)
                 var uc = updatedClasses.map(function(cls) {
                     if (cls.ok && cls.value) {
                         cls.value._id = cls.value.localId;
@@ -74,7 +80,12 @@ function updateProfile(socket, update) {
                         console.log('ERROR', cls)
                     }
                 })
-                console.log(uc)
+                console.log('UPD1', uc)
+                if (update.type === 'pkg')
+                    uc = uc.filter(function(cls) {
+                        return cls.parent == update.id
+                    })
+                console.log('UPD2', uc)
                 socket.emit('action', {
                     type: 'profile/new',
                     payload: uc

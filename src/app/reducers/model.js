@@ -77,10 +77,17 @@ function syncModel(state, action) {
         ? state
         : {
             ...state,
-            packages: [],
             mdl: null,
             fetchedModel: null,
-            pendingModel: modelId
+            pendingModel: modelId,
+            packages: [],
+            pkg: null,
+            fetchedPackage: null,
+            pendingPackage: null,
+            classes: [],
+            cls: null,
+            fetchedClass: null,
+            pendingClass: null
         }
 }
 
@@ -92,9 +99,12 @@ function syncPackage(state, action) {
         : {
             ...state,
             pkg: null,
-            classes: [],
             fetchedPackage: null,
-            pendingPackage: packageId
+            pendingPackage: packageId,
+            classes: [],
+            cls: null,
+            fetchedClass: null,
+            pendingClass: null
         }
 }
 
