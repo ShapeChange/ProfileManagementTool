@@ -5,6 +5,7 @@ var classes = {
     1: {
         name: 'CLASS',
         localId: '1',
+        editable: true,
         properties: [
             {
                 optional: false,
@@ -21,21 +22,25 @@ var classes = {
     2: {
         name: 'TYPE',
         localId: '2',
+        editable: true,
         properties: []
     },
     5: {
         name: 'TYPE_OPTIONAL',
         localId: '5',
+        editable: true,
         properties: []
     },
     3: {
         name: 'SUPER_CLASS',
         localId: '3',
+        editable: true,
         properties: []
     },
     4: {
         name: 'SUB_CLASS',
         localId: '4',
+        editable: true,
         properties: []
     }
 }

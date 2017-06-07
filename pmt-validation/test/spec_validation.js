@@ -8,7 +8,8 @@ const options = require('./setup');
 
 var errors = []
 const validator = require('../index.js').createStream(options.modelReader, {
-    appendError: appendError
+    appendError: appendError,
+    clearErrors: function() {}
 });
 
 
