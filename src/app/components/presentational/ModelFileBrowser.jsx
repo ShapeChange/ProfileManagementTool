@@ -139,7 +139,7 @@ class ModelFileBrowser extends Component {
                     type: 'prf',
                     parent: mdl._id
                 }
-            }))
+            }).sort((a, b) => a.name > b.name ? 1 : -1))
             tree.push({
                 _id: mdl._id + 'add',
                 name: 'Add Profile',

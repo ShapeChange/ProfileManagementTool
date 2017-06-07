@@ -28,10 +28,11 @@ function writableStream() {
         objectMode: true,
         highWaterMark: config.batchSize,
         write: function(record, enc, next) {
-            addToBatch(record)
+            addToBatch(record, iteration)
                 .then(function() {
-                    //console.log('iteration', iteration++)
+                    console.log('iteration', iteration++)
                     //if (iteration++ <= 24)
+
                     next();
                 });
         }
@@ -48,21 +49,21 @@ function writableStream() {
     return writable;
 }
 
-function addToBatch(record) {
+function addToBatch(record, iteration) {
     batch.push(record);
 
     if (batch.length === config.batchSize) {
-        return insertToMongo(batch);
+        return insertToMongo(batch, iteration);
     }
 
     return Promise.resolve();
 }
 
-function insertToMongo(records) {
+function insertToMongo(records, iteration) {
     if (records.length) {
         return collection.insert(records, config.insertOptions)
             .then(function() {
-                console.log('WRITTEN')
+                console.log('WRITTEN', iteration)
                 resetBatch();
             })
     }

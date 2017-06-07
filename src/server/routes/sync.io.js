@@ -1,8 +1,10 @@
 var ss = require('socket.io-stream');
 var path = require('path');
 var fs = require('fs');
+var intoStream = require('into-stream');
 var mongoImport = process.env.NODE_ENV === 'production' ? require('pmt-io/mongo-import') : require('../../../pmt-io/mongo-import');
 var mongoExport = process.env.NODE_ENV === 'production' ? require('pmt-io/mongo-export') : require('../../../pmt-io/mongo-export');
+var validator = process.env.NODE_ENV === 'production' ? require('pmt-validation') : require('../../../pmt-validation');
 
 var db;
 
@@ -47,7 +49,9 @@ const actions = {
     'class/fetch': fetchClass,
     'file/import': importFile,
     'file/export': exportFile,
-    'profile/update': updateProfile
+    'profile/update': updateProfile,
+    'editable/update': updateEditable,
+    'filter/apply': applyFilter
 }
 
 function dispatch(socket, action) {
@@ -57,20 +61,51 @@ function dispatch(socket, action) {
         actions[action.type](socket, action.payload);
 }
 
+function updateEditable(socket, update) {
+    var pr = db.updatePackageEditable(update.id, update.modelId, update.editable, update.recursive);
+
+    if (pr) {
+        return pr
+            .then(function(updatedPackages) {
+                console.log('UPD0', updatedPackages)
+                var uc = updatedPackages.map(function(cls) {
+                    if (cls.ok && cls.value) {
+                        return cls.value;
+                    } else {
+                        // TODO: error, also in catch, throw here
+                        console.log('ERROR', cls)
+                    }
+                })
+                console.log('UPD1', uc)
+                socket.emit('action', {
+                    type: 'editable/new',
+                    payload: uc
+                });
+            })
+    }
+}
+
 function updateProfile(socket, update) {
     var pr;
 
     if (update.type === 'pkg')
         pr = db.updatePackageProfile(update.id, update.modelId, update.profile, update.include, update.onlyMandatory, update.recursive);
-    else if (update.type === 'cls')
-        pr = db.updateClassProfile(update.id, update.modelId, update.profile, update.include, update.onlyMandatory, update.onlyChildren);
-    else if (update.type === 'prp')
-        pr = db.updatePropertyProfile(update.parent, update.id, update.modelId, update.profile, update.include);
+    else if (update.type === 'cls') {
+        if (update.profileParameters)
+            pr = db.updateProfileParameter(update.id, null, update.modelId, update.profile, update.profileParameters);
+        else
+            pr = db.updateClassProfile(update.id, update.modelId, update.profile, update.include, update.onlyMandatory, update.onlyChildren);
+    } else if (update.type === 'prp') {
+        if (update.profileParameters)
+            pr = db.updateProfileParameter(update.parent, update.id, update.modelId, update.profile, update.profileParameters);
+        else
+            pr = db.updatePropertyProfile(update.parent, update.id, update.modelId, update.profile, update.include);
+    }
 
     if (pr) {
         return pr
             .then(function(updatedClasses) {
-                console.log('UPD0', updatedClasses)
+                //console.log('UPD0', updatedClasses)
                 var uc = updatedClasses.map(function(cls) {
                     if (cls.ok && cls.value) {
                         cls.value._id = cls.value.localId;
@@ -80,15 +115,39 @@ function updateProfile(socket, update) {
                         console.log('ERROR', cls)
                     }
                 })
-                console.log('UPD1', uc)
+                return uc;
+            })
+            .then(function(updatedClasses) {
+                return new Promise(function(resolve, reject) {
+
+                    var checks = validator.createStream(db.getModelReader(), db.getProfileWriter(), update.profile, function() {
+                        resolve(updatedClasses);
+                    });
+
+
+                    intoStream.obj(updatedClasses).pipe(checks)
+                })
+            })
+            .then(function(updatedClasses) {
                 if (update.type === 'pkg')
-                    uc = uc.filter(function(cls) {
+                    updatedClasses = updatedClasses.filter(function(cls) {
                         return cls.parent == update.id
                     })
-                console.log('UPD2', uc)
+                //console.log('UPD2', updatedClasses)
                 socket.emit('action', {
                     type: 'profile/new',
-                    payload: uc
+                    payload: updatedClasses
+                });
+
+                return db.getModel(update.modelId)
+            })
+            .then(function(model) {
+                socket.emit('action', {
+                    type: 'model/fetched',
+                    payload: {
+                        fetchedModel: update.modelId,
+                        model: model
+                    }
                 });
             })
     }
@@ -101,6 +160,18 @@ function importFile(socket, file) {
         .then(function(stats) {
             console.log('DONE', stats);
 
+            return new Promise(function(resolve, reject) {
+
+                var checks = validator.createStream(db.getModelReader(), db.getProfileWriter(), null, function() {
+                    resolve(stats);
+                });
+
+                db.getClasses(stats.model).then(function(cursor) {
+                    cursor.pipe(checks)
+                })
+            });
+        })
+        .then(function(stats) {
             socket.emit('action', {
                 type: 'file/import/done',
                 payload: {
@@ -147,17 +218,13 @@ function fetchModels(socket, owner) {
         })
 }
 
-function fetchModel(socket, model) {
-    return db.getPackages(model)
-        .then(function(cursor) {
-            return cursor.toArray();
-        })
-        .then(function(pkgs) {
-            return db.getModel(model)
+function fetchModel(socket, payload) {
+    return fetchPackages(socket, payload.id, payload.filter)
+        .then(function() {
+            return db.getModel(payload.id)
                 .then(function(details) {
                     return {
-                        fetchedModel: model,
-                        packages: pkgs,
+                        fetchedModel: payload.id,
                         model: details
                     }
                 })
@@ -170,15 +237,25 @@ function fetchModel(socket, model) {
         })
 }
 
-function fetchPackage(socket, pkg) {
-    return fetchClasses(socket, pkg)
-        .then(function() {
-            return fetchPackageDetails(socket, pkg);
+function fetchPackages(socket, mdl, filter) {
+    return db.getFilteredPackages(mdl, filter)
+        .then(function(pkgs) {
+            return socket.emit('action', {
+                type: 'packages/fetched',
+                payload: pkgs
+            });
         })
 }
 
-function fetchClasses(socket, pkg) {
-    return db.getClassesForPackage(pkg)
+function fetchPackage(socket, payload) {
+    return fetchClasses(socket, payload.id, payload.filter)
+        .then(function() {
+            return fetchPackageDetails(socket, payload.id);
+        })
+}
+
+function fetchClasses(socket, pkg, filter) {
+    return db.getClassesForPackage(pkg, filter)
         .then(function(cursor) {
             return cursor.toArray();
         })
@@ -206,22 +283,44 @@ function fetchPackageDetails(socket, id) {
         })
 }
 
-function fetchClass(socket, id) {
-    return db.getDetails(id)
+function fetchClass(socket, payload) {
+    return db.getDetails(payload.id, payload.modelId)
         .then(function(details) {
-            if (details.type === 'cls') {
+            if (details.type === 'cls' || details.type === 'asc') {
                 details._id = details.localId
+                if (payload.filter && payload.filter !== '') {
+                    if (details.name.toLowerCase().indexOf(payload.filter) === -1 && !(details.descriptors && details.descriptors.alias && details.descriptors.alias.toLowerCase().indexOf(payload.filter) > -1)) {
+                        details.properties = details.properties.filter(function(prp) {
+                            return prp.name.toLowerCase().indexOf(payload.filter) > -1 || (prp.descriptors && prp.descriptors.alias && prp.descriptors.alias.toLowerCase().indexOf(payload.filter) > -1)
+                        })
+                    }
+                }
             }
             socket.emit('action', {
                 type: 'class/fetched',
                 payload: {
-                    fetchedClass: id,
+                    fetchedClass: payload.id,
                     details: details
                 }
             });
             return details;
         })
         .then(function(details) {
-            return fetchPackage(socket, details.parent);
+            if (details.type === 'cls')
+                return fetchPackage(socket, {
+                    id: details.parent.toString(),
+                    filter: payload.filter
+                });
+        })
+}
+
+function applyFilter(socket, payload) {
+    return db.getFilteredPackages(payload.model, payload.filter)
+        .then(function(pkgs) {
+            console.log(pkgs)
+            socket.emit('action', {
+                type: 'packages/filtered',
+                payload: pkgs
+            });
         })
 }

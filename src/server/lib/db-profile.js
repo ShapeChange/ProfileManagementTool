@@ -197,13 +197,25 @@ function getProjection() {
 }
 
 function putClassUpdate(id, modelId, update, projection) {
+    const dbUpdate = Object.keys(update).reduce(function(upd, key) {
+        return Object.keys(update[key]).reduce(function(upd2, profile) {
+            const cmd = update[key][profile] === true ? '$addToSet' : '$pull'
+            if (!upd2[cmd])
+                upd2[cmd] = {}
+            upd2[cmd] = Object.assign(upd2[cmd], {
+                [key]: profile
+            });
+            return upd2;
+        }, upd);
+    }, {});
+
     return model
         .findAndModify({
             localId: id,
             model: ObjectID(modelId)
         },
             [],
-            update,
+            dbUpdate,
             {
                 new: true,
                 fields: projection || getProjection()

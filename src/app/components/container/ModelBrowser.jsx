@@ -3,8 +3,8 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux';
 import { Card, CardHeader } from 'reactstrap';
 
-import { useThreePaneView, useSmallerFont, Font, View, actions } from '../../reducers/app'
-import { getSelectedModel, getSelectedProfile, getSelectedPackage, getSelectedClass, getSelectedProperty, getSelectedTab, getDetails, getPackages, getClasses, getProperties, getExpandedItems, actions as modelActions } from '../../reducers/model'
+import { useThreePaneView, useSmallerFont, getPendingFilter, getFilter, getBrowserDisabled, Font, View, actions } from '../../reducers/app'
+import { getSelectedModel, getSelectedProfile, getSelectedPackage, getSelectedClass, getSelectedProperty, getSelectedTab, getDetails, getPackages, getPackage, getClasses, getProperties, getExpandedItems, actions as modelActions } from '../../reducers/model'
 
 import ModelBrowserPanes from '../presentational/ModelBrowserPanes'
 import ModelBrowserTree from '../presentational/ModelBrowserTree'
@@ -13,6 +13,7 @@ import ModelElement from '../presentational/ModelElement'
 
 const mapStateToProps = (state, props) => {
     return {
+        pkg: getPackage(state),
         packages: getPackages(state),
         classes: getClasses(state),
         properties: getProperties(state),
@@ -36,7 +37,11 @@ const mapStateToProps = (state, props) => {
             prp: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/property/${state.model.fetchedClass}`
         },
         query: state.router.search,
-        title: state.model.mdl ? state.model.mdl.name : ''
+        title: state.model.mdl ? state.model.mdl.name : '',
+        pendingFilter: getPendingFilter(state).filter,
+        isFilterPending: getPendingFilter(state).pending > 0,
+        filter: getFilter(state),
+        disabled: getBrowserDisabled(state)
     }
 }
 
@@ -81,26 +86,29 @@ class ModelBrowser extends Component {
         setView(view);
     }
 
-    _getSeparateTrees = () => {
-        const {packages, classes, properties, selectedPackage, selectedClass} = this.props;
+    _setFilter = (e) => {
+        const {selectedModel, setFilter, applyFilter} = this.props;
 
-        const classTree = selectedPackage && classes ? classes.filter(cls => cls.parent === selectedPackage) : null;
+        const filter = e ? e.target.value : '';
 
-        const propertyTree = selectedClass && properties ? properties.filter(prp => prp.parent === selectedClass) : null;
+        /*clearTimeout(this._timer);
+        this._timer = setTimeout(() => {
+            setFilter(filter);
+        }, 500);*/
 
-        return {
-            packageTree: packages,
-            classTree: classTree,
-            propertyTree: propertyTree
-        }
+        setFilter(filter);
     }
 
     _getTrees = (separate) => {
-        const {packages, classes, properties, selectedPackage, selectedClass} = this.props;
+        const {pkg, packages, classes, properties, selectedPackage, selectedClass} = this.props;
 
-        const classTree = selectedPackage && classes ? classes.filter(cls => cls.parent === selectedPackage) : [];
+        const classTree = selectedPackage && classes ? classes.filter(cls => cls.parent === selectedPackage).map(cls => Object.assign({}, cls, {
+            editable: !pkg || pkg.editable
+        })) : [];
 
-        const propertyTree = selectedClass && properties ? properties.filter(prp => prp.parent === selectedClass) : [];
+        const propertyTree = selectedClass && properties ? properties.filter(prp => prp && prp.parent === selectedClass).map(prp => Object.assign({}, prp, {
+            editable: !pkg || pkg.editable
+        })) : [];
 
 
         return separate
@@ -112,46 +120,6 @@ class ModelBrowser extends Component {
             : {
                 packageTree: packages.concat(classTree).concat(propertyTree)
             }
-    }
-
-    _getSingleTree = () => {
-        const {packages, classes, properties, selectedPackage, selectedClass} = this.props;
-
-        let packageTree = packages;
-        if (classes)
-            packageTree = packageTree.concat(classes.filter(cls => cls.parent === selectedPackage))
-        if (properties)
-            packageTree = packageTree.concat(properties.filter(prp => prp.parent === selectedClass))
-
-        return packageTree
-    }
-
-    _renderDetails = () => {
-        const {details, selectedModel, selectedProfile, selectedTab, selectedPackage, selectedClass, classes, properties, baseUrls, query, updateProfile} = this.props;
-
-        let items
-        if (details.type === 'pkg') {
-            items = classes.filter(cls => cls.parent === selectedPackage)
-        } else if (details.type === 'cls' && properties) {
-            items = properties.filter(prp => prp.parent === selectedClass)
-        }
-
-        return (
-            <Card className="h-100 border-0">
-                <CardHeader className="text-nowrap d-flex flex-row" style={ { minHeight: '50px', height: '50px' } }>
-                    { details.name && <ModelElement element={ { ...details.infos, ...details } } color="default" /> }
-                </CardHeader>
-                { details._id &&
-                  <ModelBrowserDetails selectedTab={ selectedTab }
-                      selectedModel={ selectedModel }
-                      selectedProfile={ selectedProfile }
-                      updateProfile={ updateProfile }
-                      items={ items }
-                      baseUrls={ baseUrls }
-                      urlSuffix={ query }
-                      {...details}/> }
-            </Card>
-        );
     }
 
     _getItems = () => {
@@ -168,32 +136,15 @@ class ModelBrowser extends Component {
     }
 
     render() {
-        const {useThreePaneView, details, query} = this.props;
-
-        //const tree = useThreePaneView ? this._getSeparateTrees() : this._getSingleTree()
-
-        //const modelBrowserDetails = this._renderDetails()
+        const {useThreePaneView, details, query, pendingFilter, isFilterPending, filter} = this.props;
 
         const handlers = {
             onSetSinglePaneView: this._setSinglePaneView,
             onSetThreePaneView: this._setThreePaneView,
             onSetNormalFont: this._setNormalFont,
-            onSetSmallFont: this._setSmallFont
+            onSetSmallFont: this._setSmallFont,
+            onSearch: this._setFilter
         }
-
-        /*return (
-        useThreePaneView
-            ? <ModelBrowserPanes packageTree={ tree.packageTree }
-                  classTree={ tree.classTree }
-                  propertyTree={ tree.propertyTree }
-                  {...this.props}
-                  {...handlers}>
-                  { modelBrowserDetails }
-              </ModelBrowserPanes>
-            : <ModelBrowserTree packageTree={ tree } {...this.props} {...handlers}>
-                  { modelBrowserDetails }
-              </ModelBrowserTree>
-        )*/
 
         const TreeComponent = useThreePaneView ? ModelBrowserPanes : ModelBrowserTree
 
@@ -201,21 +152,25 @@ class ModelBrowser extends Component {
 
         const items = this._getItems()
 
-        return this._render(TreeComponent, trees, items, handlers, details, query)
+        return this._render(TreeComponent, trees, items, handlers, details, query, pendingFilter, isFilterPending, filter)
     }
 
-    _render = (TreeComponent, trees, items, handlers, details, query) => <TreeComponent {...this.props} {...handlers} {...trees}>
-                                                                             <Card className="h-100 border-0">
-                                                                                 <CardHeader className="text-nowrap d-flex flex-row" style={ { minHeight: '50px', height: '50px' } }>
-                                                                                     { details.name && <ModelElement element={ { ...details.infos, ...details } } color="default" /> }
-                                                                                 </CardHeader>
-                                                                                 { details._id &&
-                                                                                   <ModelBrowserDetails {...this.props}
-                                                                                       items={ items }
-                                                                                       urlSuffix={ query }
-                                                                                       {...details}/> }
-                                                                             </Card>
-                                                                         </TreeComponent>
+    _render = (TreeComponent, trees, items, handlers, details, query, pendingFilter, isFilterPending, filter) => <TreeComponent {...this.props}
+                                                                                                                     {...handlers}
+                                                                                                                     {...trees}
+                                                                                                                     pendingFilter={ pendingFilter }
+                                                                                                                     isFilterPending={ isFilterPending }>
+                                                                                                                     <Card className="h-100 border-0">
+                                                                                                                         <CardHeader className="text-nowrap d-flex flex-row" style={ { minHeight: '50px', height: '50px' } }>
+                                                                                                                             { details.name && <ModelElement element={ { ...details.infos, ...details } } color="default" filter={ filter } /> }
+                                                                                                                         </CardHeader>
+                                                                                                                         { details._id &&
+                                                                                                                           <ModelBrowserDetails {...this.props}
+                                                                                                                               items={ items }
+                                                                                                                               urlSuffix={ query }
+                                                                                                                               {...details}/> }
+                                                                                                                     </Card>
+                                                                                                                 </TreeComponent>
 }
 ;
 

@@ -78,7 +78,7 @@ class ModelFileImport extends Component {
     render() {
         const {hasImport, isImporting, importStats} = this.props;
 
-        const percent = importStats.stats ? Math.round((importStats.stats.written / importStats.stats.size) * 100) : 0;
+        const percent = importStats.stats ? Math.min(isImporting ? 99 : 100, Math.round((importStats.stats.written / importStats.stats.size) * 100)) : 0;
 
         return (
             <div>

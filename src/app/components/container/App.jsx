@@ -5,11 +5,11 @@ import { connect } from 'react-redux'
 //import { ConnectedRouter } from 'react-router-redux'
 import { Fragment, Link } from 'redux-little-router';
 
-import { Navbar, NavbarBrand, Container, Button, Badge } from 'reactstrap';
+import { Navbar, NavbarBrand, Container, Button, Badge, Popover, PopoverTitle, PopoverContent, ListGroup, ListGroupItem } from 'reactstrap';
 import FontAwesome from 'react-fontawesome';
 
-import { getPackages, getSelectedModelName, getSelectedProfile } from '../../reducers/model'
-import { useThreePaneView, useSmallerFont, isMenuOpen, Font, View, actions } from '../../reducers/app'
+import { getPackages, getModel, getSelectedProfile } from '../../reducers/model'
+import { useThreePaneView, useSmallerFont, isMenuOpen, isErrorsOpen, isBusy, Font, View, actions } from '../../reducers/app'
 import ModelBrowser from '../container/ModelBrowser'
 import SideMenu from '../presentational/SideMenu'
 
@@ -54,8 +54,16 @@ const mapStateToProps = (state, props) => {
         useThreePaneView: useThreePaneView(state),
         useSmallerFont: useSmallerFont(state),
         isMenuOpen: isMenuOpen(state),
-        model: state.model.models ? getSelectedModelName(state) : null,
-        profile: state.model.models ? getSelectedProfile(state) : null
+        isErrorsOpen: isErrorsOpen(state),
+        profile: state.model.models ? getSelectedProfile(state) : null,
+        model: getModel(state),
+        // TODO: normalize urls in LOCATION_CHANGE handler, use relative Links
+        baseUrls: {
+            pkg: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/package`,
+            cls: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/class`,
+            prp: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/property/${state.model.fetchedClass}`
+        },
+        busy: isBusy(state)
     }
 }
 
@@ -78,7 +86,7 @@ class App extends Component {
     }
 
     render() {
-        const {packages, useThreePaneView, useSmallerFont, isMenuOpen, toggleMenu, model, profile} = this.props;
+        const {packages, useThreePaneView, useSmallerFont, isMenuOpen, isErrorsOpen, toggleMenu, toggleErrors, model, profile, busy, baseUrls} = this.props;
 
         const rootPackage = packages.find(leaf => leaf.parent === null);
         const title = rootPackage ? rootPackage.name : 'ProfileManagementTool';
@@ -98,22 +106,50 @@ class App extends Component {
                         </NavbarBrand>
                         { model && <div className="navbar-text px-3">
                                        <FontAwesome name="sitemap" className="pr-2" />
-                                       <span>{ model }</span>
+                                       <span>{ model.name }</span>
                                    </div> }
                         { model && profile && <div className="navbar-text px-3">
                                                   <FontAwesome name="id-card" className="pr-2" />
                                                   <span>{ profile }</span>
                                               </div> }
-                        <div className="navbar-text ml-auto">
-                            <Link href={ '' } title="Show Errors" onClick={ (e) => {
-                                                                                e.preventDefault();
-                                                                            } }>
-                            <FontAwesome name="bell-o" className="text-danger" />
-                            <Badge color="danger" className="rounded-circle error-count">
-                                5
-                            </Badge>
-                            </Link>
-                        </div>
+                        { model && profile && <div className="navbar-text ml-auto">
+                                                  { busy ? <FontAwesome name="spinner" pulse />
+                                                    : model.profiles2[profile].errors.length > 0
+                                                    ? <div>
+                                                          <Link id="errors"
+                                                              href={ '' }
+                                                              title="Show Errors"
+                                                              onClick={ (e) => {
+                                                                            e.preventDefault();
+                                                                            toggleErrors();
+                                                                        } }>
+                                                          <Badge color="danger" className="rounded-circle">
+                                                              { model.profiles2[profile].errors.length }
+                                                          </Badge>
+                                                          </Link>
+                                                          <Popover placement="bottom right"
+                                                              isOpen={ isErrorsOpen }
+                                                              target="errors"
+                                                              toggle={ toggleErrors }>
+                                                              <PopoverTitle>
+                                                                  Errors
+                                                              </PopoverTitle>
+                                                              <PopoverContent className="p-0">
+                                                                  <ListGroup className="border-0 rounded-0">
+                                                                      { model.profiles2[profile].errors.map((err, i) => <ListGroupItem key={ i } className={ `rounded-0 border-left-0 border-right-0 border-bottom-0 ${i === 0 && 'border-top-0'}` }>
+                                                                                                                            <Link href={ `${baseUrls['cls']}/${err._id}` } title={ err.name } className="text-danger">
+                                                                                                                            { `Consistency error in class "${err.name}":` }
+                                                                                                                            <br/>
+                                                                                                                            { err.msg }
+                                                                                                                            </Link>
+                                                                                                                        </ListGroupItem>
+                                                                        ) }
+                                                                  </ListGroup>
+                                                              </PopoverContent>
+                                                          </Popover>
+                                                      </div>
+                                                    : <FontAwesome name="check" className="text-success" /> }
+                                              </div> }
                     </Navbar>
                     <Container className="px-0 h-100" fluid style={ { paddingTop: '54px' } }>
                         { /*<Route path="/model/:modelId?/:pkgId?" component={ ModelBrowser } />*/ }

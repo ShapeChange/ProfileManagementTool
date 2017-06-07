@@ -1,0 +1,9 @@
+@import "~bootstrap/scss/variables";
+
+.toggle {
+  &.disabled,
+  &:disabled {
+    cursor: $cursor-disabled;
+    opacity: .65;
+  }
+}

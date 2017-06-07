@@ -27,7 +27,9 @@ return toXml;
 }
 
 function parseOptions(options, modelId) {
-    var current = modelId;
+    var parent = modelId;
+    var current;
+    var currentId;
 
     var stats = {
         packages: 0,
@@ -40,13 +42,15 @@ function parseOptions(options, modelId) {
     if (options.setStats)
         options.setStats(stats);
 
-    var serialWrite = function(writer, depth, doSetCurrent) {
+    var serialWrite = function(writer, depth, doSetParent, doSetCurrent) {
         return function(elements) {
             return elements.reduce(function(pr, el) {
                 updateStats(el);
                 return pr.then(function() {
+                    if (doSetParent)
+                        parent = '' + el._id;
                     if (doSetCurrent)
-                        current = '' + el._id;
+                        current = el;
                     return writer.print(el.element, depth);
                 });
             }, Promise.resolve());
@@ -65,18 +69,96 @@ function parseOptions(options, modelId) {
         }
     }
 
+    var profileToElem = function(profile, params) {
+        var parameters = Object.keys(params).map(function(param) {
+            return {
+                name: 'sc:ProfileParameter',
+                type: 'element',
+                value: '',
+                attributes: {
+                    name: param,
+                    value: params[param]
+                },
+                children: []
+            }
+        })
+
+        var parameter = parameters.length === 0 ? [] : [{
+            name: 'sc:parameter',
+            type: 'element',
+            value: '',
+            attributes: {},
+            children: parameters
+        }]
+
+        return {
+            element: {
+                name: 'sc:Profile',
+                type: 'element',
+                value: '',
+                attributes: {
+                    name: profile
+                },
+                children: parameter
+            }
+        }
+    }
+
+    var profilesToElem = function(profiles, profileParameters) {
+        return profiles.reduce(function(elems, profile) {
+            elems.push(profileToElem(profile, profileParameters[profile]));
+            return elems;
+        }, [])
+    }
+
+    var editableToElems = function(packages) {
+        packages.forEach(function(pkg) {
+            if (pkg.element.attributes.hasOwnProperty('editable') || pkg.editable === false)
+                pkg.element.attributes.editable = pkg.editable === false ? 'false' : 'true'
+        });
+
+        return packages;
+    }
+
     return Object.assign(options, {
         handlers: {
             'sc:packages': function(node, writer, depth) {
-                return Promise.resolve(options.getPackages(current))
+                return Promise.resolve(options.getPackages(parent))
+                    .then(editableToElems)
                     .then(serialWrite(writer, depth, true));
             },
             'sc:classes': function(node, writer, depth) {
-                return Promise.resolve(options.getClasses(current))
-                    .then(serialWrite(writer, depth));
+                return Promise.resolve(options.getClasses(parent))
+                    .then(serialWrite(writer, depth, false, true));
             },
             'sc:associations': function(node, writer, depth) {
                 return Promise.resolve(options.getAssociations(modelId))
+                    .then(serialWrite(writer, depth));
+            },
+            'sc:id': function(node, writer, depth, next) {
+                currentId = node.children[0].value;
+                return next();
+            },
+            'sc:profiles': function(node, writer, depth) {
+                var profiles = [];
+                var profileParameters = {};
+
+                if (current) {
+                    if (current.localId === currentId) {
+                        profiles = current.profiles;
+                        profileParameters = current.profileParameters;
+                    } else {
+                        var prp = current.properties.find(function(prp) {
+                            return prp._id === currentId
+                        });
+                        if (prp) {
+                            profiles = prp.profiles
+                            profileParameters = prp.profileParameters
+                        }
+                    }
+                }
+
+                return Promise.resolve(profilesToElem(profiles, profileParameters))
                     .then(serialWrite(writer, depth));
             }
         },

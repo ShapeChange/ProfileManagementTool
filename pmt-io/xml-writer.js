@@ -80,15 +80,18 @@ var print = function print(stream, opts, ast, depth) {
                 stream.push('<' + ast.name + attributes + '>');
 
                 var recurse;
-                if (opts.handlers[ast.name]) {
-                    recurse = opts.handlers[ast.name](ast, this, depth + 1);
-                } else {
-                    recurse = ast.children.reduce(function(pr, astc) {
+                var next = function() {
+                    return ast.children.reduce(function(pr, astc) {
                         return pr.then(function() {
                             return print.call(this, stream, opts, astc, depth + 1);
                         }.bind(this));
                     }.bind(this), Promise.resolve());
+                }.bind(this)
 
+                if (opts.handlers[ast.name]) {
+                    recurse = opts.handlers[ast.name](ast, this, depth + 1, next);
+                } else {
+                    recurse = next();
                 }
 
                 recurse

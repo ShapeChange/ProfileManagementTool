@@ -1,9 +1,11 @@
 import { createAction, createActions, handleActions } from 'redux-actions';
+import { actions as modelActions } from './model';
 
 export const ItemType = {
     PKG: 'pkg',
     CLS: 'cls',
     PRP: 'prp',
+    ASC: 'asc'
 };
 
 export const Font = {
@@ -26,6 +28,7 @@ export const actions = {
     setView: createAction('view/set'),
     setFont: createAction('font/set'),
     toggleMenu: createAction('menu/toggle'),
+    toggleErrors: createAction('errors/toggle'),
     setSubmenusOpen: createAction('submenus/set'),
     createFileImport: createAction('file/import/create'),
     startFileImport: createAction('file/import/start'),
@@ -35,7 +38,9 @@ export const actions = {
     startFileExport: createAction('file/export/start'),
     endFileExport: createAction('file/export/done'),
     clearFileExport: createAction('file/export/clear'),
-    progressFileExport: createAction('file/export/stats')
+    progressFileExport: createAction('file/export/stats'),
+    setFilter: createAction('filter/set'),
+    applyFilter: createAction('filter/apply')
 };
 
 // state
@@ -48,9 +53,15 @@ const initialState = {
     useThreePaneView: false,
     useSmallerFont: false,
     menuOpen: false,
+    errorsOpen: false,
     submenusOpen: {},
     fileImport: {},
-    fileExport: {}
+    fileExport: {},
+    pendingFilter: {
+        filter: '',
+        pending: 0
+    },
+    filter: ''
 }
 
 // reducer
@@ -62,6 +73,7 @@ export default handleActions({
     [actions.setView]: setView,
     [actions.setFont]: setFont,
     [actions.toggleMenu]: toggleMenu,
+    [actions.toggleErrors]: toggleErrors,
     [actions.setSubmenusOpen]: setSubmenusOpen,
     [actions.createFileImport]: createFileImport,
     [actions.startFileImport]: startFileImport,
@@ -72,6 +84,17 @@ export default handleActions({
     [actions.endFileExport]: endFileExport,
     [actions.clearFileExport]: clearFileExport,
     [actions.progressFileExport]: progressFileExport,
+    [actions.setFilter]: setFilter,
+    [modelActions.fetchModel]: increaseFilterPending,
+    [modelActions.fetchPackage]: increaseFilterPending,
+    [modelActions.fetchClass]: increaseFilterPending,
+    [modelActions.fetchedModel]: decreaseFilterPending,
+    [modelActions.fetchedPackage]: decreaseFilterPending,
+    [modelActions.fetchedClass]: decreaseFilterPending,
+    [modelActions.updateProfile]: updateProfile,
+    [modelActions.updateEditable]: updateEditable,
+    [modelActions.updatedProfile]: updatedProfile,
+    [modelActions.updatedEditable]: updatedEditable,
 }, initialState);
 
 
@@ -140,6 +163,13 @@ function toggleMenu(state) {
     return {
         ...state,
         menuOpen: !state.menuOpen
+    }
+}
+
+function toggleErrors(state) {
+    return {
+        ...state,
+        errorsOpen: !state.errorsOpen
     }
 }
 
@@ -251,6 +281,88 @@ function clearFileExport(state) {
     }
 }
 
+function setFilter(state, action) {
+    const newState = {
+        ...state,
+        pendingFilter: {
+            ...state.pendingFilter,
+            filter: action.payload
+        }
+    }
+
+    if (newState.pendingFilter.filter === '') {
+        newState.disableBrowser = false
+        newState.filter = ''
+        newState.pendingFilter.pending = 0
+    }
+
+    return newState
+}
+
+function increaseFilterPending(state, action) {
+    return {
+        ...state,
+        pendingFilter: {
+            ...state.pendingFilter,
+            pending: state.pendingFilter.pending + 1
+        },
+        disableBrowser: true
+    }
+
+    return state
+}
+
+function decreaseFilterPending(state, action) {
+    const newState = {
+        ...state,
+        pendingFilter: {
+            ...state.pendingFilter,
+            pending: state.pendingFilter.pending - 1
+        },
+        disableBrowser: true
+    }
+
+    if (newState.pendingFilter.pending <= 0) {
+        newState.pendingFilter.pending = 0
+        newState.disableBrowser = false
+        newState.filter = newState.pendingFilter.filter
+    }
+
+    return newState
+}
+
+function updateProfile(state, action) {
+
+    return {
+        ...state,
+        busy: true
+    }
+}
+
+function updateEditable(state, action) {
+
+    return {
+        ...state,
+        busy: true
+    }
+}
+
+function updatedProfile(state, action) {
+
+    return {
+        ...state,
+        busy: false
+    }
+}
+
+function updatedEditable(state, action) {
+
+    return {
+        ...state,
+        busy: false
+    }
+}
+
 // selectors
 export const getSelectedModel = (state) => state.app.selectedModel
 export const getSelectedPackage = (state) => state.app.selectedPackage
@@ -262,6 +374,7 @@ export const isFocusOnProperty = (state) => state.app.focus === ItemType.PRP
 export const useThreePaneView = (state) => state.app.useThreePaneView
 export const useSmallerFont = (state) => state.app.useSmallerFont
 export const isMenuOpen = (state) => state.app.menuOpen
+export const isErrorsOpen = (state) => state.app.errorsOpen
 export const getSubmenusOpen = (state) => state.app.submenusOpen
 export const hasFileImport = (state) => state.app.fileImport.name ? true : false
 export const hasPendingFileImport = (state) => state.app.fileImport.pending && state.app.fileImport.stats ? true : false
@@ -269,6 +382,10 @@ export const getFileImport = (state) => state.app.fileImport
 export const hasFileExport = (state) => state.app.fileExport.name ? true : false
 export const hasPendingFileExport = (state) => state.app.fileExport.pending && state.app.fileExport.stats ? true : false
 export const getFileExport = (state) => state.app.fileExport
+export const getFilter = (state) => state.app.filter
+export const getPendingFilter = (state) => state.app.pendingFilter
+export const getBrowserDisabled = (state) => state.app.disableBrowser
+export const isBusy = (state) => state.app.busy
 
 // is backend sync needed
 const doesChangeSelectedPackage = (state, action) => state.app.selectedPackage !== action.payload

@@ -191,6 +191,14 @@ function parseModel(outStream, node, options, profiles) {
         owner: 'unknown',
         created: Date.now(),
         profiles: profiles,
+        profiles2: profiles.reduce(function(obj, prf) {
+            obj[prf] = {
+                _id: prf,
+                name: prf,
+                errors: []
+            }
+            return obj
+        }, {}),
         element: node
     }
 
@@ -231,7 +239,7 @@ function parsePackage(outStream, node, options) {
         model: options.modelIdResolved,
         type: 'pkg',
         name: node.children[0].children[0].value,
-        editable: true,
+        editable: node.attributes.editable === 'false' ? false : true,
         element: node
     }
 
@@ -255,6 +263,7 @@ function parseClass(outStream, node, options) {
 
     var id = node._id || options.generateId();
     var parentId = parent && parent['_id'] ? options.resolveId(parent['_id']) : null
+    var editable = parent && parent.attributes && parent.attributes.editable === 'false' ? false : true
 
     delete node.parent;
     delete node._id
@@ -266,6 +275,7 @@ function parseClass(outStream, node, options) {
         parent: parentId,
         model: options.modelIdResolved,
         type: 'cls',
+        editable: editable,
         element: node
     });
 
@@ -275,30 +285,23 @@ function parseClass(outStream, node, options) {
 function parseAssociation(outStream, node, options) {
     var id = node._id || options.generateId();
 
-    var nameIndex = node.children.findIndex(function(child) {
-        return child.name === 'sc:name'
-    })
-    var localIdIndex = node.children.findIndex(function(child) {
-        return child.name === 'sc:id'
-    })
-
     delete node.parent;
     delete node._id
 
-    var asc = {
+    var attributes = reduceNode(node);
+
+    var asc = Object.assign(attributes, {
         _id: id,
         parent: options.modelIdResolved,
         model: options.modelIdResolved,
         type: 'asc',
-        name: nameIndex > -1 && node.children[nameIndex].children[0].value,
-        localid: localIdIndex > -1 && node.children[localIdIndex].children[0].value,
         element: node
-    }
+    });
 
     outStream.push(asc);
 }
 
-
+// TODO: omit non-relevant for type
 function reduceNode(node, id) {
     var nameIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:name'
@@ -327,11 +330,17 @@ function reduceNode(node, id) {
     var cardinalityIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:cardinality'
     })
+    var isAttributeIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:isAttribute'
+    })
     var typeIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:typeId'
     })
     var typeNameIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:typeName'
+    })
+    var associationIdIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:associationId'
     })
     var propertiesIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:properties'
@@ -365,12 +374,15 @@ function reduceNode(node, id) {
             return st.children[0].value
         }) : [],
         profiles: profilesIndex > -1 ? node.children[profilesIndex].children.map(function(pr) {
-            return pr.attributes.name
+            return pr.attributes.name;
         }) : [],
-        cardinality: cardinalityIndex > -1 ? node.children[cardinalityIndex].children[0].value : '1..1',
+        profileParameters: profilesIndex > -1 ? _reduceProfiles(node.children[profilesIndex]) : {},
+        cardinality: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value,
+        isAttribute: isAttributeIndex > -1 && node.children[isAttributeIndex].children[0].value,
         optional: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value && node.children[cardinalityIndex].children[0].value.indexOf('0') === 0,
         typeId: typeIndex > -1 && node.children[typeIndex].children[0].value,
         typeName: typeNameIndex > -1 && node.children[typeNameIndex].children[0].value,
+        associationId: associationIdIndex > -1 && node.children[associationIdIndex].children[0].value,
         properties: propertiesIndex > -1 ? _reduceProperties(node.children[propertiesIndex], node.children[localIdIndex].children[0].value) : []
     }
 }
@@ -383,10 +395,27 @@ function _reduceProperties(properties, id) {
         p.parent = id;
         p._id = p.localId;
         p.element = prop;
-        p.type = 'prp'
+        p.type = 'prp';
+        p.cardinality = p.cardinality || '1..1'
 
         return p;
     }).sort(function(a, b) {
         return a.name > b.name ? 1 : -1
     });
+}
+
+function _reduceProfiles(profiles) {
+    return profiles.children.reduce(function(reduced, profile) {
+        var parameter = {};
+        if (profile.children.length) {
+            profile.children[0].children.reduce(function(params, param) {
+                params[param.attributes.name] = param.attributes.value;
+                return params;
+            }, parameter)
+        }
+
+        reduced[profile.attributes.name] = parameter;
+
+        return reduced;
+    }, {});
 }

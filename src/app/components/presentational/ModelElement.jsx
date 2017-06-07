@@ -16,13 +16,14 @@ const Icons = {
     [StereoType.AR]: 'exchange',
     [ItemType.PKG]: 'folder',
     [ItemType.CLS]: 'list-alt',
+    [ItemType.ASC]: 'exchange',
     [ItemType.PRP]: 'hashtag'
 }
 
 class ModelElement extends Component {
 
     render() {
-        const {tag: Tag, className, element, depth, color, showExpansionIcons, isExpanded, ...attributes} = this.props;
+        const {tag: Tag, className, element, depth, color, showExpansionIcons, isExpanded, filter, ...attributes} = this.props;
 
         let elementIcon;
 
@@ -44,6 +45,15 @@ class ModelElement extends Component {
             elementIcon = <FontAwesome name={ iconName } fixedWidth={ true } className="mr-1" />
         }
 
+        let elementName = <span className="model-element-name">{ element.name }</span>
+        if (filter && filter !== '' && element.name.toLowerCase().indexOf(filter) > -1) {
+            const b = element.name.toLowerCase().indexOf(filter)
+            const e = b + filter.length
+            elementName = <span className="model-element-name">{ element.name.substring(0, b) }<span className="bg-highlight">{ element.name.substring(b, e) }</span>
+                          { element.name.substring(e) }
+                          </span>
+        }
+
         let expansionIconType = 'blank'
         //if (hasChildren)
         if (element.type !== 'prp')
@@ -54,7 +64,7 @@ class ModelElement extends Component {
                    { expansionIcon }
                    { depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }
                    { elementIcon }
-                   <span className="model-element-name">{ element.name }</span>
+                   { elementName }
                </Tag>
     }
 }

@@ -1,19 +1,87 @@
 var Promise = require("bluebird");
 var MongoClient = require("mongodb").MongoClient;
 var ObjectID = require('mongodb').ObjectID;
-var dbProfile = require('./db-profile');
+//var dbProfile = require('./db-profile');
+var profileEdit = require('./profile-edit');
+var mr = require('./model-reader');
+var pw = require('./profile-writer');
 
 var MODELS = 'models';
 var db;
 var model;
 var dbEdit;
+var modelReader;
+var profileWriter;
 
 function setConnection(connection) {
     db = connection;
     model = db.collection(MODELS);
-    dbEdit = dbProfile.create(model);
+    //dbEdit = dbProfile.create(model);
+    modelReader = mr.create(model, MODELS)
+    profileWriter = pw.create(model)
+    dbEdit = profileEdit(modelReader, profileWriter);
+
+    model.createIndexes([{
+        key: {
+            'parent': 1
+        }
+    }, {
+        key: {
+            'model': 1
+        }
+    }, {
+        key: {
+            'localId': 1
+        }
+    }, {
+        key: {
+            'supertypes': 1
+        }
+    }, {
+        key: {
+            'editable': 1
+        }
+    }, {
+        key: {
+            'type': 1
+        }
+    }, {
+        key: {
+            'properties.typeId': 1
+        }
+    }, {
+        key: {
+            'properties.optional': 1
+        }
+    }, {
+        key: {
+            'name': 'text',
+            'descriptors.alias': 'text',
+            'descriptors.definition': 'text',
+            'descriptors.description': 'text',
+            'properties.name': 'text',
+            'properties.descriptors.alias': 'text',
+            'properties.descriptors.definition': 'text',
+            'properties.descriptors.description': 'text'
+        },
+        name: 'textSearchIndex'
+    }])
+        .then(function(indexName) {
+            console.log('Created indexes ', indexName)
+        })
+        .catch(function(error) {
+            console.log('Error on creating indexes: ', error)
+        })
 
     return db;
+}
+
+exports.getModelReader = function() {
+return modelReader;
+}
+
+exports.getProfileWriter = function() {
+return profileWriter;
 }
 
 exports.connect = function(url) {
@@ -43,7 +111,8 @@ return Promise.resolve(
         .project({
             name: 1,
             created: 1,
-            profiles: 1
+            profiles: 1,
+            profiles2: 1
         })
         .sort({
             created: -1
@@ -61,12 +130,159 @@ return Promise.resolve(
         .project({
             parent: 1,
             name: 1,
-            type: 1
+            type: 1,
+            editable: 1
         })
         .sort({
             name: 1
         })
 );
+}
+
+exports.getClasses = function(modelId) {
+return Promise.resolve(
+    model
+        .find({
+            type: 'cls',
+            model: ObjectID(modelId)
+        })
+        .project({
+            element: 0,
+            'properties.element': 0
+        })
+);
+}
+
+exports.getFilteredPackages = function(modelId, filter) {
+/*return Promise.join(exports.getPackages(modelId), getPackagesForFilteredClasses(modelId, filter), function(pkgs, ids) {
+    console.log(ids)
+    return pkgs.toArray().filter(function(pkg) {
+        return ids.indexOf(pkg._id.toHexString()) > -1;
+    });
+})*/
+
+if (!filter || filter === '') {
+    return exports.getPackages(modelId)
+        .then(function(pkgs) {
+            return pkgs.toArray();
+        })
+}
+
+return getPackagesForFilteredClasses(modelId, filter)
+    .then(function(ids) {
+        return model
+            .aggregate([
+                {
+                    $match: {
+                        _id: {
+                            $in: ids
+                        },
+                        model: ObjectID(modelId)
+                    }
+                },
+                {
+                    $graphLookup: {
+                        from: MODELS,
+                        startWith: "$parent",
+                        connectFromField: "parent",
+                        connectToField: "_id",
+                        as: "items",
+                        restrictSearchWithMatch: {
+                            model: ObjectID(modelId),
+                            type: 'pkg'
+                        }
+                    }
+                },
+                {
+                    $unwind: "$items"
+                },
+                {
+                    $replaceRoot: {
+                        newRoot: "$items"
+                    }
+                },
+                {
+                    $project: {
+                        parent: 1,
+                        name: 1,
+                        type: 1,
+                        editable: 1
+                    }
+                }
+            ])
+            .toArray()
+    })
+    .then(function(pkgs) {
+        const ids = [];
+        return pkgs.filter(function(pkg) {
+            if (ids.indexOf(pkg._id.toHexString()) === -1) {
+                ids.push(pkg._id.toHexString())
+                return true
+            }
+            return false
+        });
+    })
+
+/*return Promise.resolve(
+    model
+        .find({
+            type: 'pkg',
+            model: ObjectID(modelId),
+            $text: {
+                $search: filter
+            }
+        })
+        .project({
+            parent: 1,
+            name: 1,
+            type: 1,
+            editable: 1
+        })
+        .sort({
+            name: 1
+        })
+);*/
+}
+
+function getPackagesForFilteredClasses(modelId, filter) {
+    return Promise.resolve(
+        model
+            .find({
+                type: 'cls',
+                model: ObjectID(modelId),
+                $or: [
+                    {
+                        name: {
+                            $regex: '(?i)' + filter
+                        }
+                    },
+                    {
+                        'descriptors.alias': {
+                            $regex: '(?i)' + filter
+                        }
+                    },
+                    {
+                        'properties.name': {
+                            $regex: '(?i)' + filter
+                        }
+                    },
+                    {
+                        'properties.descriptors.alias': {
+                            $regex: '(?i)' + filter
+                        }
+                    }
+                ]
+            })
+            .project({
+                parent: 1
+            })
+    ).then(function(classes) {
+        return classes.toArray()
+    }).then(function(classes) {
+        return classes.map(function(cls) {
+            return cls._id //.toHexString()
+        })
+    });
 }
 
 exports.getPackagesForParent = function(parent) {
@@ -99,20 +315,48 @@ return Promise.resolve(
 );
 }
 
-exports.getClassesForPackage = function(pkg) {
+exports.getClassesForPackage = function(pkg, filter) {
+const query = {
+    type: 'cls',
+    parent: ObjectID(pkg)
+}
+
+if (filter && filter !== '') {
+    query.$or = [
+        {
+            name: {
+                $regex: '(?i)' + filter
+            }
+        },
+        {
+            'descriptors.alias': {
+                $regex: '(?i)' + filter
+            }
+        },
+        {
+            'properties.name': {
+                $regex: '(?i)' + filter
+            }
+        },
+        {
+            'properties.descriptors.alias': {
+                $regex: '(?i)' + filter
+            }
+        }
+    ]
+}
+
 return Promise.resolve(
     model
-        .find({
-            type: 'cls',
-            parent: ObjectID(pkg)
-        })
+        .find(query)
         .project({
             localId: 1,
             parent: 1,
             name: 1,
             type: 1,
             stereotypes: 1,
-            profiles: 1
+            profiles: 1,
+            editable: 1
         })
         .sort({
             name: 1
@@ -120,12 +364,14 @@ return Promise.resolve(
 );
 }
 
-exports.getDetails = function(id) {
+exports.getDetails = function(id, modelId) {
 var query = id.length === 24 ? {
     _id: ObjectID(id)
 } : {
     localId: id
 }
+if (modelId)
+    query.model = ObjectID(modelId)
 
 return model
     .findOne(query, {
@@ -162,6 +408,7 @@ return model
                 })
                 .toArray()
                 .then(function(resolvedIds) {
+
                     if (details.supertypes)
                         details.supertypes = details.supertypes.map(function(st) {
                             return resolvedIds.find(function(tid) {
@@ -213,6 +460,20 @@ return measure(dbEdit.getProfileUpdatesForClass(clsId, modelId, profile, include
 exports.updatePropertyProfile = function(clsId, prpId, modelId, profile, include) {
 
 return measure(dbEdit.getProfileUpdatesForProperty(clsId, prpId, modelId, profile, include));
+
+}
+
+exports.updatePackageEditable = function(pkgId, modelId, editable, recursive) {
+
+
+return measure(dbEdit.getEditableUpdatesForPackage(pkgId, modelId, editable, recursive));
+
+}
+
+exports.updateProfileParameter = function(clsId, prpId, modelId, profile, parameter) {
+
+
+return measure(dbEdit.getProfileParameterUpdates(clsId, prpId, modelId, profile, parameter));
 
 }
 

@@ -25,7 +25,7 @@ class ModelTreeList extends Component {
     }
 
     _renderLeaf = (leaf, isFirst, isLast, isSelected, isExpanded, hasChildren, depth, onSelect, onExpand) => {
-        const {focus, showExpansionIcons, useSmallerFont, baseUrls, urlSuffix, selectedProfile} = this.props;
+        const {focus, showExpansionIcons, useSmallerFont, baseUrls, urlSuffix, selectedProfile, filter} = this.props;
 
         let classNames = 'border-left-0 border-right-0 border-bottom-0 rounded-0 list-group-item-action text-nowrap'
         if (isFirst)
@@ -38,6 +38,8 @@ class ModelTreeList extends Component {
             classNames += ' text-primary'
         if (leaf.profiles && leaf.profiles.indexOf(selectedProfile) === -1)
             classNames += ' model-element-disabled'
+        if (!leaf.editable)
+            classNames += ' model-element-not-editable'
         if (!focus)
             classNames += ' nofocus'
         if (useSmallerFont)
@@ -50,7 +52,10 @@ class ModelTreeList extends Component {
                    key={ leaf._id }
                    title={ leaf.name }
                    className={ classNames }>
-                   <ModelElement element={ leaf } depth={ depth } isExpanded={ isExpanded } />
+                   <ModelElement element={ leaf }
+                       depth={ depth }
+                       isExpanded={ isExpanded }
+                       filter={ filter } />
                </ListGroupItem>
     }
 

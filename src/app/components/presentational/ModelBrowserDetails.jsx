@@ -17,6 +17,15 @@ class ModelBrowserDetails extends Component {
         });
     }
 
+    _updateEditableForElement = (item) => {
+        const {editable} = this.props;
+
+        this._updateEditable(item, {
+            editable: !item.editable,
+            recursive: false
+        });
+    }
+
     _updateProfileForChildren = (item, include, onlyMandatory, recursive) => {
 
         this._updateProfile(item, {
@@ -24,6 +33,29 @@ class ModelBrowserDetails extends Component {
             onlyMandatory: onlyMandatory,
             recursive: recursive,
             onlyChildren: true
+        });
+    }
+
+    _updateEditableForChildren = (item, editable) => {
+
+        this._updateEditable(item, {
+            editable: editable,
+            recursive: true
+        });
+    }
+
+    _updateProfileParameter = (item, key, value) => {
+        const {updateProfile, selectedModel, selectedProfile} = this.props;
+
+        updateProfile({
+            id: item._id,
+            modelId: selectedModel,
+            type: item.type,
+            parent: item.parent,
+            profile: selectedProfile,
+            profileParameters: {
+                [key]: value
+            }
         });
     }
 
@@ -40,8 +72,18 @@ class ModelBrowserDetails extends Component {
         });
     }
 
+    _updateEditable = (item, update) => {
+        const {updateEditable, selectedModel} = this.props;
+
+        updateEditable({
+            id: item._id,
+            modelId: selectedModel,
+            ...update
+        });
+    }
+
     render() {
-        const {_id, name, type, items, infos, parameters, selectedTab, baseUrls, urlSuffix} = this.props;
+        const {_id, name, type, items, infos, parameters, selectedTab, baseUrls, urlSuffix, filter} = this.props;
 
         const baseUrl = `${baseUrls[type]}/${_id}`;
         const isInfo = infos && selectedTab === 'info'
@@ -52,11 +94,12 @@ class ModelBrowserDetails extends Component {
         return (_id &&
             <div className="p-3" style={ { overflowY: 'auto', overflowX: 'hidden' } }>
                 <Nav pills className="mb-3">
-                    <NavItem>
-                        <NavLink tag={ Link } href={ `${baseUrl}/profile${urlSuffix}` } active={ isProfile }>
-                            Actions
-                        </NavLink>
-                    </NavItem>
+                    { type !== 'asc' &&
+                      <NavItem>
+                          <NavLink tag={ Link } href={ `${baseUrl}/profile${urlSuffix}` } active={ isProfile }>
+                              Profile
+                          </NavLink>
+                      </NavItem> }
                     { items &&
                       <NavItem>
                           <NavLink tag={ Link } href={ `${baseUrl}/items${urlSuffix}` } active={ selectedTab === 'items' }>
@@ -66,9 +109,9 @@ class ModelBrowserDetails extends Component {
                     { infos &&
                       <NavItem>
                           <NavLink tag={ Link }
-                              href={ `${baseUrl}/info${urlSuffix}` }
+                              href={ selectedTab !== 'info' ? `${baseUrl}/info${urlSuffix}` : '' }
                               active={ selectedTab === 'info' }
-                              disabled={ !infos }>
+                              disabled={ !infos || selectedTab === 'info' }>
                               Info
                           </NavLink>
                       </NavItem> }
@@ -80,9 +123,17 @@ class ModelBrowserDetails extends Component {
                       </NavItem> }
                 </Nav>
                 { isProfile &&
-                  <ModelBrowserActions {...this.props} updateProfile={ this._updateProfileForElement } updateProfileForChildren={ this._updateProfileForChildren } /> }
+                  <ModelBrowserActions {...this.props}
+                      updateProfile={ this._updateProfileForElement }
+                      updateProfileForChildren={ this._updateProfileForChildren }
+                      updateEditable={ this._updateEditableForElement }
+                      updateEditableForChildren={ this._updateEditableForChildren }
+                      updateProfileParameter={ this._updateProfileParameter } /> }
                 { isInfo &&
-                  <ModelBrowserInfos infos={ infos } baseUrl={ baseUrls['cls'] } urlSuffix={ selectedTab } /> }
+                  <ModelBrowserInfos infos={ infos }
+                      baseUrl={ baseUrls['cls'] }
+                      urlSuffix={ selectedTab }
+                      filter={ filter } /> }
                 { isItems &&
                   <ModelBrowserItems {...this.props} urlSuffix={ selectedTab } updateProfile={ this._updateProfileForElement } /> }
                 { isParameters &&

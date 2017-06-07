@@ -25,11 +25,14 @@ export const actions = {
     fetchedModel: createAction('model/fetched'),
     fetchPackage: createAction('package/fetch'),
     fetchedPackage: createAction('package/fetched'),
+    fetchedPackages: createAction('packages/fetched'),
     fetchClass: createAction('class/fetch'),
     fetchedClass: createAction('class/fetched'),
     fetchedClasses: createAction('classes/fetched'),
     updateProfile: createAction('profile/update'),
-    updatedProfile: createAction('profile/new')
+    updatedProfile: createAction('profile/new'),
+    updateEditable: createAction('editable/update'),
+    updatedEditable: createAction('editable/new')
 };
 
 // state
@@ -55,9 +58,11 @@ export default handleActions({
     [actions.fetchedModels]: fetchedModels,
     [actions.fetchedModel]: fetchedModel,
     [actions.fetchedPackage]: fetchedPackage,
+    [actions.fetchedPackages]: fetchedPackages,
     [actions.fetchedClass]: fetchedClass,
     [actions.fetchedClasses]: fetchedClasses,
-    [actions.updatedProfile]: updatedProfile
+    [actions.updatedProfile]: updatedProfile,
+    [actions.updatedEditable]: updatedEditable
 }, initialState);
 
 function onLocationChange(state, action) {
@@ -131,15 +136,12 @@ function fetchedModels(state, action) {
 
 
 function fetchedModel(state, action) {
-    return state.pendingModel !== action.payload.fetchedModel
-        ? state
-        : {
-            ...state,
-            fetchedModel: action.payload.fetchedModel,
-            packages: action.payload.packages,
-            mdl: action.payload.model,
-            pendingModel: null
-        }
+    return {
+        ...state,
+        fetchedModel: action.payload.fetchedModel,
+        mdl: action.payload.model,
+        pendingModel: null
+    }
 }
 
 
@@ -155,14 +157,12 @@ function fetchedPackage(state, action) {
 }
 
 function fetchedClass(state, action) {
-    return state.pendingClass !== action.payload.fetchedClass
-        ? state
-        : {
-            ...state,
-            fetchedClass: action.payload.fetchedClass,
-            cls: action.payload.details,
-            pendingClass: null
-        }
+    return {
+        ...state,
+        fetchedClass: action.payload.fetchedClass,
+        cls: action.payload.details,
+        pendingClass: null
+    }
 }
 
 function fetchedClasses(state, action) {
@@ -172,41 +172,11 @@ function fetchedClasses(state, action) {
     }
 }
 
-function updateProfile(state, action) {
-
-    const mutation = action.payload.include
-        ? {
-            profiles: {
-                $push: [action.payload.profile]
-            }
-        }
-        : {
-            profiles: {
-                $apply: prf => prf.filter(i => i !== action.payload.profile)
-            }
-        }
-
-    if (action.payload.type === 'prp') {
-        const index = state.cls.properties.findIndex(prp => prp._id === action.payload.id)
-
-        return update(state, {
-            cls: {
-                properties: {
-                    [index]: mutation
-                }
-            }
-        })
-    } else if (action.payload.type === 'cls') {
-        const index = state.classes.findIndex(cls => cls._id === action.payload.id)
-
-        return update(state, {
-            classes: {
-                [index]: mutation
-            }
-        })
+function fetchedPackages(state, action) {
+    return {
+        ...state,
+        packages: action.payload
     }
-
-    return state;
 }
 
 function updatedProfile(state, action) {
@@ -225,6 +195,9 @@ function updatedProfile(state, action) {
                     clsUpdate = {
                         profiles: {
                             $set: elem.profiles
+                        },
+                        profileParameters: {
+                            $set: elem.profileParameters || state.cls.profileParameters
                         }
                     }
 
@@ -233,6 +206,9 @@ function updatedProfile(state, action) {
                             upd[i] = {
                                 profiles: {
                                     $set: prp.profiles
+                                },
+                                profileParameters: {
+                                    $set: prp.profileParameters || state.cls.properties[i].profileParameters
                                 }
                             }
                             return upd
@@ -257,8 +233,66 @@ function updatedProfile(state, action) {
     return current;
 }
 
+function updatedEditable(state, action) {
+
+    var current = state;
+
+    action.payload.forEach(elem => {
+        const index = state.packages.findIndex(pkg => pkg._id === elem._id)
+
+        if (index > -1) {
+            let pkgUpdate = {};
+            if (state.pkg && state.pkg._id === elem._id) {
+                pkgUpdate = {
+                    editable: {
+                        $set: elem.editable
+                    }
+                }
+            }
+
+            current = update(current, {
+                packages: {
+                    [index]: {
+                        editable: {
+                            $set: elem.editable
+                        }
+                    }
+                },
+                pkg: pkgUpdate
+            })
+        } else {
+            const indexCls = state.classes.findIndex(cls => cls.localId === elem.localId)
+
+            if (indexCls > -1) {
+                let clsUpdate = {};
+                if (state.cls && state.cls.localId === elem.localId) {
+                    clsUpdate = {
+                        editable: {
+                            $set: elem.editable
+                        }
+                    }
+                }
+
+                current = update(current, {
+                    classes: {
+                        [indexCls]: {
+                            editable: {
+                                $set: elem.editable
+                            }
+                        }
+                    },
+                    cls: clsUpdate
+                })
+            }
+        }
+    })
+
+    return current;
+}
+
 //selectors
 export const getModels = (state) => state.model.models
+export const getModel = (state) => state.model.mdl
 export const getPackages = (state) => state.model.packages
 export const getClasses = (state) => state.model.classes
 export const getProperties = (state) => getClass(state) && _extractProperties(getClass(state).properties) //_reduceProperties(_extractProperties(getClass(state)), getClass(state))
@@ -273,7 +307,6 @@ export const getPendingModel = (state) => state.model.pendingModel
 export const getPendingPackage = (state) => state.model.pendingPackage
 export const getPendingClass = (state) => state.model.pendingClass
 export const getSelectedModel = (state) => state.router.params.modelId //state.model.pendingModel || state.model.fetchedModel
-export const getSelectedModelName = (state) => getModels(state).length && getSelectedModel(state) ? getModels(state).find(mdl => mdl._id == getSelectedModel(state)).name : null
 export const getSelectedProfile = (state) => state.router.params.profileId
 export const getSelectedPackage = (state) => state.model.pendingPackage || state.model.fetchedPackage
 export const getSelectedClass = (state) => state.router.params.classId //state.model.pendingClass || state.model.fetchedClass
@@ -338,7 +371,10 @@ const _extractDetails = (details) => {
     let d = {}
     if (details && details.type === 'prp') {
         if (details.typeId) {
-            d.type = details.typeId
+            d.type = {
+                _id: details.typeId,
+                name: details.typeName
+            }
         }
         if (details.associationId) {
             d.association = details.associationId
@@ -362,7 +398,11 @@ const _extractDetails = (details) => {
         _id: details && details._id,
         type: details && details.type,
         name: details && details.name,
+        parent: details && details.parent,
+        editable: details && details.editable,
+        optional: details && details.optional,
         profiles: details && details.profiles,
+        profileParameters: details && details.profileParameters,
         infos: infos
     }
 }

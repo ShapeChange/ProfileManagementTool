@@ -6,7 +6,7 @@ import { Link } from 'redux-little-router';
 class ModelBrowserInfos extends Component {
 
     render() {
-        const {infos, baseUrl, urlSuffix} = this.props;
+        const {infos, baseUrl, urlSuffix, filter} = this.props;
 
         return (infos &&
             <Table>
@@ -21,7 +21,15 @@ class ModelBrowserInfos extends Component {
                                       { infos[key].name }
                                       </Link>
                           } else if (key === 'association' && infos[key]) {
-                              value = infos[key].name
+                              value = <Link href={ `${baseUrl}/${infos[key].localId}/${urlSuffix || ''}` }>
+                                      { infos[key].name }
+                                      </Link>
+                          } else if (key === 'alias' && filter !== '' && infos[key] && infos[key].toLowerCase().indexOf(filter) > -1) {
+                              const b = infos[key].toLowerCase().indexOf(filter)
+                              const e = b + filter.length
+                              value = <span>{ infos[key].substring(0, b) }<span className="bg-highlight">{ infos[key].substring(b, e) }</span>
+                                      { infos[key].substring(e) }
+                                      </span>
                           }
                           return <tr key={ key }>
                                      <th scope="row" className={ 'pl-0' + (i === 0 ? ' border-top-0' : '') }>

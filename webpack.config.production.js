@@ -67,6 +67,10 @@ return webpackMerge(commonConfig(), {
                 to: '../../node_modules/pmt-io'
             },
             {
+                from: '../../pmt-validation',
+                to: '../../node_modules/pmt-validation'
+            },
+            {
                 from: '../../package.json',
                 to: '../../'
             }

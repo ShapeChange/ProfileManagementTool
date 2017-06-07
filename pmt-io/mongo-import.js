@@ -26,7 +26,7 @@ classes:  41
 associations:  6
 */
 
-var batchSize = 32;
+var batchSize = 8;
 
 exports.importFile = function(db, stream, metadata) {
 return new Promise(function(resolve, reject) {

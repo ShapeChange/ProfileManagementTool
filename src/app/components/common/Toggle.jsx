@@ -2,20 +2,22 @@ import React, { Component, PropTypes } from 'react';
 import { FormGroup, Label, Input } from 'reactstrap';
 import FontAwesome from 'react-fontawesome';
 
+import './Toggle.scss'
 
 class Toggle extends Component {
 
     render() {
-        const {name, label, children, checked, onToggle, size, color, className} = this.props;
+        const {name, label, children, checked, disabled, onToggle, size, color, className} = this.props;
 
         const icon = checked ? 'toggle-on' : 'toggle-off'
 
         return (
             <FormGroup check className="m-0">
-                <Label check className="d-flex flex-row p-0">
+                <Label check className={ `toggle d-flex flex-row p-0 ${disabled && 'disabled'}` }>
                     <Input type="checkbox"
                         name={ name }
                         checked={ checked }
+                        disabled={ disabled }
                         onChange={ onToggle }
                         className="hidden-xl-down" />
                     <FontAwesome name={ icon }
