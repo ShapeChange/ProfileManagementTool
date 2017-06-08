@@ -1,4 +1,4 @@
-var Writable = require('stream').Writable;
+var writer = require('flush-write-stream')
 var Promise = require("bluebird");
 
 var config = {
@@ -7,70 +7,57 @@ var config = {
         w: 1
     }
 };
-var batch = [];
-var collection;
 
 module.exports = {
     create: streamToMongoDB
 };
 
-function streamToMongoDB(coll, options) {
-    config = Object.assign(config, options);
+function streamToMongoDB(collection, options) {
+    var params = Object.assign({
+        collection: collection,
+        batch: [],
+        iteration: 0
+    }, config, options);
 
-    collection = coll;
-
-    return writableStream();
-}
-
-function writableStream() {
-    var iteration = 0;
-    const writable = new Writable({
+    return writer({
         objectMode: true,
-        highWaterMark: config.batchSize,
-        write: function(record, enc, next) {
-            addToBatch(record, iteration)
-                .then(function() {
-                    console.log('iteration', iteration++)
-                    //if (iteration++ <= 24)
-
-                    next();
-                });
-        }
-    });
-
-    writable.on("finish", function() {
-        insertToMongo(batch)
+        highWaterMark: 1
+    }, function(obj, enc, cb) {
+        params.iteration++;
+        addToBatch(obj, params)
+            .then(cb);
+    }, function(cb) {
+        insertToMongo(params)
             .then(function() {
-                console.log('mongo close')
-                writable.emit("close");
-            });
+                console.log('mongo close');
+                cb();
+                this.emit("close");
+            }.bind(this));
     });
-
-    return writable;
 }
 
-function addToBatch(record, iteration) {
-    batch.push(record);
+function addToBatch(record, params) {
+    params.batch.push(record);
 
-    if (batch.length === config.batchSize) {
-        return insertToMongo(batch, iteration);
+    if (params.batch.length === params.batchSize) {
+        return insertToMongo(params);
     }
 
     return Promise.resolve();
 }
 
-function insertToMongo(records, iteration) {
-    if (records.length) {
-        return collection.insert(records, config.insertOptions)
+function insertToMongo(params) {
+    if (params.batch.length) {
+        return params.collection.insert(params.batch, params.insertOptions)
             .then(function() {
-                console.log('WRITTEN', iteration)
-                resetBatch();
+                console.log('WRITTEN', params.iteration)
+                resetBatch(params);
             })
     }
 
     return Promise.resolve();
 }
 
-function resetBatch() {
-    batch = [];
+function resetBatch(params) {
+    params.batch = [];
 }

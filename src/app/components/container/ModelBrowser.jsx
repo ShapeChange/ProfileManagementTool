@@ -4,7 +4,7 @@ import { bindActionCreators } from 'redux';
 import { Card, CardHeader } from 'reactstrap';
 
 import { useThreePaneView, useSmallerFont, getPendingFilter, getFilter, getBrowserDisabled, Font, View, actions } from '../../reducers/app'
-import { getSelectedModel, getSelectedProfile, getSelectedPackage, getSelectedClass, getSelectedProperty, getSelectedTab, getDetails, getPackages, getPackage, getClasses, getProperties, getExpandedItems, actions as modelActions } from '../../reducers/model'
+import { getSelectedModel, getSelectedProfile, getSelectedPackage, getSelectedClass, getSelectedProperty, getSelectedTab, getDetails, getPackages, getPackage, getClasses, getClass, getProperties, getExpandedItems, actions as modelActions } from '../../reducers/model'
 
 import ModelBrowserPanes from '../presentational/ModelBrowserPanes'
 import ModelBrowserTree from '../presentational/ModelBrowserTree'
@@ -15,6 +15,7 @@ const mapStateToProps = (state, props) => {
     return {
         pkg: getPackage(state),
         packages: getPackages(state),
+        cls: getClass(state),
         classes: getClasses(state),
         properties: getProperties(state),
         details: getDetails(state), //isFocusOnPackage(state) ? getPackageDetails(state) : isFocusOnClass(state) ? getClassDetails(state) : isFocusOnProperty(state) ? getPropertyDetails(state, getSelectedProperty(state)) : null,

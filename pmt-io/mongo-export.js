@@ -10,7 +10,7 @@ var fromJson = require('./export');
 exports.exportFile = function(db, stream, modelId) {
 var zipfile = new yazl.ZipFile();
 
-return db.getDetails(modelId)
+return db.getFullModel(modelId)
     .then(function(model) {
         return new Promise(function(resolve, reject) {
             var stats;

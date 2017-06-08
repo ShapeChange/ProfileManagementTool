@@ -63,7 +63,7 @@ function parseOptions(options, modelId) {
                 stats.packages++;
             } else if (el.type === 'cls') {
                 stats.classes++;
-                stats.ids.push(1);
+            //stats.ids.push(1);
             } else if (el.type === 'asc')
                 stats.associations++;
         }

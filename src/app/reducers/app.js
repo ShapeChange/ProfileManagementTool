@@ -200,7 +200,8 @@ function startFileImport(state, action) {
             name: action.payload.metadata.name,
             stats: {
                 size: action.payload.metadata.size,
-                written: 0
+                written: 0,
+                progress: 0
             }
         }
     }
@@ -325,7 +326,7 @@ function decreaseFilterPending(state, action) {
     if (newState.pendingFilter.pending <= 0) {
         newState.pendingFilter.pending = 0
         newState.disableBrowser = false
-        newState.filter = newState.pendingFilter.filter
+        newState.filter = newState.pendingFilter.filter.toLowerCase()
     }
 
     return newState

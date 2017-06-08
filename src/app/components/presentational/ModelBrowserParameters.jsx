@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Table, Input, Label, Form, FormGroup } from 'reactstrap';
+import Toggle from '../common/Toggle'
 
 
 class ModelBrowserParameters extends Component {
@@ -23,14 +24,14 @@ class ModelBrowserParameters extends Component {
             multiplicity.maxUnbounded = multiplicity.maxValueUnbounded = bounds[1] === '*'
 
             if (profileParameters[selectedProfile] && profileParameters[selectedProfile].multiplicity) {
-                console.log(profileParameters[selectedProfile].multiplicity)
+                //console.log(profileParameters[selectedProfile].multiplicity)
                 bounds = profileParameters[selectedProfile].multiplicity.split('..')
                 multiplicity.minValue = parseInt(bounds[0])
                 multiplicity.maxValue = parseInt(bounds[1])
                 multiplicity.maxValueUnbounded = bounds[1] === '*'
             }
         }
-        console.log(multiplicity);
+        //console.log(multiplicity);
 
         return multiplicity
     }
@@ -55,7 +56,7 @@ class ModelBrowserParameters extends Component {
             multiplicity.maxValueUnbounded = true;
         else if (e.target.type === 'checkbox' && !e.target.checked) {
             multiplicity.maxValueUnbounded = false;
-            multiplicity.maxValue = multiplicity.minValue + 1;
+            multiplicity.maxValue = multiplicity.minValue === 0 ? 1 : multiplicity.minValue;
         }
         else
             multiplicity.maxValue = e.target.value;
@@ -70,7 +71,7 @@ class ModelBrowserParameters extends Component {
     }
 
     render() {
-        const {isClass, isProperty, infos, profileParameters, selectedProfile} = this.props;
+        const {isClass, isProperty, infos, profileParameters, selectedProfile, updateProfileParameter} = this.props;
 
         const multiplicity = this._parseMultiplicity();
 
@@ -125,17 +126,19 @@ class ModelBrowserParameters extends Component {
                                               value={ multiplicity.minValue }
                                               min={ multiplicity.min }
                                               max={ multiplicity.maxValue }
-                                              onChange={ this._updateMinCardinality } />
+                                              onChange={ this._updateMinCardinality }
+                                              onKeyDown={ e => e.preventDefault() } />
                                           <span className="px-1">..</span>
                                           <Input type="number"
                                               size='sm'
                                               name="maxOccurs"
                                               style={ { width: '75px' } }
                                               value={ multiplicity.maxValue }
-                                              min={ multiplicity.minValue }
+                                              min={ multiplicity.minValue || 1 }
                                               max={ multiplicity.max }
                                               disabled={ multiplicity.maxValueUnbounded }
-                                              onChange={ this._updateMaxCardinality } />
+                                              onChange={ this._updateMaxCardinality }
+                                              onKeyDown={ e => e.preventDefault() } />
                                           { ' ' }
                                           <FormGroup check className="pl-3">
                                               <Label check>

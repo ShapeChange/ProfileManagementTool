@@ -1,6 +1,7 @@
 var ss = require('socket.io-stream');
 var path = require('path');
 var fs = require('fs');
+var through2 = require('through2');
 var intoStream = require('into-stream');
 var mongoImport = process.env.NODE_ENV === 'production' ? require('pmt-io/mongo-import') : require('../../../pmt-io/mongo-import');
 var mongoExport = process.env.NODE_ENV === 'production' ? require('pmt-io/mongo-export') : require('../../../pmt-io/mongo-export');
@@ -155,8 +156,25 @@ function updateProfile(socket, update) {
 
 function importFile(socket, file) {
     console.log(file.metadata);
+    var written = 0;
+    var progress = 0;
 
-    return mongoImport.importFile(db.getModelCollection(), file.stream, file.metadata)
+    return mongoImport.importFile(db.getModelCollection(), file.stream, file.metadata, function(chunkLength) {
+        written += chunkLength;
+
+        var newProgress = Math.round((written / file.metadata.size) * 50);
+
+        if (newProgress > progress) {
+            progress = newProgress;
+
+            socket.emit('action', {
+                type: 'file/import/stats',
+                payload: {
+                    progress: progress
+                }
+            });
+        }
+    })
         .then(function(stats) {
             console.log('DONE', stats);
 
@@ -166,9 +184,30 @@ function importFile(socket, file) {
                     resolve(stats);
                 });
 
-                db.getClasses(stats.model).then(function(cursor) {
-                    cursor.pipe(checks)
-                })
+                written = 0;
+                var logger = through2.obj(function(obj, enc, cb) {
+                    written++;
+
+                    var newProgress = Math.round((written / stats.classes) * 50) + 50;
+
+                    if (newProgress > progress) {
+                        progress = newProgress;
+
+                        socket.emit('action', {
+                            type: 'file/import/stats',
+                            payload: {
+                                progress: progress
+                            }
+                        });
+                    }
+
+                    cb(null, obj);
+                });
+
+                db.getClasses(stats.model)
+                    .then(function(cursor) {
+                        cursor.pipe(logger).pipe(checks)
+                    })
             });
         })
         .then(function(stats) {
@@ -192,7 +231,7 @@ function exportFile(socket, file) {
         .then(function(stats) {
             console.log('DONE', stats);
 
-            console.log(JSON.stringify(stats.ids));
+            //console.log(JSON.stringify(stats.ids));
 
         /*socket.emit('action', {
             type: 'file/export/done',
@@ -248,9 +287,16 @@ function fetchPackages(socket, mdl, filter) {
 }
 
 function fetchPackage(socket, payload) {
-    return fetchClasses(socket, payload.id, payload.filter)
-        .then(function() {
-            return fetchPackageDetails(socket, payload.id);
+    return fetchPackageDetails(socket, payload.id)
+        .then(function(details) {
+            var filter;
+            if (payload.filter && payload.filter !== '') {
+                if (details.name.toLowerCase().indexOf(payload.filter) === -1 && !(details.descriptors && details.descriptors.alias && details.descriptors.alias.toLowerCase().indexOf(payload.filter) > -1)) {
+                    // if filter does not match package, filter classes
+                    filter = payload.filter;
+                }
+            }
+            return fetchClasses(socket, payload.id, filter)
         })
 }
 
@@ -273,13 +319,14 @@ function fetchClasses(socket, pkg, filter) {
 function fetchPackageDetails(socket, id) {
     return db.getDetails(id)
         .then(function(details) {
-            return socket.emit('action', {
+            socket.emit('action', {
                 type: 'package/fetched',
                 payload: {
                     fetchedPackage: id,
                     details: details
                 }
             });
+            return details;
         })
 }
 

@@ -47,6 +47,10 @@ function setConnection(connection) {
         }
     }, {
         key: {
+            'profiles': 1
+        }
+    }, {
+        key: {
             'properties.typeId': 1
         }
     }, {
@@ -106,7 +110,8 @@ exports.getModels = function(owner) {
 return Promise.resolve(
     model
         .find({
-            owner: owner
+            owner: owner,
+            type: 'mdl'
         })
         .project({
             name: 1,
@@ -120,13 +125,30 @@ return Promise.resolve(
 )
 }
 
-exports.getPackages = function(modelId) {
+exports.getPackages = function(modelId, filter) {
+const query = {
+    type: 'pkg',
+    model: ObjectID(modelId)
+}
+
+if (filter && filter !== '') {
+    query.$or = [
+        {
+            name: {
+                $regex: '(?i)' + filter
+            }
+        },
+        {
+            'descriptors.alias': {
+                $regex: '(?i)' + filter
+            }
+        }
+    ]
+}
+
 return Promise.resolve(
     model
-        .find({
-            type: 'pkg',
-            model: ObjectID(modelId)
-        })
+        .find(query)
         .project({
             parent: 1,
             name: 1,
@@ -154,12 +176,6 @@ return Promise.resolve(
 }
 
 exports.getFilteredPackages = function(modelId, filter) {
-/*return Promise.join(exports.getPackages(modelId), getPackagesForFilteredClasses(modelId, filter), function(pkgs, ids) {
-    console.log(ids)
-    return pkgs.toArray().filter(function(pkg) {
-        return ids.indexOf(pkg._id.toHexString()) > -1;
-    });
-})*/
 
 if (!filter || filter === '') {
     return exports.getPackages(modelId)
@@ -168,83 +184,154 @@ if (!filter || filter === '') {
         })
 }
 
-return getPackagesForFilteredClasses(modelId, filter)
-    .then(function(ids) {
-        return model
-            .aggregate([
-                {
-                    $match: {
-                        _id: {
-                            $in: ids
-                        },
-                        model: ObjectID(modelId)
-                    }
-                },
-                {
-                    $graphLookup: {
-                        from: MODELS,
-                        startWith: "$parent",
-                        connectFromField: "parent",
-                        connectToField: "_id",
-                        as: "items",
-                        restrictSearchWithMatch: {
-                            model: ObjectID(modelId),
-                            type: 'pkg'
-                        }
-                    }
-                },
-                {
-                    $unwind: "$items"
-                },
-                {
-                    $replaceRoot: {
-                        newRoot: "$items"
-                    }
-                },
-                {
-                    $project: {
-                        parent: 1,
-                        name: 1,
-                        type: 1,
-                        editable: 1
-                    }
-                }
-            ])
-            .toArray()
+var filteredPackageTree = exports.getPackages(modelId, filter)
+    .then(function(pkgs) {
+        return pkgs.toArray();
     })
     .then(function(pkgs) {
-        const ids = [];
-        return pkgs.filter(function(pkg) {
-            if (ids.indexOf(pkg._id.toHexString()) === -1) {
-                ids.push(pkg._id.toHexString())
-                return true
-            }
-            return false
-        });
+        return pkgs.map(function(pkg) {
+            return pkg._id
+        })
+    })
+    .then(function(pkgIds) {
+        return getParentsForPackages(modelId, pkgIds)
     })
 
-/*return Promise.resolve(
-    model
-        .find({
-            type: 'pkg',
-            model: ObjectID(modelId),
-            $text: {
-                $search: filter
-            }
-        })
-        .project({
-            parent: 1,
-            name: 1,
-            type: 1,
-            editable: 1
-        })
-        .sort({
-            name: 1
-        })
-);*/
+
+var packagesForFilteredClasses = getFilteredClasses(modelId, filter)
+    .then(function(classIds) {
+        return getPackagesForClasses(modelId, classIds)
+    })
+
+
+return Promise.join(filteredPackageTree, packagesForFilteredClasses, function(pkgs, pkgs2) {
+    return pkgs.concat(pkgs2.filter(function(pkg2) {
+        return pkgs.findIndex(function(pkg) {
+                return pkg._id === pkg2._id
+            }) === -1;
+    }));
+})
+
 }
 
-function getPackagesForFilteredClasses(modelId, filter) {
+function getPackagesForClasses(modelId, classIds) {
+
+    return model
+        .aggregate([
+            {
+                $match: {
+                    _id: {
+                        $in: classIds
+                    },
+                    model: ObjectID(modelId)
+                }
+            },
+            {
+                $graphLookup: {
+                    from: MODELS,
+                    startWith: "$parent",
+                    connectFromField: "parent",
+                    connectToField: "_id",
+                    as: "items",
+                    restrictSearchWithMatch: {
+                        model: ObjectID(modelId),
+                        type: 'pkg'
+                    }
+                }
+            },
+            {
+                $unwind: "$items"
+            },
+            {
+                $replaceRoot: {
+                    newRoot: "$items"
+                }
+            },
+            {
+                $project: {
+                    parent: 1,
+                    name: 1,
+                    type: 1,
+                    editable: 1
+                }
+            }
+        ])
+        .toArray()
+        .then(function(pkgs) {
+            const ids = [];
+            return pkgs.filter(function(pkg) {
+                if (ids.indexOf(pkg._id.toHexString()) === -1) {
+                    ids.push(pkg._id.toHexString())
+                    return true
+                }
+                return false
+            });
+        })
+
+}
+
+function getParentsForPackages(modelId, pkgIds) {
+    return model
+        .aggregate([
+            {
+                $match: {
+                    _id: {
+                        $in: pkgIds
+                    },
+                    model: ObjectID(modelId)
+                }
+            },
+            {
+                $graphLookup: {
+                    from: MODELS,
+                    startWith: "$parent",
+                    connectFromField: "parent",
+                    connectToField: "_id",
+                    as: "inheritanceTree",
+                    restrictSearchWithMatch: {
+                        model: ObjectID(modelId),
+                        type: 'pkg'
+                    }
+                }
+            },
+            {
+                $project: {
+                    items: {
+                        $concatArrays: [["$$ROOT"], "$inheritanceTree"]
+                    }
+                }
+            },
+            {
+                $unwind: "$items"
+            },
+            {
+                $replaceRoot: {
+                    newRoot: "$items"
+                }
+            },
+            {
+                $project: {
+                    parent: 1,
+                    name: 1,
+                    type: 1,
+                    editable: 1
+                }
+            }
+        ])
+        .toArray()
+        .then(function(pkgs) {
+            const ids = [];
+            return pkgs.filter(function(pkg) {
+                if (ids.indexOf(pkg._id.toHexString()) === -1) {
+                    ids.push(pkg._id.toHexString())
+                    return true
+                }
+                return false
+            });
+        })
+}
+
+function getFilteredClasses(modelId, filter) {
     return Promise.resolve(
         model
             .find({
@@ -441,6 +528,13 @@ return model
         _id: ObjectID(id)
     }, {
         element: 0
+    })
+}
+
+exports.getFullModel = function(id) {
+return model
+    .findOne({
+        _id: ObjectID(id)
     })
 }
 

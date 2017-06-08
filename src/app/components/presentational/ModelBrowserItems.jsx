@@ -9,7 +9,7 @@ import ModelElement from './ModelElement'
 class ModelBrowserItems extends Component {
 
     render() {
-        const {items, type, pkg, profiles, baseUrls, urlSuffix, selectedProfile, updateProfile} = this.props;
+        const {items, type, pkg, profiles, baseUrls, urlSuffix, selectedProfile, updateProfile, filter} = this.props;
 
         let itemClassNames = 'p-0'
         const editable = pkg && pkg.editable
@@ -25,7 +25,7 @@ class ModelBrowserItems extends Component {
                                                               <td className={ `py-0 px-0 ${i === 0 && 'border-0'}` }>
                                                                   <Toggle name={ item._id }
                                                                       checked={ item.profiles.indexOf(selectedProfile) > -1 }
-                                                                      disabled={ !editable || (type === 'cls' && profiles.indexOf(selectedProfile) > -1 && !item.optional) }
+                                                                      disabled={ !editable || (type === 'cls' && profiles.indexOf(selectedProfile) === -1) || (type === 'cls' && profiles.indexOf(selectedProfile) > -1 && !item.optional) }
                                                                       onToggle={ e => updateProfile(item) }>
                                                                   </Toggle>
                                                               </td>
@@ -34,7 +34,8 @@ class ModelBrowserItems extends Component {
                                                                       element={ item }
                                                                       color={ item.profiles.indexOf(selectedProfile) === -1 ? 'muted' : 'primary' }
                                                                       href={ `${baseUrls[item.type]}/${item._id}/${urlSuffix ? urlSuffix : ''}` }
-                                                                      className={ `mr-1 ${!editable && 'model-element-not-editable'}` } />
+                                                                      className={ `mr-1 ${!editable && 'model-element-not-editable'}` }
+                                                                      filter={ filter } />
                                                               </td>
                                                               <td className={ `py-0 pr-0 ${i === 0 && 'border-0'}` }>
                                                                   { item.type === 'prp' && item.cardinality }

@@ -3,6 +3,7 @@
 //var inFile = fs.createReadStream("./test/res/PMT_UnitTest_Model.zip");
 var Promise = require("bluebird");
 var ObjectID = require('mongodb').ObjectID;
+var through2 = require('through2');
 
 var unzip = require('./unzip');
 var fromXml = require('./import');
@@ -26,9 +27,9 @@ classes:  41
 associations:  6
 */
 
-var batchSize = 8;
+var batchSize = 16;
 
-exports.importFile = function(db, stream, metadata) {
+exports.importFile = function(db, stream, metadata, onStats) {
 return new Promise(function(resolve, reject) {
     var stats;
 
@@ -51,9 +52,15 @@ return new Promise(function(resolve, reject) {
         batchSize: batchSize
     });
 
+    var logger = through2(function(chunk, enc, cb) {
+        if (onStats)
+            onStats(chunk.length)
+        cb(null, chunk);
+    });
+
     var pl = metadata.zipped
-        ? stream.pipe(toUnzip)
-        : stream
+        ? stream.pipe(logger).pipe(toUnzip)
+        : stream.pipe(logger)
 
     pl = pl
         .pipe(toJson)

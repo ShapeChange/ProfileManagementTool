@@ -9,7 +9,7 @@ import ModelBrowserParameters from './ModelBrowserParameters'
 class ModelBrowserActions extends Component {
 
     render() {
-        const {_id, name, type, optional, infos, pkg, profiles, profileParameters, selectedProfile, updateProfile, updateProfileForChildren, updateEditable, updateEditableForChildren, updateProfileParameter} = this.props;
+        const {_id, name, type, optional, infos, pkg, cls, profiles, profileParameters, selectedProfile, updateProfile, updateProfileForChildren, updateEditable, updateEditableForChildren, updateProfileParameter} = this.props;
 
         const isPackage = type === 'pkg'
         const isClass = type === 'cls'
@@ -22,17 +22,19 @@ class ModelBrowserActions extends Component {
                     { (isClass || isProperty) &&
                       <Toggle name="includeSelf"
                           checked={ profiles.indexOf(selectedProfile) > -1 }
-                          disabled={ !editable || (type === 'prp' && !optional) }
+                          disabled={ !editable || (type === 'prp' && !cls.profiles.indexOf(selectedProfile) > -1) || (type === 'prp' && !optional) }
                           onToggle={ e => updateProfile(this.props) }
                           size="2x">
-                          <span className={ `align-self-center ${profiles.indexOf(selectedProfile) > -1 && 'font-weight-bold'} ${!editable && 'text-muted'}` }><span className="font-italic">{ name }</span> is included in profile</span>
+                          <span className={ `align-self-center ${profiles.indexOf(selectedProfile) > -1 && 'font-weight-bold'} ${!editable && 'text-muted'}` }><span className="font-italic">{ name }</span> is
+                          { profiles.indexOf(selectedProfile) === -1 && ' not ' } included in profile</span>
                       </Toggle> }
                     { isPackage &&
                       <Toggle name="editableSelf"
                           checked={ editable }
                           onToggle={ e => updateEditable(this.props) }
                           size="2x">
-                          <span className="align-self-center"><span className="font-italic">{ name }</span> is editable</span>
+                          <span className="align-self-center"><span className="font-italic">{ name }</span> is
+                          { !editable && ' not ' } editable</span>
                       </Toggle> }
                 </FormGroup>
                 { (isPackage || isClass) &&

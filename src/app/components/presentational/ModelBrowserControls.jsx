@@ -17,7 +17,7 @@ class ModelBrowserControls extends Component {
         }
 
         return (
-            <Form inline className="d-flex flex-row justify-content-end">
+            <Form inline className="d-flex flex-row justify-content-end" onSubmit={ e => e.preventDefault() }>
                 <div className="mr-auto inner-addon inner-addon-sm right-addon">
                     <FontAwesome name={ searchIcon }
                         pulse={ isFilterPending }

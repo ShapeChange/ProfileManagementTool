@@ -22,7 +22,7 @@ lexer.on('data', function(data) {
 
 var toObjects = through2({
     readableObjectMode: true,
-    highWaterMark: opts.batchSize
+    highWaterMark: 1 //opts.batchSize
 }, function(chunkBuf, enc, cb) {
     var chunk = chunkBuf.toString();
     if (!opts.nsPrefix)
@@ -129,8 +129,9 @@ function createXmlTransformer(outStream, options) {
 
         options.stats.classes++;
 
-        if (options.stats.classes % options.batchSize == 0) {
+        if (options.stats.classes % 8 == 0) {
             console.log(options.stats.classes + ': ' + process.memoryUsage().heapUsed);
+
             options.stats.maxMemory = Math.max(options.stats.maxMemory, process.memoryUsage().heapUsed)
         }
     });
@@ -143,6 +144,12 @@ function createXmlTransformer(outStream, options) {
         parseAssociation(outStream, node, options);
 
         options.stats.associations++;
+
+        if (options.stats.associations % 8 == 0) {
+            console.log(options.stats.associations + ': ' + process.memoryUsage().heapUsed);
+
+            options.stats.maxMemory = Math.max(options.stats.maxMemory, process.memoryUsage().heapUsed)
+        }
     });
 
     // split here, free memory

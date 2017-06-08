@@ -1,6 +1,7 @@
 import createSocketIoMiddleware from './redux-socket.io';
 import io from 'socket.io-client';
 import ss from 'socket.io-stream';
+import escapeStringRegexp from 'escape-string-regexp';
 import { LOCATION_CHANGED } from 'redux-little-router';
 import { actions as appActions, doesChangeState, getFilter, getPendingFilter } from '../reducers/app'
 import { actions, getModels, getPendingModel, getPendingPackage, getPendingClass, getSelectedModel, getSelectedPackage, getSelectedClass } from '../reducers/model'
@@ -45,14 +46,6 @@ function conditionalExecute(action, emit, next, store, socket) {
         // upload a file to the server. 
         ss(socket).emit('import', stream, action.payload.metadata);
         const blobStream = ss.createBlobReadStream(action.payload.file);
-
-        var written = 0;
-        blobStream.on('data', function(chunk) {
-            written += chunk.length;
-            store.dispatch(appActions.progressFileImport({
-                written: written
-            }))
-        });
 
         blobStream.pipe(stream);
 
@@ -125,19 +118,20 @@ function conditionalExecute(action, emit, next, store, socket) {
         if (pendingPackage && pendingPackage !== previousPendingPackage)
             emit('action', actions.fetchPackage({
                 id: pendingPackage,
-                modelId: pendingModel,
+                modelId: getSelectedModel(store.getState()),
                 filter: filter
             }));
         if (pendingClass && pendingClass !== previousPendingClass)
             emit('action', actions.fetchClass({
                 id: pendingClass,
-                modelId: pendingModel,
+                modelId: getSelectedModel(store.getState()),
                 filter: filter
             }));
     }
 }
 
 function updateFilter(store, emit, pendingFilter) {
+    const filter = escapeStringRegexp(pendingFilter.toLowerCase())
     const selectedModel = getSelectedModel(store.getState())
     const selectedPackage = getSelectedPackage(store.getState())
     const selectedClass = getSelectedClass(store.getState())
@@ -145,7 +139,7 @@ function updateFilter(store, emit, pendingFilter) {
     if (selectedModel) {
         const fetchAction = actions.fetchModel({
             id: selectedModel,
-            filter: pendingFilter
+            filter: filter
         })
 
         store.dispatch(fetchAction)
@@ -154,7 +148,7 @@ function updateFilter(store, emit, pendingFilter) {
     if (selectedPackage) {
         const fetchAction = actions.fetchPackage({
             id: selectedPackage,
-            filter: pendingFilter
+            filter: filter
         })
 
         store.dispatch(fetchAction)
@@ -163,7 +157,8 @@ function updateFilter(store, emit, pendingFilter) {
     if (selectedClass) {
         const fetchAction = actions.fetchClass({
             id: selectedClass,
-            filter: pendingFilter
+            modelId: selectedModel,
+            filter: filter
         })
 
         store.dispatch(fetchAction)
