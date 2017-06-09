@@ -70,7 +70,7 @@ function parseOptions(options, modelId) {
     }
 
     var profileToElem = function(profile, params) {
-        var parameters = Object.keys(params).map(function(param) {
+        var parameters = params ? Object.keys(params).map(function(param) {
             return {
                 name: 'sc:ProfileParameter',
                 type: 'element',
@@ -81,7 +81,7 @@ function parseOptions(options, modelId) {
                 },
                 children: []
             }
-        })
+        }) : []
 
         var parameter = parameters.length === 0 ? [] : [{
             name: 'sc:parameter',

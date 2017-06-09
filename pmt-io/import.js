@@ -295,7 +295,7 @@ function parseAssociation(outStream, node, options) {
     delete node.parent;
     delete node._id
 
-    var attributes = reduceNode(node);
+    var attributes = reduceNode(node, null, 'asc');
 
     var asc = Object.assign(attributes, {
         _id: id,
@@ -309,7 +309,7 @@ function parseAssociation(outStream, node, options) {
 }
 
 // TODO: omit non-relevant for type
-function reduceNode(node, id) {
+function reduceNode(node, id, type) {
     var nameIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:name'
     })
@@ -352,6 +352,16 @@ function reduceNode(node, id) {
     var propertiesIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:properties'
     })
+
+    if (profilesIndex === -1 && type !== 'asc') {
+        node.children.push({
+            name: 'sc:profiles',
+            type: 'element',
+            value: '',
+            attributes: {},
+            children: []
+        })
+    }
 
     return {
         name: nameIndex > -1 && node.children[nameIndex].children[0].value,
