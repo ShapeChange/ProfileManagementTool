@@ -310,6 +310,30 @@ function parseAssociation(outStream, node, options) {
 
 // TODO: omit non-relevant for type
 function reduceNode(node, id, type) {
+
+    var profilesIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:profiles'
+    })
+    var propertiesIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:properties'
+    })
+
+    if (profilesIndex === -1 && type !== 'asc') {
+        var profiles = {
+            name: 'sc:profiles',
+            type: 'element',
+            value: '',
+            attributes: {},
+            children: []
+        }
+        if (propertiesIndex === -1) {
+            node.children.push(profiles);
+        } else {
+            node.children.splice(propertiesIndex, 0, profiles);
+            propertiesIndex++;
+        }
+    }
+
     var nameIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:name'
     })
@@ -331,14 +355,14 @@ function reduceNode(node, id, type) {
     var supertypesIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:supertypes'
     })
-    var profilesIndex = node.children.findIndex(function(child) {
-        return child.name === 'sc:profiles'
-    })
     var cardinalityIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:cardinality'
     })
     var isAttributeIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:isAttribute'
+    })
+    var isAbstractIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:isAbstract'
     })
     var typeIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:typeId'
@@ -349,19 +373,6 @@ function reduceNode(node, id, type) {
     var associationIdIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:associationId'
     })
-    var propertiesIndex = node.children.findIndex(function(child) {
-        return child.name === 'sc:properties'
-    })
-
-    if (profilesIndex === -1 && type !== 'asc') {
-        node.children.push({
-            name: 'sc:profiles',
-            type: 'element',
-            value: '',
-            attributes: {},
-            children: []
-        })
-    }
 
     return {
         name: nameIndex > -1 && node.children[nameIndex].children[0].value,
@@ -396,6 +407,7 @@ function reduceNode(node, id, type) {
         profileParameters: profilesIndex > -1 ? _reduceProfiles(node.children[profilesIndex]) : {},
         cardinality: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value,
         isAttribute: isAttributeIndex > -1 && node.children[isAttributeIndex].children[0].value,
+        isAbstract: isAbstractIndex > -1 && node.children[isAbstractIndex].children[0].value === 'true',
         optional: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value && node.children[cardinalityIndex].children[0].value.indexOf('0') === 0,
         typeId: typeIndex > -1 && node.children[typeIndex].children[0].value,
         typeName: typeNameIndex > -1 && node.children[typeNameIndex].children[0].value,

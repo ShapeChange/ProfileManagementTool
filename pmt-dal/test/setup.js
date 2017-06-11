@@ -35,7 +35,18 @@ var classes = {
         name: 'SUPER_CLASS',
         localId: '3',
         editable: true,
-        properties: []
+        properties: [
+            {
+                optional: false,
+                typeId: '2',
+                _id: '1_1'
+            },
+            {
+                optional: true,
+                typeId: '5',
+                _id: '1_2'
+            }
+        ]
     },
     4: {
         name: 'SUB_CLASS',
@@ -77,6 +88,36 @@ var modelReader = {
             return classes[key];
         })
         return Promise.resolve(values);
+    },
+    getProjection: function() {
+        return {};
+    },
+    getClassesForPackage: function(id, modelId, recursive, subNotSuper) {
+        var graph = [classes['1']];
+
+        if (recursive) {
+            graph.push(classes['4'])
+        }
+
+        var pr = Promise.resolve(graph)
+
+        if (subNotSuper !== undefined) {
+            pr = modelReader.getClassGraph('1', modelId, subNotSuper)
+            if (recursive) {
+                pr = pr.then(function(g) {
+                    return modelReader.getClassGraph('4', modelId, subNotSuper)
+                        .then(function(g2) {
+                            return g.concat(g2)
+                        })
+                })
+            }
+        }
+        pr = pr.then(function(g) {
+            console.log('GRPH', g)
+            return g
+        })
+
+        return pr;
     }
 };
 
@@ -95,6 +136,8 @@ function joinUpdates(updates) {
 
     console.log(require('util').inspect(joinedUpdates, false, null));
     this.updatedClasses = joinedUpdates;
+
+    return updates;
 }
 
 var editor = profileEdit(modelReader, profileWriter);
@@ -110,7 +153,6 @@ module.exports = {
     optionalPrpIdIndex: 1,
     profile: 'A',
     editor: editor,
-    getTypeIdForProperty: getTypeIdForProperty
+    getTypeIdForProperty: getTypeIdForProperty,
+    joinUpdates: joinUpdates
 }
-
-module.exports.joinUpdates = joinUpdates.bind(module.exports)

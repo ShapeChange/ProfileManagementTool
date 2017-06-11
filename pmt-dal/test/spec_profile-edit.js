@@ -11,7 +11,7 @@ describe('Profile Editing', function() {
 
 describe('include property', function() {
 
-    const params = Object.assign(options, {
+    const params = Object.assign({}, options, {
         include: true
     });
 
@@ -20,7 +20,7 @@ describe('include property', function() {
     before(function() {
 
         return editor.getProfileUpdatesForProperty(clsId, mandatoryPrpId, 'model', profile, include)
-            .then(params.joinUpdates)
+            .then(params.joinUpdates.bind(params))
     });
 
     propertySpec.shouldIncludeProperty(params);
@@ -40,7 +40,7 @@ describe('include property', function() {
 
 describe('exclude property', function() {
 
-    const params = Object.assign(options, {
+    const params = Object.assign({}, options, {
         include: false
     });
 
@@ -49,7 +49,7 @@ describe('exclude property', function() {
     before(function() {
 
         return editor.getProfileUpdatesForProperty(clsId, mandatoryPrpId, 'model', profile, include)
-            .then(params.joinUpdates)
+            .then(params.joinUpdates.bind(params))
     });
 
     propertySpec.shouldExcludeProperty(params);
@@ -71,7 +71,7 @@ describe('exclude property', function() {
 // TODO: test for recursive addition of same class, shouldn't happen
 describe('include class', function() {
 
-    const params = Object.assign(options, {
+    const params = Object.assign({}, options, {
         include: true
     });
 
@@ -80,7 +80,7 @@ describe('include class', function() {
     before(function() {
 
         return editor.getProfileUpdatesForClass(clsId, 'model', profile, include)
-            .then(params.joinUpdates)
+            .then(params.joinUpdates.bind(params))
     });
 
     classSpec.shouldIncludeClass(params);
@@ -95,7 +95,7 @@ describe('include class', function() {
 
 describe('exclude class', function() {
 
-    const params = Object.assign(options, {
+    const params = Object.assign({}, options, {
         include: false
     });
 
@@ -104,7 +104,7 @@ describe('exclude class', function() {
     before(function() {
 
         return editor.getProfileUpdatesForClass(clsId, 'model', profile, include)
-            .then(params.joinUpdates)
+            .then(params.joinUpdates.bind(params))
     });
 
     classSpec.shouldExcludeClass(params);
@@ -127,7 +127,7 @@ describe('exclude class', function() {
     it('should remove profile from any optional properties that use given class as type', function() {
 
         return editor.getProfileUpdatesForClass(getTypeIdForProperty(clsId, optionalPrpId), 'model', profile, include)
-            .then(params.joinUpdates)
+            .then(params.joinUpdates.bind(params))
             .then(function() {
                 params.updatedClasses.should.have.deep.property(`${clsId}.properties\\.${optionalPrpIdIndex}\\.profiles.${profile}`, include);
 
