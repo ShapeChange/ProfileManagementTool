@@ -4,12 +4,13 @@ import FontAwesome from 'react-fontawesome';
 import { Link } from 'redux-little-router';
 import Toggle from '../common/Toggle'
 import ModelBrowserParameters from './ModelBrowserParameters'
+import Warning from '../common/Warning'
 
 
 class ModelBrowserActions extends Component {
 
     render() {
-        const {_id, name, type, optional, infos, pkg, cls, profiles, profileParameters, selectedProfile, updateProfile, updateProfileForChildren, updateEditable, updateEditableForChildren, updateProfileParameter} = this.props;
+        const {_id, name, type, optional, infos, pkg, cls, profiles, profileParameters, selectedProfile, updateProfile, updateProfileForChildren, updateEditable, updateEditableForChildren, updateProfileParameter, isFlattenInheritance} = this.props;
 
         const isPackage = type === 'pkg'
         const isClass = type === 'cls'
@@ -22,7 +23,7 @@ class ModelBrowserActions extends Component {
                     { (isClass || isProperty) &&
                       <Toggle name="includeSelf"
                           checked={ profiles.indexOf(selectedProfile) > -1 }
-                          disabled={ !editable || (type === 'prp' && !cls.profiles.indexOf(selectedProfile) > -1) || (type === 'prp' && !optional) }
+                          disabled={ !editable || (type === 'prp' && cls.profiles.indexOf(selectedProfile) === -1) || (type === 'prp' && !optional) }
                           onToggle={ e => updateProfile(this.props) }
                           size="2x">
                           <span className={ `align-self-center ${profiles.indexOf(selectedProfile) > -1 && 'font-weight-bold'} ${!editable && 'text-muted'}` }><span className="font-italic">{ name }</span> is
@@ -97,11 +98,15 @@ class ModelBrowserActions extends Component {
                   <div>
                       <div className="d-flex py-1">
                           <span className={ !editable && 'text-muted' }>Add all properties to profile</span>
+                          { isFlattenInheritance && infos.supertypes &&
+                            <Warning id={ `${_id}-add-warning` } placement="right" className="ml-1">
+                                Applying this action will affect other classes
+                            </Warning> }
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
                               disabled={ !editable }
-                              onClick={ e => updateProfileForChildren(this.props, true, false) }>
+                              onClick={ e => updateProfileForChildren(this.props, true, false, isFlattenInheritance) }>
                               Apply
                           </Button>
                       </div>
@@ -146,11 +151,15 @@ class ModelBrowserActions extends Component {
                   <div>
                       <div className="d-flex py-1">
                           <span className={ !editable && 'text-muted' }>Remove optional properties from profile</span>
+                          { isFlattenInheritance && infos.supertypes &&
+                            <Warning id={ `${_id}-remove-warning` } placement="right" className="ml-1">
+                                Applying this action will affect other classes
+                            </Warning> }
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
                               disabled={ !editable }
-                              onClick={ e => updateProfileForChildren(this.props, false, true) }>
+                              onClick={ e => updateProfileForChildren(this.props, false, true, isFlattenInheritance) }>
                               Apply
                           </Button>
                       </div>

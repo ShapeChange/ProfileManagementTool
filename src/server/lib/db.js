@@ -443,7 +443,8 @@ return Promise.resolve(
             type: 1,
             stereotypes: 1,
             profiles: 1,
-            editable: 1
+            editable: 1,
+            isAbstract: 1
         })
         .sort({
             name: 1
@@ -465,60 +466,124 @@ return model
         element: 0,
         'properties.element': 0
     })
-    // TODO: aggregate ???
-    .then(function(details) {
-        var localids = [];
+    .then(resolveIds)
+}
 
-        if (details && details.supertypes)
-            localids = localids.concat(details.supertypes);
-        if (details && details.properties)
-            details.properties.reduce(function(ids, prp) {
-                //if (prp.typeId) ids.push(prp.typeId)
-                if (prp.associationId) ids.push(prp.associationId)
-                return ids;
-            }, localids);
+// TODO: aggregate ???
+function resolveIds(details) {
+    var localids = [];
 
-        if (localids.length) {
-            return model
-                .find({
-                    type: {
-                        $in: ["cls", "asc"]
-                    },
-                    model: details.model,
-                    localId: {
-                        $in: localids
-                    }
-                })
-                .project({
-                    name: 1,
-                    localId: 1
-                })
-                .toArray()
-                .then(function(resolvedIds) {
+    if (details && details.supertypes)
+        localids = localids.concat(details.supertypes);
+    if (details && details.properties)
+        details.properties.reduce(function(ids, prp) {
+            if (prp.typeId) ids.push(prp.typeId)
+            if (prp.associationId) ids.push(prp.associationId)
+            return ids;
+        }, localids);
 
-                    if (details.supertypes)
-                        details.supertypes = details.supertypes.map(function(st) {
-                            return resolvedIds.find(function(tid) {
-                                return tid.localId === st;
+    if (localids.length) {
+        return model
+            .find({
+                type: {
+                    $in: ["cls", "asc"]
+                },
+                model: details.model,
+                localId: {
+                    $in: localids
+                }
+            })
+            .project({
+                name: 1,
+                localId: 1,
+                isAbstract: 1
+            })
+            .toArray()
+            .then(function(resolvedIds) {
+
+                if (details.supertypes)
+                    details.supertypes = details.supertypes.map(function(st) {
+                        return resolvedIds.find(function(tid) {
+                            return tid.localId === st;
+                        });
+                    });
+                if (details.properties)
+                    details.properties = details.properties.map(function(prp) {
+                        if (prp.typeId)
+                            prp.typeId = resolvedIds.find(function(tid) {
+                                return tid.localId === prp.typeId;
                             });
-                        });
-                    if (details.properties)
-                        details.properties = details.properties.map(function(prp) {
-                            /*if (prp.typeId)
-                                prp.typeId = resolvedIds.find(function(tid) {
-                                    return tid.localid === prp.typeId;
-                                });*/
-                            if (prp.associationId)
-                                prp.associationId = resolvedIds.find(function(tid) {
-                                    return tid.localId === prp.associationId;
-                                });
-                            return prp;
-                        });
+                        if (prp.associationId)
+                            prp.associationId = resolvedIds.find(function(tid) {
+                                return tid.localId === prp.associationId;
+                            });
+                        return prp;
+                    });
 
-                    return details
-                })
-        } else
-            return details;
+                return details
+            })
+    } else
+        return details;
+}
+
+exports.getFlattenedClass = function(id, modelId) {
+return model
+    .aggregate([
+        {
+            $match: {
+                localId: id,
+                model: ObjectID(modelId)
+            }
+        },
+        {
+            $graphLookup: {
+                from: MODELS,
+                startWith: '$supertypes',
+                connectFromField: 'supertypes',
+                connectToField: 'localId',
+                as: "inheritanceTree",
+                restrictSearchWithMatch: {
+                    model: ObjectID(modelId)
+                }
+            }
+        },
+        {
+            $addFields: {
+                properties: {
+                    $reduce: {
+                        input: "$inheritanceTree.properties",
+                        initialValue: "$$ROOT.properties",
+                        in: {
+                            $concatArrays: ["$$value", "$$this"]
+                        }
+                    }
+                }
+            }
+        }, {
+            $addFields: {
+                superEditable: {
+                    $map: {
+                        input: "$inheritanceTree",
+                        as: "row",
+                        in: {
+                            _id: "$$row.localId",
+                            editable: "$$row.editable"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                element: 0,
+                'properties.element': 0,
+                inheritanceTree: 0
+            }
+        }
+    ])
+    .toArray()
+    .then(function(details) {
+        return resolveIds(details[0])
     })
 }
 
@@ -545,9 +610,9 @@ return measure(dbEdit.getProfileUpdatesForPackage(clsId, modelId, profile, inclu
 
 }
 
-exports.updateClassProfile = function(clsId, modelId, profile, include, onlyMandatory, onlyChildren) {
+exports.updateClassProfile = function(clsId, modelId, profile, include, onlyMandatory, onlyChildren, ascendInheritanceTree) {
 
-return measure(dbEdit.getProfileUpdatesForClass(clsId, modelId, profile, include, onlyMandatory, onlyChildren));
+return measure(dbEdit.getProfileUpdatesForClass(clsId, modelId, profile, include, onlyMandatory, onlyChildren, ascendInheritanceTree));
 
 }
 

@@ -95,7 +95,7 @@ function updateProfile(socket, update) {
         if (update.profileParameters)
             pr = db.updateProfileParameter(update.id, null, update.modelId, update.profile, update.profileParameters);
         else
-            pr = db.updateClassProfile(update.id, update.modelId, update.profile, update.include, update.onlyMandatory, update.onlyChildren);
+            pr = db.updateClassProfile(update.id, update.modelId, update.profile, update.include, update.onlyMandatory, update.onlyChildren, update.recursive);
     } else if (update.type === 'prp') {
         if (update.profileParameters)
             pr = db.updateProfileParameter(update.parent, update.id, update.modelId, update.profile, update.profileParameters);
@@ -119,6 +119,7 @@ function updateProfile(socket, update) {
                 return uc;
             })
             .then(function(updatedClasses) {
+                console.log('UPD1', updatedClasses)
                 return new Promise(function(resolve, reject) {
 
                     var checks = validator.createStream(db.getModelReader(), db.getProfileWriter(), update.profile, function() {
@@ -331,7 +332,9 @@ function fetchPackageDetails(socket, id) {
 }
 
 function fetchClass(socket, payload) {
-    return db.getDetails(payload.id, payload.modelId)
+    var cls = payload.flattenInheritance ? db.getFlattenedClass(payload.id, payload.modelId) : db.getDetails(payload.id, payload.modelId)
+
+    return cls
         .then(function(details) {
             if (details.type === 'cls' || details.type === 'asc') {
                 details._id = details.localId

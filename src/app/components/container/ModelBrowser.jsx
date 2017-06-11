@@ -3,7 +3,7 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux';
 import { Card, CardHeader } from 'reactstrap';
 
-import { useThreePaneView, useSmallerFont, getPendingFilter, getFilter, getBrowserDisabled, Font, View, actions } from '../../reducers/app'
+import { useThreePaneView, useSmallerFont, getPendingFilter, getFilter, getBrowserDisabled, isFlattenInheritance, isFlattenOninas, Font, View, actions } from '../../reducers/app'
 import { getSelectedModel, getSelectedProfile, getSelectedPackage, getSelectedClass, getSelectedProperty, getSelectedTab, getDetails, getPackages, getPackage, getClasses, getClass, getProperties, getExpandedItems, actions as modelActions } from '../../reducers/model'
 
 import ModelBrowserPanes from '../presentational/ModelBrowserPanes'
@@ -42,7 +42,9 @@ const mapStateToProps = (state, props) => {
         pendingFilter: getPendingFilter(state).filter,
         isFilterPending: getPendingFilter(state).pending > 0,
         filter: getFilter(state),
-        disabled: getBrowserDisabled(state)
+        disabled: getBrowserDisabled(state),
+        isFlattenInheritance: isFlattenInheritance(state),
+        isFlattenOninas: isFlattenOninas(state)
     }
 }
 
@@ -130,7 +132,7 @@ class ModelBrowser extends Component {
         if (details.type === 'pkg') {
             items = classes.filter(cls => cls.parent === selectedPackage)
         } else if (details.type === 'cls' && properties) {
-            items = properties.filter(prp => prp.parent === selectedClass)
+            items = properties
         }
 
         return items

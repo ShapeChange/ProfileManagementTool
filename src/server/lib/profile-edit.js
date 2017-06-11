@@ -112,47 +112,52 @@ function getProfileUpdatesForProperty(clsId, prpId, modelId, profile, include) {
         })
 }
 
-function getProfileUpdatesForClass(id, modelId, profile, include, onlyMandatory = true, onlyChildren = false, visitedClassIds = []) {
+function getProfileUpdatesForClass(id, modelId, profile, include, onlyMandatory = true, onlyChildren = false, ascendInheritanceTree = false, visitedClassIds = []) {
 
     var propertyFilter = function(prp) {
         return !onlyMandatory || !prp.optional;
     };
 
     if (onlyChildren) {
-        var update = {}
 
-        var propertyHandler = function(update, prp, index) {
-            /*if (include && onlyMandatory && !prp.optional) {
-                update['$addToSet']['properties.' + i + '.profiles'] = profile;
-            } else if (include && !onlyMandatory) {
-                update['$addToSet']['properties.' + i + '.profiles'] = profile;
-            } else if (!include && onlyMandatory && prp.optional) {
-                update['$pull']['properties.' + i + '.profiles'] = profile;
-            } else if (!include && !onlyMandatory) {
-                update['$pull']['properties.' + i + '.profiles'] = profile;
-            }*/
-            if (include && onlyMandatory && !prp.optional) {
-                buildPropertyUpdate(update, profile, include, index)
-            } else if (include && !onlyMandatory) {
-                buildPropertyUpdate(update, profile, include, index)
-            } else if (!include && onlyMandatory && prp.optional) {
-                buildPropertyUpdate(update, profile, include, index)
-            } else if (!include && !onlyMandatory) {
-                buildPropertyUpdate(update, profile, include, index)
-            }
-        }.bind(this, update);
+        var cls = ascendInheritanceTree ? modelReader.getClassGraph(id, modelId) : modelReader.getClass(id, modelId)
 
-        return modelReader.getClass(id, modelId)
+        return cls
             .then(function(cls) {
+                return ascendInheritanceTree ? cls : [cls]
+            })
+            .then(function(clss) {
 
-                var updatesType = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler, propertyFilter);
+                return Promise.map(clss, function(cls) {
+                    var update = {}
 
+                    var propertyHandler = function(update, prp, index) {
+                        if (include && onlyMandatory && !prp.optional) {
+                            buildPropertyUpdate(update, profile, include, index)
+                        } else if (include && !onlyMandatory) {
+                            buildPropertyUpdate(update, profile, include, index)
+                        } else if (!include && onlyMandatory && prp.optional) {
+                            buildPropertyUpdate(update, profile, include, index)
+                        } else if (!include && !onlyMandatory) {
+                            buildPropertyUpdate(update, profile, include, index)
+                        }
+                    }.bind(this, update);
 
-                var updates = Promise.all([profileWriter.putClassUpdateProfile(cls.localId, modelId, update)]);
+                    var updatesType = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler, propertyFilter);
 
-                return Promise.join(updates, updatesType, function(updates1, updates2) {
-                    return updates1.concat(updates2);
+                    var updates = Promise.all([]);
+                    if (update && Object.keys(update).length)
+                        updates = Promise.all([profileWriter.putClassUpdateProfile(cls.localId, modelId, update)]);
+
+                    return Promise.join(updates, updatesType, function(updates1, updates2) {
+                        return updates1.concat(updates2);
+                    })
+
                 })
+                    .then(function(classes) {
+                        return [].concat.apply([], classes);
+                    })
+
             })
     }
 
@@ -187,13 +192,6 @@ function getProfileUpdatesForPackage(id, modelId, profile, include, onlyMandator
     };
 
     var propertyHandler = function(update, prp, index) {
-        /*if (include && onlyMandatory && !prp.optional) {
-            update['$addToSet']['properties.' + i + '.profiles'] = profile;
-        } else if (include && !onlyMandatory) {
-            update['$addToSet']['properties.' + i + '.profiles'] = profile;
-        } else if (!include) {
-            update['$pull']['properties.' + i + '.profiles'] = profile;
-        }*/
         if (include && onlyMandatory && !prp.optional) {
             buildPropertyUpdate(update, profile, include, index)
         } else if (include && !onlyMandatory) {
@@ -205,7 +203,7 @@ function getProfileUpdatesForPackage(id, modelId, profile, include, onlyMandator
 
     var projection = modelReader.getProjection('parent');
 
-    return modelReader.getClassesForPackage(id, modelId, recursive, {
+    return modelReader.getClassesForPackage(id, modelId, recursive, !include, {
         editable: true
     })
         .then(function(classes) {
@@ -250,7 +248,7 @@ function getProfileUpdatesForType(id, modelId, profile, include) {
     return Promise.resolve([]);
 }
 
-function buildPropertiesUpdate(properties, clsId, modelId, profile, include, propertyHandler, propertyFilter, visitedClassIds = []) {
+function buildPropertiesUpdate(properties, clsId, modelId, profile, include, propertyHandler, propertyFilter, ascendInheritanceTree = false, visitedClassIds = []) {
     /*var update = include ? {
         $addToSet: {}
     } : {
@@ -281,7 +279,7 @@ function buildPropertiesUpdate(properties, clsId, modelId, profile, include, pro
         visitedClassIds.push(...typeIds)
 
         var updatesType = Promise.map(typeIds, function(typeId) {
-            return getProfileUpdatesForClass(typeId, modelId, profile, include, true, false, visitedClassIds)
+            return getProfileUpdatesForClass(typeId, modelId, profile, include, true, false, ascendInheritanceTree, visitedClassIds)
         })
             .then(function(classesOfType) {
                 return [].concat.apply([], classesOfType);
@@ -303,7 +301,7 @@ function buildClassUpdate(cls, modelId, profile, include, propertyHandler, prope
         }
     };
 
-    var updates = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler.bind(this, update), propertyFilter, visitedClassIds)
+    var updates = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler.bind(this, update), propertyFilter, false, visitedClassIds)
         .then(function(updatesTypes) {
 
             var updatesClass = Promise.all([profileWriter.putClassUpdateProfile(cls.localId, modelId, update, projection)]);

@@ -2,7 +2,7 @@ import React, { Component, PropTypes } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux'
 
-import { isMenuOpen, getSubmenusOpen, hasFileImport, hasPendingFileImport, getFileImport, hasFileExport, hasPendingFileExport, getFileExport, actions } from '../../reducers/app'
+import { isMenuOpen, getSubmenusOpen, hasFileImport, hasPendingFileImport, getFileImport, hasFileExport, hasPendingFileExport, getFileExport, isFlattenInheritance, isFlattenOninas, actions } from '../../reducers/app'
 import { getModels, getSelectedModel, getSelectedProfile } from '../../reducers/model'
 
 import { Card, CardHeader, CardBlock, CardText, ModalHeader, ModalBody, ModalFooter, Button, ListGroup, ListGroupItem, Collapse } from 'reactstrap';
@@ -23,6 +23,8 @@ const mapStateToProps = (state, props) => {
     return {
         isMenuOpen: isMenuOpen(state),
         submenusOpen: getSubmenusOpen(state),
+        isFlattenInheritance: isFlattenInheritance(state),
+        isFlattenOninas: isFlattenOninas(state),
         models: getModels(state),
         selectedModel: getSelectedModel(state),
         selectedProfile: getSelectedProfile(state),
@@ -69,7 +71,7 @@ class SideMenu extends Component {
     }
 
     render() {
-        const {isMenuOpen, submenusOpen, setSubmenusOpen, toggleMenu, models, selectedModel, selectedProfile} = this.props;
+        const {isMenuOpen, submenusOpen, setSubmenusOpen, toggleMenu, isFlattenInheritance, toggleFlattenInheritance, isFlattenOninas, toggleFlattenOninas, models, selectedModel, selectedProfile} = this.props;
         const {createFileImport, startFileImport, clearFileImport, isImporting, hasImport, importStats, startFileExport, clearFileExport, isExporting, hasExport, exportStats} = this.props;
 
         let expanded = []
@@ -112,7 +114,10 @@ class SideMenu extends Component {
                                                             <FontAwesome name="eye" fixedWidth={ true } className="mr-2 align-self-center" />
                                                             <span className="">View</span>
                                                         </div> } title="View">
-                                    <ModelViewSettings/>
+                                    <ModelViewSettings isFlattenInheritance={ isFlattenInheritance }
+                                        isFlattenOninas={ isFlattenOninas }
+                                        toggleFlattenInheritance={ toggleFlattenInheritance }
+                                        toggleFlattenOninas={ toggleFlattenOninas } />
                                 </AccordionItem>
                                 <AccordionItem header={ <div className="w-100 d-flex flex-row justify-content-between">
                                                             <span><FontAwesome name="sitemap" fixedWidth={ true } className="pr-4" />Model Files</span>

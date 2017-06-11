@@ -72,7 +72,7 @@ function putPackageUpdate(id, modelId, update, projection) {
 
 function appendError(error) {
     if (!error._id)
-        throw new Error()
+        return //throw new Error()
 
     var update = {
         $addToSet: {
@@ -98,7 +98,7 @@ function appendError(error) {
 
 function clearErrors(clsId, modelId, profile) {
     if (!clsId)
-        throw new Error()
+        return //throw new Error()
 
     var update = {
         $pull: {
@@ -121,7 +121,7 @@ function clearErrors(clsId, modelId, profile) {
     )
 }
 
-var minProjection = ['localId', 'name', 'type', 'profiles', 'properties.profiles', 'model', 'editable'];
+var minProjection = ['localId', 'name', 'type', 'profiles', 'properties.profiles', 'properties._id', 'model', 'editable'];
 
 function getProjection() {
     return minProjection.concat([].slice.call(arguments)).reduce(function(prj, key) {

@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import ss from 'socket.io-stream';
 import escapeStringRegexp from 'escape-string-regexp';
 import { LOCATION_CHANGED } from 'redux-little-router';
-import { actions as appActions, doesChangeState, getFilter, getPendingFilter } from '../reducers/app'
+import { actions as appActions, doesChangeState, getFilter, getPendingFilter, isFlattenInheritance } from '../reducers/app'
 import { actions, getModels, getPendingModel, getPendingPackage, getPendingClass, getSelectedModel, getSelectedPackage, getSelectedClass } from '../reducers/model'
 
 export default function createSyncIoMiddleware() {
@@ -105,6 +105,7 @@ function conditionalExecute(action, emit, next, store, socket) {
 
         next(action);
 
+        const flattenInheritance = isFlattenInheritance(store.getState())
         const filter = getFilter(store.getState())
         const pendingModel = getPendingModel(store.getState())
         const pendingPackage = getPendingPackage(store.getState())
@@ -125,7 +126,8 @@ function conditionalExecute(action, emit, next, store, socket) {
             emit('action', actions.fetchClass({
                 id: pendingClass,
                 modelId: getSelectedModel(store.getState()),
-                filter: filter
+                filter: filter,
+                flattenInheritance: flattenInheritance
             }));
     }
 }

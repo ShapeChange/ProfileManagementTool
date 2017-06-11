@@ -30,6 +30,8 @@ export const actions = {
     toggleMenu: createAction('menu/toggle'),
     toggleErrors: createAction('errors/toggle'),
     setSubmenusOpen: createAction('submenus/set'),
+    toggleFlattenInheritance: createAction('flatten/inheritance/toggle'),
+    toggleFlattenOninas: createAction('flatten/oninas/toggle'),
     createFileImport: createAction('file/import/create'),
     startFileImport: createAction('file/import/start'),
     endFileImport: createAction('file/import/done'),
@@ -55,6 +57,8 @@ const initialState = {
     menuOpen: false,
     errorsOpen: false,
     submenusOpen: {},
+    flattenInheritance: true,
+    flattenOninas: false,
     fileImport: {},
     fileExport: {},
     pendingFilter: {
@@ -75,6 +79,8 @@ export default handleActions({
     [actions.toggleMenu]: toggleMenu,
     [actions.toggleErrors]: toggleErrors,
     [actions.setSubmenusOpen]: setSubmenusOpen,
+    [actions.toggleFlattenInheritance]: toggleFlattenInheritance,
+    [actions.toggleFlattenOninas]: toggleFlattenOninas,
     [actions.createFileImport]: createFileImport,
     [actions.startFileImport]: startFileImport,
     [actions.endFileImport]: endFileImport,
@@ -178,6 +184,20 @@ function setSubmenusOpen(state, action) {
     return {
         ...state,
         submenusOpen: action.payload
+    }
+}
+
+function toggleFlattenInheritance(state) {
+    return {
+        ...state,
+        flattenInheritance: !state.flattenInheritance
+    }
+}
+
+function toggleFlattenOninas(state) {
+    return {
+        ...state,
+        flattenOninas: !state.flattenOninas
     }
 }
 
@@ -377,6 +397,8 @@ export const useSmallerFont = (state) => state.app.useSmallerFont
 export const isMenuOpen = (state) => state.app.menuOpen
 export const isErrorsOpen = (state) => state.app.errorsOpen
 export const getSubmenusOpen = (state) => state.app.submenusOpen
+export const isFlattenInheritance = (state) => state.app.flattenInheritance
+export const isFlattenOninas = (state) => state.app.flattenOninas
 export const hasFileImport = (state) => state.app.fileImport.name ? true : false
 export const hasPendingFileImport = (state) => state.app.fileImport.pending && state.app.fileImport.stats ? true : false
 export const getFileImport = (state) => state.app.fileImport

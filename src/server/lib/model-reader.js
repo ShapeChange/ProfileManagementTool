@@ -10,6 +10,7 @@ MODELS = MDL;
 
 return {
     getClass: getClass,
+    getFlattenedClass: getFlattenedClass,
     getClassGraph: getClassGraph,
     getClassesForPackage: getClassesForPackage,
     getAllOfType: getAllOfType,
@@ -27,7 +28,7 @@ function getProjection() {
     }, {})
 }
 
-function getClassGraph(id, modelId, subNotSuper, prjctn = {}, filter = {}) {
+function getClassGraph(id, modelId, subNotSuper, prjctn = {}, filter = {}, match = false) {
     var projection = Object.assign({
         localId: 1,
         editable: 1,
@@ -36,13 +37,15 @@ function getClassGraph(id, modelId, subNotSuper, prjctn = {}, filter = {}) {
         'properties.optional': 1
     }, prjctn);
 
+    match = match || {
+        localId: id,
+        model: ObjectID(modelId)
+    }
+
     return model
         .aggregate([
             {
-                $match: {
-                    localId: id,
-                    model: ObjectID(modelId)
-                }
+                $match: match
             },
             {
                 $graphLookup: {
@@ -177,7 +180,69 @@ function getClass(id, modelId) {
         })
 }
 
-function getClassesForPackage(id, modelId, recursive, filter = {}) {
+function getFlattenedClass(id, modelId) {
+    return model
+        .aggregate([
+            {
+                $match: {
+                    localId: id,
+                    model: ObjectID(modelId)
+                }
+            },
+            {
+                $graphLookup: {
+                    from: MODELS,
+                    startWith: '$supertypes',
+                    connectFromField: 'supertypes',
+                    connectToField: 'localId',
+                    as: "inheritanceTree",
+                    restrictSearchWithMatch: {
+                        model: ObjectID(modelId)
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    properties: {
+                        $reduce: {
+                            input: "$inheritanceTree.properties",
+                            initialValue: "$$ROOT.properties",
+                            in: {
+                                $concatArrays: ["$$value", "$$this"]
+                            }
+                        }
+                    }
+                }
+            }, {
+                $addFields: {
+                    superEditable: {
+                        $map: {
+                            input: "$inheritanceTree",
+                            as: "row",
+                            in: {
+                                _id: "$$row.localId",
+                                editable: "$$row.editable"
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    localId: 1,
+                    'properties._id': 1,
+                    "properties.typeId": 1,
+                    'properties.optional': 1
+                }
+            }
+        ])
+        .toArray()
+        .then(function(details) {
+            return details[0]
+        })
+}
+
+function getClassesForPackage(id, modelId, recursive, subNotSuper, filter = {}) {
     var query = Object.assign({
         parent: ObjectID(id),
         type: 'cls',
@@ -195,10 +260,24 @@ function getClassesForPackage(id, modelId, recursive, filter = {}) {
         return getClassesForPackageGraph(id, modelId, projection, filter);
     }
 
-    return model
-        .find(query)
-        .project(projection)
-        .toArray();
+    if (subNotSuper === undefined) {
+        return model
+            .find(query)
+            .project(projection)
+            .toArray();
+    }
+
+    return getClassGraph(null, modelId, subNotSuper, projection, filter, query)
+        .then(function(clss) {
+            const ids = [];
+            return clss.filter(function(cls) {
+                if (ids.indexOf(cls._id.toHexString()) === -1) {
+                    ids.push(cls._id.toHexString())
+                    return true
+                }
+                return false
+            });
+        })
 }
 
 function getAllOfType(typeId, modelId) {

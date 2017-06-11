@@ -187,23 +187,36 @@ function updatedProfile(state, action) {
         if (elem.type === 'prp') {
 
         } else if (elem.type === 'cls') {
-            const index = state.classes.findIndex(cls => cls._id === elem._id)
-
-            if (index > -1) {
-                let clsUpdate = {};
-                if (state.cls && state.cls._id === elem._id) {
-                    clsUpdate = {
-                        profiles: {
-                            $set: elem.profiles
-                        },
-                        profileParameters: {
-                            $set: elem.profileParameters || state.cls.profileParameters
-                        }
+            let clsUpdate = {};
+            if (state.cls && state.cls._id === elem._id) {
+                clsUpdate = {
+                    profiles: {
+                        $set: elem.profiles
+                    },
+                    profileParameters: {
+                        $set: elem.profileParameters || state.cls.profileParameters
                     }
+                }
+            }
 
-                    if (elem.properties) {
-                        clsUpdate.properties = elem.properties.reduce((upd, prp, i) => {
-                            upd[i] = {
+            if (elem.properties && state.cls) {
+                if (state.cls._id === elem._id) {
+                    clsUpdate.properties = elem.properties.reduce((upd, prp, i) => {
+                        upd[i] = {
+                            profiles: {
+                                $set: prp.profiles
+                            },
+                            profileParameters: {
+                                $set: prp.profileParameters || state.cls.properties[i].profileParameters
+                            }
+                        }
+                        return upd
+                    }, {})
+                } else /*if (state.app.flattenInheritance)*/ {
+                    clsUpdate.properties = elem.properties.reduce((upd, prp, i) => {
+                        const j = state.cls.properties.findIndex(prp2 => prp._id === prp2._id)
+                        if (j > -1) {
+                            upd[j] = {
                                 profiles: {
                                     $set: prp.profiles
                                 },
@@ -211,11 +224,15 @@ function updatedProfile(state, action) {
                                     $set: prp.profileParameters || state.cls.properties[i].profileParameters
                                 }
                             }
-                            return upd
-                        }, {})
-                    }
+                        }
+                        return upd
+                    }, {})
                 }
+            }
 
+            const index = state.classes.findIndex(cls => cls._id === elem._id)
+
+            if (index > -1) {
                 current = update(current, {
                     classes: {
                         [index]: {
@@ -224,6 +241,10 @@ function updatedProfile(state, action) {
                             }
                         }
                     },
+                    cls: clsUpdate
+                })
+            } else {
+                current = update(current, {
                     cls: clsUpdate
                 })
             }
@@ -294,8 +315,8 @@ function updatedEditable(state, action) {
 export const getModels = (state) => state.model.models
 export const getModel = (state) => state.model.mdl
 export const getPackages = (state) => state.model.packages
-export const getClasses = (state) => state.model.classes
-export const getProperties = (state) => getClass(state) && _extractProperties(getClass(state).properties) //_reduceProperties(_extractProperties(getClass(state)), getClass(state))
+export const getClasses = (state) => state.app.flattenInheritance ? state.model.classes.filter(cls => !cls.isAbstract) : state.model.classes
+export const getProperties = (state) => getClass(state) && _extractProperties(getClass(state)) //_reduceProperties(_extractProperties(getClass(state)), getClass(state))
 export const getPackage = (state) => state.model.pkg
 export const getClass = (state) => state.model.cls
 export const getProperty = (state) => _extractProperty(getProperties(state), getSelectedProperty(state))
@@ -349,11 +370,14 @@ const _getExpandedItems = (state) => {
     return expanded
 }
 
-const _extractProperties = (properties) => {
-    return [].concat(properties)
+const _extractProperties = (cls) => {
+    return [].concat(cls.properties)
         .sort(function(a, b) {
             return a.name > b.name ? 1 : -1
-        })
+        }).map(prp => ({
+        ...prp,
+        editable: prp.parent === cls._id ? cls.editable : cls.superEditable && cls.superEditable.find(s => prp.parent === s._id).editable
+    }))
 //return details && details.element.children ? details.element.children.find(child => child && child.name === 'sc:properties') : null
 }
 
@@ -400,6 +424,7 @@ const _extractDetails = (details) => {
         name: details && details.name,
         parent: details && details.parent,
         editable: details && details.editable,
+        superEditable: details && details.superEditable,
         optional: details && details.optional,
         profiles: details && details.profiles,
         profileParameters: details && details.profileParameters,
