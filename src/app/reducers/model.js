@@ -315,7 +315,7 @@ function updatedEditable(state, action) {
 export const getModels = (state) => state.model.models
 export const getModel = (state) => state.model.mdl
 export const getPackages = (state) => state.model.packages
-export const getClasses = (state) => state.app.flattenInheritance ? state.model.classes.filter(cls => !cls.isAbstract) : state.model.classes
+export const getClasses = (state) => (state.app.flattenInheritance || state.app.flattenOninas) ? state.model.classes.filter(cls => ((!state.app.flattenInheritance || !cls.isAbstract) && (!state.app.flattenOninas || (!cls.isMeta && !cls.isReason)))) : state.model.classes
 export const getProperties = (state) => getClass(state) && _extractProperties(getClass(state)) //_reduceProperties(_extractProperties(getClass(state)), getClass(state))
 export const getPackage = (state) => state.model.pkg
 export const getClass = (state) => state.model.cls
@@ -416,7 +416,10 @@ const _extractDetails = (details) => {
     const supert = details && details.supertypes && details.supertypes.length > 0 ? {
         supertypes: details.supertypes
     } : {}
-    const infos = Object.assign(d, stereo, supert, descriptors, taggedValues)
+    const subt = details && details.subtypes && details.subtypes.length > 0 ? {
+        subtypes: details.subtypes
+    } : {}
+    const infos = Object.assign(d, stereo, supert, subt, descriptors)
 
     return {
         _id: details && details._id,
@@ -428,7 +431,8 @@ const _extractDetails = (details) => {
         optional: details && details.optional,
         profiles: details && details.profiles,
         profileParameters: details && details.profileParameters,
-        infos: infos
+        infos: infos,
+        taggedValues: taggedValues
     }
 }
 

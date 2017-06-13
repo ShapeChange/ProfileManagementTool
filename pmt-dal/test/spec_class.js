@@ -33,11 +33,11 @@ function shouldExcludeClass(params) {
     });
 }
 
-function shouldNotIncludeClass(params) {
+function shouldNotIncludeClass(params, name = 'given class') {
 
     const {clsId, profile, include, getUpdateEntry} = params;
 
-    it('should not add profile to given class', function() {
+    it('should not add profile to ' + name, function() {
 
         //params.updatedClasses.should.not.include(getUpdateEntry(clsId, profile, include));
         params.updatedClasses.should.not.have.deep.property(`${clsId}.profiles.${profile}`);

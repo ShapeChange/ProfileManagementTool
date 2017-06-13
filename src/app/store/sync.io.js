@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import ss from 'socket.io-stream';
 import escapeStringRegexp from 'escape-string-regexp';
 import { LOCATION_CHANGED } from 'redux-little-router';
-import { actions as appActions, doesChangeState, getFilter, getPendingFilter, isFlattenInheritance } from '../reducers/app'
+import { actions as appActions, doesChangeState, getFilter, getPendingFilter, isFlattenInheritance, isFlattenOninas } from '../reducers/app'
 import { actions, getModels, getPendingModel, getPendingPackage, getPendingClass, getSelectedModel, getSelectedPackage, getSelectedClass } from '../reducers/model'
 
 export default function createSyncIoMiddleware() {
@@ -16,6 +16,8 @@ export default function createSyncIoMiddleware() {
         appActions.startFileImport.toString(),
         appActions.startFileExport.toString(),
         appActions.setFilter.toString(),
+        appActions.toggleFlattenInheritance.toString(),
+        appActions.toggleFlattenOninas.toString(),
         actions.updateProfile.toString(),
         actions.updateEditable.toString()
     ], {
@@ -91,6 +93,50 @@ function conditionalExecute(action, emit, next, store, socket) {
             }
         }
 
+    } else if (action.type === appActions.toggleFlattenInheritance.toString()) {
+
+        const previousIsFlattenInheritance = isFlattenInheritance(store.getState());
+
+        next(action);
+
+        const currentIsFlattenInheritance = isFlattenInheritance(store.getState())
+
+        if (currentIsFlattenInheritance !== previousIsFlattenInheritance) {
+            const selectedClass = getSelectedClass(store.getState())
+
+            if (selectedClass) {
+                emit('action', actions.fetchClass({
+                    id: selectedClass,
+                    modelId: getSelectedModel(store.getState()),
+                    filter: getFilter(store.getState()),
+                    flattenInheritance: currentIsFlattenInheritance,
+                    flattenOninas: isFlattenOninas(store.getState())
+                }));
+            }
+        }
+
+    } else if (action.type === appActions.toggleFlattenOninas.toString()) {
+
+        const previousIsFlattenOninas = isFlattenOninas(store.getState());
+
+        next(action);
+
+        const currentIsFlattenOninas = isFlattenOninas(store.getState())
+
+        if (currentIsFlattenOninas !== previousIsFlattenOninas) {
+            const selectedClass = getSelectedClass(store.getState())
+
+            if (selectedClass) {
+                emit('action', actions.fetchClass({
+                    id: selectedClass,
+                    modelId: getSelectedModel(store.getState()),
+                    filter: getFilter(store.getState()),
+                    flattenInheritance: isFlattenInheritance(store.getState()),
+                    flattenOninas: currentIsFlattenOninas
+                }));
+            }
+        }
+
     } else {
 
         // TODO: get owner from auth
@@ -106,6 +152,7 @@ function conditionalExecute(action, emit, next, store, socket) {
         next(action);
 
         const flattenInheritance = isFlattenInheritance(store.getState())
+        const flattenOninas = isFlattenOninas(store.getState())
         const filter = getFilter(store.getState())
         const pendingModel = getPendingModel(store.getState())
         const pendingPackage = getPendingPackage(store.getState())
@@ -127,12 +174,15 @@ function conditionalExecute(action, emit, next, store, socket) {
                 id: pendingClass,
                 modelId: getSelectedModel(store.getState()),
                 filter: filter,
-                flattenInheritance: flattenInheritance
+                flattenInheritance: flattenInheritance,
+                flattenOninas: flattenOninas
             }));
     }
 }
 
 function updateFilter(store, emit, pendingFilter) {
+    const flattenInheritance = isFlattenInheritance(store.getState())
+    const flattenOninas = isFlattenOninas(store.getState())
     const filter = escapeStringRegexp(pendingFilter.toLowerCase())
     const selectedModel = getSelectedModel(store.getState())
     const selectedPackage = getSelectedPackage(store.getState())
@@ -160,7 +210,9 @@ function updateFilter(store, emit, pendingFilter) {
         const fetchAction = actions.fetchClass({
             id: selectedClass,
             modelId: selectedModel,
-            filter: filter
+            filter: filter,
+            flattenInheritance: flattenInheritance,
+            flattenOninas: flattenOninas
         })
 
         store.dispatch(fetchAction)

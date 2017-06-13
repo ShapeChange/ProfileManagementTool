@@ -48,6 +48,23 @@ var classes = {
             }
         ]
     },
+    6: {
+        name: 'SUPER_CLASS_NON_EDITABLE',
+        localId: '6',
+        editable: false,
+        properties: [
+            {
+                optional: false,
+                typeId: '2',
+                _id: '1_1'
+            },
+            {
+                optional: true,
+                typeId: '5',
+                _id: '1_2'
+            }
+        ]
+    },
     4: {
         name: 'SUB_CLASS',
         localId: '4',
@@ -68,11 +85,15 @@ var modelReader = {
     getClass: function(clsId, modelId) {
         return Promise.resolve(classes[clsId]);
     },
-    getClassGraph: function(clsId, modelId, subNotSuper) {
+    getClassGraph: function(clsId, modelId, subNotSuper, projection, filter) {
         var graph = [classes[clsId]];
 
         if (clsId === '1') {
             graph.push(subNotSuper ? classes['4'] : classes['3'])
+        }
+
+        if (clsId === '1' && !subNotSuper && (!filter || !filter.editable)) {
+            graph.push(classes['6'])
         }
 
         return Promise.resolve(graph);
@@ -92,7 +113,7 @@ var modelReader = {
     getProjection: function() {
         return {};
     },
-    getClassesForPackage: function(id, modelId, recursive, subNotSuper) {
+    getClassesForPackage: function(id, modelId, recursive, subNotSuper, filter) {
         var graph = [classes['1']];
 
         if (recursive) {
@@ -102,10 +123,10 @@ var modelReader = {
         var pr = Promise.resolve(graph)
 
         if (subNotSuper !== undefined) {
-            pr = modelReader.getClassGraph('1', modelId, subNotSuper)
+            pr = modelReader.getClassGraph('1', modelId, subNotSuper, {}, filter)
             if (recursive) {
                 pr = pr.then(function(g) {
-                    return modelReader.getClassGraph('4', modelId, subNotSuper)
+                    return modelReader.getClassGraph('4', modelId, subNotSuper, {}, filter)
                         .then(function(g2) {
                             return g.concat(g2)
                         })
@@ -153,6 +174,7 @@ module.exports = {
     optionalPrpIdIndex: 1,
     profile: 'A',
     editor: editor,
+    classes: classes,
     getTypeIdForProperty: getTypeIdForProperty,
     joinUpdates: joinUpdates
 }

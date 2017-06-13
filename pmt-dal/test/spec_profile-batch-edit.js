@@ -19,12 +19,17 @@ describe('Package', function() {
             recursive: false
         });
 
+        const paramsSuperNonEditable = Object.assign({}, params, {
+            clsId: '6'
+        });
+
         const {clsId, profile, include, onlyMandatory, recursive, editor} = params;
 
         before(function() {
 
             return editor.getProfileUpdatesForPackage('pkg', 'model', profile, include, onlyMandatory, recursive)
                 .then(params.joinUpdates.bind(params))
+                .then(params.joinUpdates.bind(paramsSuperNonEditable))
         });
 
         classSpec.shouldIncludeClass(params);
@@ -34,6 +39,8 @@ describe('Package', function() {
         classSpec.shouldNotIncludeSubClasses(params);
 
         propertySpec.shouldIncludeMandatoryProperties(params);
+
+        propertySpec.shouldNotIncludeAnyProperties(paramsSuperNonEditable, params.classes['6'].name);
 
     });
 
@@ -50,28 +57,6 @@ describe('Package', function() {
 });
 
 describe('Class', function() {
-
-    describe('include mandatory properties', function() {
-
-        const params = Object.assign({}, options, {
-            include: true,
-            onlyMandatory: true,
-            onlyChildren: true
-        });
-
-        const {clsId, profile, include, onlyMandatory, onlyChildren, editor} = params;
-
-        before(function() {
-
-            return editor.getProfileUpdatesForClass(clsId, 'model', profile, include, onlyMandatory, onlyChildren)
-                .then(params.joinUpdates.bind(params))
-        });
-
-        classSpec.shouldNotIncludeClass(params);
-
-        propertySpec.shouldIncludeMandatoryProperties(params);
-
-    });
 
     describe('include all properties with full view', function() {
 
@@ -108,6 +93,10 @@ describe('Class', function() {
             clsId: params.superClsId
         });
 
+        const paramsSuperNonEditable = Object.assign({}, params, {
+            clsId: '6'
+        });
+
         const {clsId, profile, include, onlyMandatory, onlyChildren, recursive, editor} = params;
 
         before(function() {
@@ -115,15 +104,18 @@ describe('Class', function() {
             return editor.getProfileUpdatesForClass(clsId, 'model', profile, include, onlyMandatory, onlyChildren, recursive)
                 .then(params.joinUpdates.bind(params))
                 .then(paramsSuper.joinUpdates.bind(paramsSuper))
+                .then(paramsSuper.joinUpdates.bind(paramsSuperNonEditable))
         });
 
         classSpec.shouldNotIncludeClass(params);
 
-        classSpec.shouldNotIncludeClass(paramsSuper);
+        classSpec.shouldNotIncludeClass(paramsSuper, params.classes['3'].name);
 
         propertySpec.shouldIncludeAllProperties(params);
 
-        propertySpec.shouldIncludeAllProperties(paramsSuper);
+        propertySpec.shouldIncludeAllProperties(paramsSuper, params.classes['3'].name);
+
+        propertySpec.shouldNotIncludeAnyProperties(paramsSuperNonEditable, params.classes['6'].name);
 
     });
 
@@ -178,28 +170,6 @@ describe('Class', function() {
         propertySpec.shouldExcludeOptionalProperties(params);
 
         propertySpec.shouldExcludeOptionalProperties(paramsSuper);
-
-    });
-
-    describe('exclude all properties', function() {
-
-        const params = Object.assign({}, options, {
-            include: false,
-            onlyMandatory: false,
-            onlyChildren: true
-        });
-
-        const {clsId, profile, include, onlyMandatory, onlyChildren, editor} = params;
-
-        before(function() {
-
-            return editor.getProfileUpdatesForClass(clsId, 'model', profile, include, onlyMandatory, onlyChildren)
-                .then(params.joinUpdates.bind(params))
-        });
-
-        classSpec.shouldNotExcludeClass(params);
-
-        propertySpec.shouldExcludeAllProperties(params);
 
     });
 

@@ -332,7 +332,7 @@ function fetchPackageDetails(socket, id) {
 }
 
 function fetchClass(socket, payload) {
-    var cls = payload.flattenInheritance ? db.getFlattenedClass(payload.id, payload.modelId) : db.getDetails(payload.id, payload.modelId)
+    var cls = payload.flattenInheritance || payload.flattenOninas ? db.getFlattenedClass(payload.id, payload.modelId, payload.flattenInheritance, payload.flattenOninas) : db.getDetails(payload.id, payload.modelId)
 
     return cls
         .then(function(details) {

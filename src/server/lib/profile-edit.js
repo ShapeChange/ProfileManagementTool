@@ -120,7 +120,9 @@ function getProfileUpdatesForClass(id, modelId, profile, include, onlyMandatory 
 
     if (onlyChildren) {
 
-        var cls = ascendInheritanceTree ? modelReader.getClassGraph(id, modelId) : modelReader.getClass(id, modelId)
+        var cls = ascendInheritanceTree ? modelReader.getClassGraph(id, modelId, false, {}, {
+            editable: true
+        }) : modelReader.getClass(id, modelId)
 
         return cls
             .then(function(cls) {

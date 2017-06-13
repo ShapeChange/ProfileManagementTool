@@ -7,6 +7,7 @@ exports.shouldIncludeMandatoryProperties = shouldIncludeMandatoryProperties;
 exports.shouldExcludeOptionalProperties = shouldExcludeOptionalProperties;
 exports.shouldIncludeAllProperties = shouldIncludeAllProperties;
 exports.shouldExcludeAllProperties = shouldExcludeAllProperties;
+exports.shouldNotIncludeAnyProperties = shouldNotIncludeAnyProperties;
 
 
 function shouldIncludeProperty(params) {
@@ -77,12 +78,12 @@ function shouldIncludeMandatoryProperties(params) {
     });
 }
 
-function shouldIncludeAllProperties(params) {
+function shouldIncludeAllProperties(params, name = 'given class') {
 
     const {clsId, profile, include, mandatoryPrpId, mandatoryPrpIdIndex, optionalPrpId, optionalPrpIdIndex} = params;
     const {getUpdateEntry, getTypeIdForProperty} = params;
 
-    it('should add profile to all properties of given class', function() {
+    it('should add profile to all properties of ' + name, function() {
 
         //params.updatedClasses.should.include(getUpdateEntry(clsId, profile, include, mandatoryPrpId, optionalPrpId));
         params.updatedClasses.should.have.deep.property(`${clsId}.properties\\.${mandatoryPrpIdIndex}\\.profiles.${profile}`, include);
@@ -95,6 +96,18 @@ function shouldIncludeAllProperties(params) {
         //params.updatedClasses.should.include(getUpdateEntry(getTypeIdForProperty(optionalPrpId), profile, include));
         params.updatedClasses.should.have.deep.property(`${getTypeIdForProperty(clsId, mandatoryPrpId)}.profiles.${profile}`, include);
         params.updatedClasses.should.have.deep.property(`${getTypeIdForProperty(clsId, optionalPrpId)}.profiles.${profile}`, include);
+    });
+}
+
+function shouldNotIncludeAnyProperties(params, name = 'given class') {
+
+    const {clsId, profile, include, mandatoryPrpId, mandatoryPrpIdIndex, optionalPrpId, optionalPrpIdIndex} = params;
+    const {getUpdateEntry, getTypeIdForProperty} = params;
+
+    it('should not add profile to any properties of ' + name, function() {
+
+        params.updatedClasses.should.not.have.deep.property(`${clsId}.properties\\.${mandatoryPrpIdIndex}\\.profiles.${profile}`);
+        params.updatedClasses.should.not.have.deep.property(`${clsId}.properties\\.${optionalPrpIdIndex}\\.profiles.${profile}`);
     });
 }
 

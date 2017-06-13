@@ -83,7 +83,7 @@ class ModelBrowserDetails extends Component {
     }
 
     render() {
-        const {_id, name, type, items, infos, parameters, selectedTab, baseUrls, urlSuffix, filter, isFlattenInheritance} = this.props;
+        const {_id, name, type, items, infos, taggedValues, parameters, selectedTab, baseUrls, urlSuffix, filter, isFlattenInheritance, isFlattenOninas} = this.props;
 
         const baseUrl = `${baseUrls[type]}/${_id}`;
         const isInfo = infos && selectedTab === 'info'
@@ -131,10 +131,12 @@ class ModelBrowserDetails extends Component {
                       updateProfileParameter={ this._updateProfileParameter } /> }
                 { isInfo &&
                   <ModelBrowserInfos infos={ infos }
+                      taggedValues={ taggedValues }
                       baseUrl={ baseUrls['cls'] }
                       urlSuffix={ selectedTab }
                       filter={ filter }
-                      isFlattenInheritance={ isFlattenInheritance } /> }
+                      isFlattenInheritance={ isFlattenInheritance }
+                      isFlattenOninas={ isFlattenOninas } /> }
                 { isItems &&
                   <ModelBrowserItems {...this.props} urlSuffix={ selectedTab } updateProfile={ this._updateProfileForElement } /> }
                 { isParameters &&

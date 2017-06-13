@@ -57,8 +57,8 @@ const initialState = {
     menuOpen: false,
     errorsOpen: false,
     submenusOpen: {},
-    flattenInheritance: true,
-    flattenOninas: false,
+    flattenInheritance: false,
+    flattenOninas: true,
     fileImport: {},
     fileExport: {},
     pendingFilter: {

@@ -275,7 +275,7 @@ function parseClass(outStream, node, options) {
     delete node.parent;
     delete node._id
 
-    var attributes = reduceNode(node, options.resolveId(id));
+    var attributes = reduceNode(node, options.resolveId(id), 'cls');
 
     var cls = Object.assign(attributes, {
         _id: id,
@@ -355,6 +355,9 @@ function reduceNode(node, id, type) {
     var supertypesIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:supertypes'
     })
+    var subtypesIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:subtypes'
+    })
     var cardinalityIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:cardinality'
     })
@@ -374,7 +377,7 @@ function reduceNode(node, id, type) {
         return child.name === 'sc:associationId'
     })
 
-    return {
+    var reduced = {
         name: nameIndex > -1 && node.children[nameIndex].children[0].value,
         localId: localIdIndex > -1 && node.children[localIdIndex].children[0].value,
         descriptors: descriptorsIndex > -1 && node.children[descriptorsIndex].children.reduce((attrs, attr) => {
@@ -388,7 +391,7 @@ function reduceNode(node, id, type) {
             }, {}),
         taggedValues: taggedValuesIndex > -1 && node.children[taggedValuesIndex].children.reduce((attrs, attr) => {
                 let key = attr.children && attr.children[0] && attr.children[0].children[0] ? attr.children[0].children[0].value : null
-                let value = key && attr.children[1] && attr.children[1].children[0] ? attr.children[1].children[0].children[0].value : ''
+                let value = key && attr.children[1] && attr.children[1].children[0] && attr.children[1].children[0].children[0] ? attr.children[1].children[0].children[0].value : ''
                 if (key && key !== 'profiles' && key !== 'sequenceNumber' && value && value !== '')
                     attrs[key] = value
 
@@ -399,6 +402,9 @@ function reduceNode(node, id, type) {
             }),
         baseclass: baseClassIndex > -1 && node.children[baseClassIndex].children[0].value,
         supertypes: supertypesIndex > -1 ? node.children[supertypesIndex].children.map(function(st) {
+            return st.children[0].value
+        }) : [],
+        subtypes: subtypesIndex > -1 ? node.children[subtypesIndex].children.map(function(st) {
             return st.children[0].value
         }) : [],
         profiles: profilesIndex > -1 ? node.children[profilesIndex].children.map(function(pr) {
@@ -414,12 +420,14 @@ function reduceNode(node, id, type) {
         associationId: associationIdIndex > -1 && node.children[associationIdIndex].children[0].value,
         properties: propertiesIndex > -1 ? _reduceProperties(node.children[propertiesIndex], node.children[localIdIndex].children[0].value) : []
     }
+
+    return _reduceMetaAndReason(reduced, type);
 }
 
 
 function _reduceProperties(properties, id) {
     return properties.children.map(function(prop) {
-        let p = reduceNode(prop);
+        let p = reduceNode(prop, null, 'prp');
 
         p.parent = id;
         p._id = p.localId;
@@ -447,4 +455,31 @@ function _reduceProfiles(profiles) {
 
         return reduced;
     }, {});
+}
+
+function _reduceMetaAndReason(reducedNode, type) {
+    if (type === 'cls' && reducedNode.stereotypes) {
+
+        var hasNilReason = false;
+
+        reducedNode.properties.forEach(function(prp) {
+            var isNilReason = (prp.taggedValues && (prp.taggedValues.gmlImplementedByNilReason === 'true' || prp.taggedValues.implementedByNilReason === 'true'))
+                || (_hasReasonName(reducedNode.name) && prp.name === 'reason')
+
+            hasNilReason = hasNilReason || isNilReason;
+            prp.isNilReason = isNilReason
+        })
+
+        return Object.assign(reducedNode, {
+            // TODO
+            isMeta: reducedNode.stereotypes.indexOf('datatype') > -1 && reducedNode.properties.length === 1 && reducedNode.properties[0].typeName && _hasReasonName(reducedNode.properties[0].typeName),
+            isReason: reducedNode.stereotypes.indexOf('union') > -1 && reducedNode.properties.length === 2 && hasNilReason
+        })
+    }
+
+    return reducedNode
+}
+
+function _hasReasonName(name) {
+    return name.indexOf('Reason') === name.length - 6
 }

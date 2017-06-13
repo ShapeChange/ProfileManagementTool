@@ -205,13 +205,19 @@ var packagesForFilteredClasses = getFilteredClasses(modelId, filter)
 
 
 return Promise.join(filteredPackageTree, packagesForFilteredClasses, function(pkgs, pkgs2) {
-    return pkgs.concat(pkgs2.filter(function(pkg2) {
-        return pkgs.findIndex(function(pkg) {
-                return pkg._id === pkg2._id
-            }) === -1;
-    }));
+    return pkgs.concat(pkgs2);
 })
 
+    .then(function(pkgs) {
+        const ids = [];
+        return pkgs.filter(function(pkg) {
+            if (ids.indexOf(pkg._id.toHexString()) === -1) {
+                ids.push(pkg._id.toHexString())
+                return true
+            }
+            return false
+        });
+    })
 }
 
 function getPackagesForClasses(modelId, classIds) {
@@ -444,7 +450,9 @@ return Promise.resolve(
             stereotypes: 1,
             profiles: 1,
             editable: 1,
-            isAbstract: 1
+            isAbstract: 1,
+            isMeta: 1,
+            isReason: 1
         })
         .sort({
             name: 1
@@ -470,16 +478,25 @@ return model
 }
 
 // TODO: aggregate ???
-function resolveIds(details) {
+function resolveIds(details, flattenOninas) {
     var localids = [];
 
     if (details && details.supertypes)
         localids = localids.concat(details.supertypes);
+    if (details && details.subtypes)
+        localids = localids.concat(details.subtypes);
     if (details && details.properties)
         details.properties.reduce(function(ids, prp) {
             if (prp.typeId) ids.push(prp.typeId)
             if (prp.associationId) ids.push(prp.associationId)
             return ids;
+        }, localids);
+    if (flattenOninas && details.metaReasonClasses)
+        details.metaReasonClasses.reduce(function(ids, cls) {
+            return cls.properties.reduce(function(ids, prp) {
+                if (prp.typeId) ids.push(prp.typeId)
+                return ids;
+            }, ids);
         }, localids);
 
     if (localids.length) {
@@ -496,7 +513,9 @@ function resolveIds(details) {
             .project({
                 name: 1,
                 localId: 1,
-                isAbstract: 1
+                isAbstract: 1,
+                isMeta: 1,
+                isReason: 1
             })
             .toArray()
             .then(function(resolvedIds) {
@@ -507,7 +526,52 @@ function resolveIds(details) {
                             return tid.localId === st;
                         });
                     });
-                if (details.properties)
+                if (details.subtypes)
+                    details.subtypes = details.subtypes.map(function(st) {
+                        return resolvedIds.find(function(tid) {
+                            return tid.localId === st;
+                        });
+                    });
+                if (details.properties) {
+                    if (flattenOninas && details.metaReasonClasses) {
+                        resolvedIds = resolvedIds.concat(details.metaReasonClasses.map(function(t) {
+                            return {
+                                name: t.name,
+                                localId: t.localId,
+                                isAbstract: t.isAbstract,
+                                isMeta: t.isMeta,
+                                isReason: t.isReason
+                            }
+                        }))
+
+                        details.properties = details.properties.map(function(prp) {
+                            var metaReason = details.metaReasonClasses.find(function(t) {
+                                return t.localId === prp.typeId
+                            })
+
+                            if (metaReason && metaReason.isMeta) {
+                                metaReason = details.metaReasonClasses.find(function(t) {
+                                    return metaReason.properties && t.localId === metaReason.properties[0].typeId
+                                })
+                            }
+
+                            if (metaReason && metaReason.isReason && metaReason.properties) {
+                                var value = metaReason.properties.find(function(p) {
+                                    return !p.isNilReason
+                                })
+
+                                if (value) {
+                                    prp.typeId = value.typeId
+                                    prp.cardinality = _mergeCardinalities(prp.cardinality, value.cardinality)
+                                }
+                            }
+
+                            return prp;
+                        });
+
+                        delete details.metaReasonClasses
+                    }
+
                     details.properties = details.properties.map(function(prp) {
                         if (prp.typeId)
                             prp.typeId = resolvedIds.find(function(tid) {
@@ -519,6 +583,7 @@ function resolveIds(details) {
                             });
                         return prp;
                     });
+                }
 
                 return details
             })
@@ -526,27 +591,38 @@ function resolveIds(details) {
         return details;
 }
 
-exports.getFlattenedClass = function(id, modelId) {
-return model
-    .aggregate([
-        {
-            $match: {
-                localId: id,
+function _mergeCardinalities(cardinality1, cardinality2) {
+    var bounds1 = cardinality1.split('..')
+    var bounds2 = cardinality2.split('..')
+    var newMin = parseInt(bounds1[0]) * parseInt(bounds2[0])
+    var newMax = bounds1[1] === '*' || bounds2[1] === '*' ? '*' : parseInt(bounds1[1]) * parseInt(bounds2[1])
+
+    return newMin + '..' + newMax
+}
+
+exports.getFlattenedClass = function(id, modelId, flattenInheritance, flattenOninas) {
+var aggregate = [
+    {
+        $match: {
+            localId: id,
+            model: ObjectID(modelId)
+        }
+    }
+]
+
+if (flattenInheritance) {
+    aggregate = aggregate.concat([{
+        $graphLookup: {
+            from: MODELS,
+            startWith: '$supertypes',
+            connectFromField: 'supertypes',
+            connectToField: 'localId',
+            as: "inheritanceTree",
+            restrictSearchWithMatch: {
                 model: ObjectID(modelId)
             }
-        },
-        {
-            $graphLookup: {
-                from: MODELS,
-                startWith: '$supertypes',
-                connectFromField: 'supertypes',
-                connectToField: 'localId',
-                as: "inheritanceTree",
-                restrictSearchWithMatch: {
-                    model: ObjectID(modelId)
-                }
-            }
-        },
+        }
+    },
         {
             $addFields: {
                 properties: {
@@ -572,18 +648,44 @@ return model
                     }
                 }
             }
-        },
-        {
-            $project: {
-                element: 0,
-                'properties.element': 0,
-                inheritanceTree: 0
+        }])
+}
+
+if (flattenOninas) {
+    aggregate = aggregate.concat([{
+        $graphLookup: {
+            from: MODELS,
+            startWith: '$properties.typeId',
+            connectFromField: 'properties.typeId',
+            connectToField: 'localId',
+            as: "metaReasonClasses",
+            restrictSearchWithMatch: {
+                model: ObjectID(modelId),
+                $or: [{
+                    isMeta: true
+                }, {
+                    isReason: true
+                }]
             }
         }
-    ])
+    }])
+}
+
+aggregate.push({
+    $project: {
+        element: 0,
+        'properties.element': 0,
+        'metaReasonClasses.element': 0,
+        'metaReasonClasses.properties.element': 0,
+        inheritanceTree: 0
+    }
+})
+
+return model
+    .aggregate(aggregate)
     .toArray()
     .then(function(details) {
-        return resolveIds(details[0])
+        return resolveIds(details[0], flattenOninas)
     })
 }
 
