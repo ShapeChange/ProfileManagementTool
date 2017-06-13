@@ -16,6 +16,8 @@ install:
 test_script:
   - npm test
   - npm run build
+  - npm run win
+  - npm pack dist
   - cd pmt-win
   - npm run build
   - cd ..
@@ -26,3 +28,6 @@ build: off
 artifacts:
   - path: pmt-win\*.zip
     name: pmt-win
+
+  - path: *.tgz
+    name: pmt

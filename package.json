@@ -1,6 +1,6 @@
 {
     "name": "pmt",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "",
     "private": true,
     "main": "server.js",
@@ -9,7 +9,7 @@
         "build": "NODE_ENV=production webpack --config webpack.config.production.js",
         "win": "cd dist && npmAddScript -k preinstall -v \"stop-service && uninstall-service\" -f && npmAddScript -k postinstall -v \"install-service && start-service\" -f",
         "prod": "NODE_ENV=production node dist/server.js",
-        "test": "mocha ./*/test --recursive"
+        "test": "mocha --recursive ./pmt-io/test ./pmt-dal/test"
     },
     "author": "interactive instruments GmbH",
     "license": "GPL-3.0",
