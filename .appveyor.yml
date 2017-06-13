@@ -16,10 +16,10 @@ install:
 test_script:
   - npm test
   - npm run build
-  - npm run win
   - cd dist
   - npm --production install
   - cd ..
+  - npm run win
   - npm pack dist
   - cd pmt-win
   - npm run build
