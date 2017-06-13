@@ -29,5 +29,5 @@ artifacts:
   - path: pmt-win\*.zip
     name: pmt-win
 
-  - path: *.tgz
+  - path: .\*.tgz
     name: pmt
