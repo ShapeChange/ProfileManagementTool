@@ -4,11 +4,15 @@
     "description": "",
     "private": true,
     "scripts": {
+        "build": "pack-zip ../pmt-win pmt-win-1.0.0.zip"
     },
     "author": "interactive instruments GmbH",
     "license": "GPL-3.0",
     "devDependencies": {
+        "pack-zip": "^0.2.2"
     },
     "dependencies": {
+        "pmt-win-srvc": "../pmt-win-srvc",
+        ".bin": ""
     }
 }

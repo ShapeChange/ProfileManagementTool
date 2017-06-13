@@ -1,0 +1,28 @@
+# Test against the latest version of this Node.js version
+environment:
+  nodejs_version: "6"
+
+# Install scripts. (runs after repo cloning)
+install:
+  # Get the latest stable version of Node.js or io.js
+  - ps: Install-Product node $env:nodejs_version
+  # install modules
+  - npm install
+  - cd pmt-win
+  - npm install
+  - cd ..
+
+# Post-install test scripts.
+test_script:
+  - npm test
+  - npm run build
+  - cd pmt-win
+  - npm run build
+  - cd ..
+
+# Don't actually build.
+build: off
+
+artifacts:
+  - path: pmt-win\*.zip
+    name: pmt-win
