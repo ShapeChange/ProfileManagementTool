@@ -110,11 +110,11 @@ class App extends Component {
                                    </div> }
                         { model && profile && <div className="navbar-text px-3">
                                                   <FontAwesome name="id-card" className="pr-2" />
-                                                  <span>{ profile }</span>
+                                                  <span>{ model.profiles[profile].name }</span>
                                               </div> }
                         { model && profile && <div className="navbar-text ml-auto">
                                                   { busy ? <FontAwesome name="spinner" pulse />
-                                                    : model.profiles2[profile].errors.length > 0
+                                                    : model.profiles[profile].errors.length > 0
                                                     ? <div>
                                                           <Link id="errors"
                                                               href={ '' }
@@ -124,7 +124,7 @@ class App extends Component {
                                                                             toggleErrors();
                                                                         } }>
                                                           <Badge color="danger" className="rounded-circle">
-                                                              { model.profiles2[profile].errors.length }
+                                                              { model.profiles[profile].errors.length }
                                                           </Badge>
                                                           </Link>
                                                           <Popover placement="bottom right"
@@ -136,13 +136,13 @@ class App extends Component {
                                                               </PopoverTitle>
                                                               <PopoverContent className="p-0">
                                                                   <ListGroup className="border-0 rounded-0">
-                                                                      { model.profiles2[profile].errors.map((err, i) => <ListGroupItem key={ i } className={ `rounded-0 border-left-0 border-right-0 border-bottom-0 ${i === 0 && 'border-top-0'}` }>
-                                                                                                                            <Link href={ `${baseUrls['cls']}/${err._id}` } title={ err.name } className="text-danger">
-                                                                                                                            { `Consistency error in class "${err.name}":` }
-                                                                                                                            <br/>
-                                                                                                                            { err.msg }
-                                                                                                                            </Link>
-                                                                                                                        </ListGroupItem>
+                                                                      { model.profiles[profile].errors.map((err, i) => <ListGroupItem key={ i } className={ `rounded-0 border-left-0 border-right-0 border-bottom-0 ${i === 0 && 'border-top-0'}` }>
+                                                                                                                           <Link href={ `${baseUrls['cls']}/${err._id}` } title={ err.name } className="text-danger">
+                                                                                                                           { `Consistency error in class "${err.name}":` }
+                                                                                                                           <br/>
+                                                                                                                           { err.msg }
+                                                                                                                           </Link>
+                                                                                                                       </ListGroupItem>
                                                                         ) }
                                                                   </ListGroup>
                                                               </PopoverContent>

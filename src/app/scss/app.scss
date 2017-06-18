@@ -1,5 +1,7 @@
 @import "~bootstrap/scss/variables";
 
+$yellow-light: rgba(255,213,0,.33);
+
 /*html, body {
 	height: 100%;
 }*/
@@ -110,6 +112,10 @@ a.text-muted:focus, a.text-muted:hover {
 
 .bg-highlight {
 	background-color: $yellow;
+}
+
+.underscore-highlight {		
+	background-color: $yellow-light;
 }
 
 

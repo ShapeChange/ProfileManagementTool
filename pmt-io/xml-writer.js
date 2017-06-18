@@ -52,6 +52,11 @@ var indent = function indent(stream, opts, depth) {
     }
 }
 
+var writer = {
+    print: null,
+    resume: null
+};
+
 /**
  * @param  {XmlNode|XmlNode[]} ast
  * @return {string}
@@ -77,6 +82,7 @@ var print = function print(stream, opts, ast, depth) {
                 resolve();
             } else {
                 indent(stream, opts, depth);
+
                 stream.push('<' + ast.name + attributes + '>');
 
                 var recurse;
@@ -98,12 +104,20 @@ var print = function print(stream, opts, ast, depth) {
                     .then(function(noIndent) {
                         !noIndent && indent(stream, opts, depth);
 
-                        stream.push('</' + ast.name + '>');
+                        var pause = !stream.push('</' + ast.name + '>');
 
                         if (depth === 0)
                             stream.push('\n');
 
-                        resolve()
+                        if (pause) {
+                            //console.log('PAUSE WRITER')
+                            writer.resume = function() {
+                                //console.log('RESUME WRITER')
+                                writer.resume = null;
+                                resolve();
+                            }
+                        } else
+                            resolve()
                     })
                     .catch(function(e) {
                         reject(e)
@@ -125,7 +139,6 @@ function create(stream, options) {
         handlers: {}
     }, options);
 
-    var writer = {};
     writer.print = print.bind(writer, stream, opts);
 
     return writer;

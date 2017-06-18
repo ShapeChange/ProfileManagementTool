@@ -47,6 +47,14 @@ function setConnection(connection) {
         }
     }, {
         key: {
+            'name': 1
+        }
+    }, {
+        key: {
+            'descriptors.alias': 1
+        }
+    }, {
+        key: {
             'profiles': 1
         }
     }, {
@@ -59,6 +67,14 @@ function setConnection(connection) {
         }
     }, {
         key: {
+            'properties.name': 1
+        }
+    }, {
+        key: {
+            'properties.descriptors.alias': 1
+        }
+    } /*, {
+        key: {
             'name': 'text',
             'descriptors.alias': 'text',
             'descriptors.definition': 'text',
@@ -69,7 +85,7 @@ function setConnection(connection) {
             'properties.descriptors.description': 'text'
         },
         name: 'textSearchIndex'
-    }])
+    }*/ ])
         .then(function(indexName) {
             console.log('Created indexes ', indexName)
         })
@@ -116,8 +132,7 @@ return Promise.resolve(
         .project({
             name: 1,
             created: 1,
-            profiles: 1,
-            profiles2: 1
+            profiles: 1
         })
         .sort({
             created: -1
@@ -355,12 +370,32 @@ function getFilteredClasses(modelId, filter) {
                         }
                     },
                     {
+                        'descriptors.description': {
+                            $regex: '(?i)' + filter
+                        }
+                    },
+                    {
+                        'descriptors.definition': {
+                            $regex: '(?i)' + filter
+                        }
+                    },
+                    {
                         'properties.name': {
                             $regex: '(?i)' + filter
                         }
                     },
                     {
                         'properties.descriptors.alias': {
+                            $regex: '(?i)' + filter
+                        }
+                    },
+                    {
+                        'properties.descriptors.description': {
+                            $regex: '(?i)' + filter
+                        }
+                    },
+                    {
+                        'properties.descriptors.definition': {
                             $regex: '(?i)' + filter
                         }
                     }
@@ -427,12 +462,32 @@ if (filter && filter !== '') {
             }
         },
         {
+            'descriptors.description': {
+                $regex: '(?i)' + filter
+            }
+        },
+        {
+            'descriptors.definition': {
+                $regex: '(?i)' + filter
+            }
+        },
+        {
             'properties.name': {
                 $regex: '(?i)' + filter
             }
         },
         {
             'properties.descriptors.alias': {
+                $regex: '(?i)' + filter
+            }
+        },
+        {
+            'properties.descriptors.description': {
+                $regex: '(?i)' + filter
+            }
+        },
+        {
+            'properties.descriptors.definition': {
                 $regex: '(?i)' + filter
             }
         }
@@ -456,6 +511,16 @@ return Promise.resolve(
         })
         .sort({
             name: 1
+        })
+        .toArray()
+        .then(function(classes) {
+            if (filter && filter !== '') {
+                return classes.map(function(cls) {
+                    cls.filterMatch = true;
+                    return cls;
+                })
+            }
+            return classes;
         })
 );
 }
@@ -752,3 +817,79 @@ exports.close = function(force) {
 return db.close(force || false);
 }
 
+exports.deleteModel = function(id) {
+return model
+    .deleteOne({
+        _id: ObjectID(id)
+    })
+    .then(function(ret) {
+        console.log('DELETE', ret.result)
+        // do not wait for this, should happen async in the background
+        model
+            .deleteMany({
+                model: ObjectID(id)
+            })
+            .then(function(ret2) {
+                console.log('DELETE2', ret2.result)
+            })
+    })
+}
+
+exports.deleteProfile = function(id, modelId) {
+var update = {
+    $unset: {
+        ['profiles.' + id]: ''
+    }
+}
+
+return updateModel(modelId, update)
+    .then(function(ret) {
+        console.log('DELETE', ret)
+        return ret.value;
+    })
+}
+
+exports.addProfile = function(id, modelId) {
+var update = {
+    $set: {
+        ['profiles.' + id]: {
+            _id: id,
+            name: id,
+            errors: []
+        }
+    }
+}
+
+return updateModel(modelId, update)
+    .then(function(ret) {
+        console.log('ADD', ret)
+        return ret.value;
+    })
+}
+
+exports.renameProfile = function(id, name, modelId) {
+var update = {
+    $set: {
+        ['profiles.' + id + '.name']: name
+    }
+}
+
+return updateModel(modelId, update)
+    .then(function(ret) {
+        console.log('RENAME', ret)
+        return ret.value;
+    })
+}
+
+function updateModel(id, update) {
+    return model
+        .findAndModify({
+            _id: ObjectID(id)
+        },
+            [],
+            update,
+            {
+                new: true
+            }
+    )
+}

@@ -78,7 +78,7 @@ function onLocationChange(state, action) {
 function syncModel(state, action) {
     const modelId = action.payload.params ? action.payload.params.modelId : null
 
-    return !modelId || state.pendingModel === modelId || state.fetchedModel === modelId
+    return state.pendingModel === modelId || state.fetchedModel === modelId
         ? state
         : {
             ...state,

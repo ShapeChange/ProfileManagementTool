@@ -1,13 +1,14 @@
 //var fs = require('fs');
 var yazl = require("yazl");
 var intoStream = require('into-stream');
+var through2 = require('through2');
 //var outFile = fs.createWriteStream("./test/res/out.zip");
 
 var fromJson = require('./export');
 //var db = require('../src/server/lib/db')
 
 
-exports.exportFile = function(db, stream, modelId) {
+exports.exportFile = function(db, stream, modelId, onStatsHandler) {
 var zipfile = new yazl.ZipFile();
 
 return db.getFullModel(modelId)
@@ -35,8 +36,12 @@ return db.getFullModel(modelId)
                         });
                 },
                 setStats: function(stat) {
+                    stat.totalElements = model.totalElements
+                    stat.written = 0;
                     stats = stat;
                 },
+                onStats: onStatsHandler,
+                profiles: model.profiles,
                 pretty: true,
                 selfClose: true
             });
@@ -49,9 +54,16 @@ return db.getFullModel(modelId)
                 .outputStream
                 .pipe(stream);
 
-            zipfile.addReadStream(
-                intoStream.obj(model.element)
-                    .pipe(toXml), model.name + '.xml');
+            var logger = through2(function(chunk, enc, cb) {
+                stats.written += chunk.length
+                cb(null, chunk);
+            });
+
+            var inPl = intoStream.obj(model.element)
+                .pipe(toXml)
+                .pipe(logger)
+
+            zipfile.addReadStream(inPl, model.name + '.xml');
 
             zipfile.end();
 

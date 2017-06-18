@@ -95,3 +95,8 @@ $really-muted: rgba(255,255,255,.10);
 			font-weight: bold;
 		}
 	}
+
+	.file-browser-item-passive {
+		border-top: 1px solid $really-muted !important;
+		margin-bottom: 0px !important;
+	}

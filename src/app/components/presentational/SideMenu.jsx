@@ -2,7 +2,7 @@ import React, { Component, PropTypes } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux'
 
-import { isMenuOpen, getSubmenusOpen, hasFileImport, hasPendingFileImport, getFileImport, hasFileExport, hasPendingFileExport, getFileExport, isFlattenInheritance, isFlattenOninas, actions } from '../../reducers/app'
+import { isMenuOpen, getSubmenusOpen, hasFileImport, hasPendingFileImport, getFileImport, hasFileExport, hasPendingFileExport, getFileExport, isFlattenInheritance, isFlattenOninas, getDeleteRequested, getProfileEdit, actions } from '../../reducers/app'
 import { getModels, getSelectedModel, getSelectedProfile } from '../../reducers/model'
 
 import { Card, CardHeader, CardBlock, CardText, ModalHeader, ModalBody, ModalFooter, Button, ListGroup, ListGroupItem, Collapse } from 'reactstrap';
@@ -33,7 +33,9 @@ const mapStateToProps = (state, props) => {
         importStats: getFileImport(state),
         isExporting: hasPendingFileExport(state),
         hasExport: hasFileExport(state),
-        exportStats: getFileExport(state)
+        exportStats: getFileExport(state),
+        deleteRequested: getDeleteRequested(state),
+        profileEdit: getProfileEdit(state)
     }
 }
 
@@ -72,11 +74,14 @@ class SideMenu extends Component {
 
     render() {
         const {isMenuOpen, submenusOpen, setSubmenusOpen, toggleMenu, isFlattenInheritance, toggleFlattenInheritance, isFlattenOninas, toggleFlattenOninas, models, selectedModel, selectedProfile} = this.props;
-        const {createFileImport, startFileImport, clearFileImport, isImporting, hasImport, importStats, startFileExport, clearFileExport, isExporting, hasExport, exportStats} = this.props;
+        const {createFileImport, startFileImport, clearFileImport, isImporting, hasImport, importStats, startFileExport, clearFileExport, isExporting, hasExport, exportStats, deleteRequested, requestDelete, confirmDelete, cancelDelete, profileEdit, requestProfileEdit, confirmProfileEdit, cancelProfileEdit} = this.props;
 
         let expanded = []
         if (selectedModel) expanded.push(selectedModel)
         if (importStats.model) expanded.push(importStats.model)
+        if (exportStats.id) expanded.push(exportStats.id)
+        if (deleteRequested)
+            expanded = expanded.concat(deleteRequested)
         const selected = selectedModel && selectedProfile ? (selectedModel + selectedProfile) : null
 
         return (
@@ -137,11 +142,9 @@ class SideMenu extends Component {
                                         hasImport={ hasImport }
                                         importStats={ importStats }
                                         ref={ this.onFileImportLoad } />
-                                    <ModelFileExport isExporting={ isExporting }
-                                        hasExport={ hasExport }
-                                        exportStats={ exportStats }
-                                        clearFileExport={ clearFileExport } />
                                     <ModelFileBrowser models={ models }
+                                        selectedModel={ selectedModel }
+                                        selectedProfile={ selectedProfile }
                                         expanded={ expanded }
                                         selected={ selected }
                                         toggleMenu={ toggleMenu }
@@ -149,7 +152,16 @@ class SideMenu extends Component {
                                         isExporting={ isExporting }
                                         hasImport={ hasImport }
                                         hasExport={ hasExport }
-                                        exportStats={ exportStats } />
+                                        exportStats={ exportStats }
+                                        deleteRequested={ deleteRequested }
+                                        profileEdit={ profileEdit }
+                                        requestDelete={ requestDelete }
+                                        confirmDelete={ confirmDelete }
+                                        cancelDelete={ cancelDelete }
+                                        requestProfileEdit={ requestProfileEdit }
+                                        confirmProfileEdit={ confirmProfileEdit }
+                                        cancelProfileEdit={ cancelProfileEdit }
+                                        clearFileExport={ clearFileExport } />
                                 </AccordionItem>
                             </Accordion>
                         </CardBlock>

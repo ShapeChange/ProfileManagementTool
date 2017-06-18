@@ -2,11 +2,23 @@ var through2 = require('through2');
 var Promise = require("bluebird");
 var xmlWriter = require('./xml-writer');
 
+// backpressure is handled manually here, by not resolving a promise in xml-writer
+// when push return value is false to pause and resuming in _read below by resolving the promise 
+// 
+// alternative implementation that handles backpressure automatically
+// instead of pulling from the db in xml-writer for elements with a handler
+// stream all elements from the db in the correct order into the xml-writer
+// xml-writer would still need to know that e.g. sc:classes is the entry point for db elements of type cls
+
 exports.createStream = function(modelId, options) {
 var writer;
 var opts = parseOptions(options, modelId);
 
-var toXml = through2.obj(function(obj, enc, cb) {
+var toXml = through2({
+    writableObjectMode: true,
+    readableObjectMode: false,
+    highWaterMark: 16384,
+}, function(obj, enc, cb) {
     var start;
     if (!writer) {
         start = Date.now();
@@ -23,6 +35,16 @@ var toXml = through2.obj(function(obj, enc, cb) {
         cb();
 });
 
+var oldRead = toXml._read;
+toXml._read = function() {
+    if (writer && writer.resume) {
+        //console.log('TOXML RESUME')
+        writer.resume();
+    }
+
+    return oldRead.apply(toXml, arguments);
+}
+
 return toXml;
 }
 
@@ -35,8 +57,7 @@ function parseOptions(options, modelId) {
         packages: 0,
         classes: 0,
         associations: 0,
-        duration: 0,
-        ids: []
+        duration: 0
     }
 
     if (options.setStats)
@@ -45,14 +66,19 @@ function parseOptions(options, modelId) {
     var serialWrite = function(writer, depth, doSetParent, doSetCurrent) {
         return function(elements) {
             return elements.reduce(function(pr, el) {
-                updateStats(el);
-                return pr.then(function() {
-                    if (doSetParent)
-                        parent = '' + el._id;
-                    if (doSetCurrent)
-                        current = el;
-                    return writer.print(el.element, depth);
-                });
+                //updateStats(el);
+                return pr
+                    .then(function() {
+                        if (doSetParent)
+                            parent = '' + el._id;
+                        if (doSetCurrent)
+                            current = el;
+                        return writer.print(el.element, depth);
+                    })
+                    .then(function(written) {
+                        updateStats(el);
+                        return written;
+                    });
             }, Promise.resolve());
         }
     }
@@ -63,9 +89,10 @@ function parseOptions(options, modelId) {
                 stats.packages++;
             } else if (el.type === 'cls') {
                 stats.classes++;
-            //stats.ids.push(1);
             } else if (el.type === 'asc')
                 stats.associations++;
+            if (options.onStats && (el.type === 'pkg' || el.type === 'cls' || el.type === 'asc'))
+                options.onStats(stats);
         }
     }
 
@@ -104,9 +131,11 @@ function parseOptions(options, modelId) {
         }
     }
 
-    var profilesToElem = function(profiles, profileParameters) {
+    var profilesToElem = function(modelProfiles, profiles, profileParameters) {
         return profiles.reduce(function(elems, profile) {
-            elems.push(profileToElem(profile, profileParameters[profile]));
+            if (modelProfiles[profile]) {
+                elems.push(profileToElem(modelProfiles[profile].name, profileParameters[profile]));
+            }
             return elems;
         }, [])
     }
@@ -158,7 +187,7 @@ function parseOptions(options, modelId) {
                     }
                 }
 
-                return Promise.resolve(profilesToElem(profiles, profileParameters))
+                return Promise.resolve(profilesToElem(options.profiles, profiles, profileParameters))
                     .then(serialWrite(writer, depth));
             }
         },

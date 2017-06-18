@@ -1,5 +1,6 @@
 import { createAction, createActions, handleActions } from 'redux-actions';
 import { actions as modelActions } from './model';
+import update from 'immutability-helper';
 
 export const ItemType = {
     PKG: 'pkg',
@@ -42,7 +43,13 @@ export const actions = {
     clearFileExport: createAction('file/export/clear'),
     progressFileExport: createAction('file/export/stats'),
     setFilter: createAction('filter/set'),
-    applyFilter: createAction('filter/apply')
+    applyFilter: createAction('filter/apply'),
+    requestDelete: createAction('delete/request'),
+    confirmDelete: createAction('delete/confirm'),
+    cancelDelete: createAction('delete/cancel'),
+    requestProfileEdit: createAction('profile/edit/request'),
+    confirmProfileEdit: createAction('profile/edit/confirm'),
+    cancelProfileEdit: createAction('profile/edit/cancel')
 };
 
 // state
@@ -65,7 +72,9 @@ const initialState = {
         filter: '',
         pending: 0
     },
-    filter: ''
+    filter: '',
+    deleteRequested: [],
+    profileEdit: {}
 }
 
 // reducer
@@ -91,6 +100,12 @@ export default handleActions({
     [actions.clearFileExport]: clearFileExport,
     [actions.progressFileExport]: progressFileExport,
     [actions.setFilter]: setFilter,
+    [actions.requestDelete]: requestDelete,
+    [actions.confirmDelete]: confirmDelete,
+    [actions.cancelDelete]: cancelDelete,
+    [actions.requestProfileEdit]: requestProfileEdit,
+    [actions.confirmProfileEdit]: confirmProfileEdit,
+    [actions.cancelProfileEdit]: cancelProfileEdit,
     [modelActions.fetchModel]: increaseFilterPending,
     [modelActions.fetchPackage]: increaseFilterPending,
     [modelActions.fetchClass]: increaseFilterPending,
@@ -289,9 +304,16 @@ function endFileExport(state, action) {
     }
 }
 
-function progressFileExport(state) {
+function progressFileExport(state, action) {
     return {
-        ...state
+        ...state,
+        fileExport: {
+            ...state.fileExport,
+            stats: {
+                ...state.fileExport.stats,
+                ...action.payload
+            }
+        }
     }
 }
 
@@ -384,6 +406,64 @@ function updatedEditable(state, action) {
     }
 }
 
+function requestDelete(state, action) {
+
+    return {
+        ...state,
+        deleteRequested: [
+            ...state.deleteRequested,
+            action.payload
+        ]
+    }
+}
+
+function confirmDelete(state, action) {
+
+    return {
+        ...state,
+        deleteRequested: state.deleteRequested.filter(d => d !== action.payload.deleteId)
+    }
+}
+
+function cancelDelete(state, action) {
+
+    return {
+        ...state,
+        deleteRequested: state.deleteRequested.filter(d => d !== action.payload)
+    }
+}
+
+
+
+function requestProfileEdit(state, action) {
+
+    return update(state, {
+        profileEdit: {
+            [action.payload._id]: {
+                $set: action.payload
+            }
+        }
+    })
+}
+
+function confirmProfileEdit(state, action) {
+
+    return update(state, {
+        profileEdit: {
+            $unset: [action.payload._id]
+        }
+    })
+}
+
+function cancelProfileEdit(state, action) {
+
+    return update(state, {
+        profileEdit: {
+            $unset: [action.payload._id]
+        }
+    })
+}
+
 // selectors
 export const getSelectedModel = (state) => state.app.selectedModel
 export const getSelectedPackage = (state) => state.app.selectedPackage
@@ -409,6 +489,8 @@ export const getFilter = (state) => state.app.filter
 export const getPendingFilter = (state) => state.app.pendingFilter
 export const getBrowserDisabled = (state) => state.app.disableBrowser
 export const isBusy = (state) => state.app.busy
+export const getDeleteRequested = (state) => state.app.deleteRequested
+export const getProfileEdit = (state) => state.app.profileEdit
 
 // is backend sync needed
 const doesChangeSelectedPackage = (state, action) => state.app.selectedPackage !== action.payload

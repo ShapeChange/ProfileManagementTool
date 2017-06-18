@@ -32,12 +32,16 @@ class ModelBrowserInfos extends Component {
                               value = <Link href={ `${baseUrl}/${infos[key].localId}/${urlSuffix || ''}` }>
                                       { infos[key].name }
                                       </Link>
-                          } else if (key === 'alias' && filter !== '' && infos[key] && infos[key].toLowerCase().indexOf(filter) > -1) {
-                              const b = infos[key].toLowerCase().indexOf(filter)
-                              const e = b + filter.length
-                              value = <span>{ infos[key].substring(0, b) }<span className="bg-highlight">{ infos[key].substring(b, e) }</span>
-                                      { infos[key].substring(e) }
-                                      </span>
+                          } else if (filter && filter !== '' && infos[key]) {
+                              if (key === 'alias' || key === 'description' || key === 'definition') {
+                                  const start = infos[key].toLowerCase().indexOf(filter)
+                                  if (start > -1) {
+                                      const end = start + filter.length
+                                      value = <span>{ infos[key].substring(0, start) }<span className="bg-highlight">{ infos[key].substring(start, end) }</span>
+                                              { infos[key].substring(end) }
+                                              </span>
+                                  }
+                              }
                           }
                           return <tr key={ key }>
                                      <th scope="row" className={ 'pl-0' + (i === 0 ? ' border-top-0' : '') }>

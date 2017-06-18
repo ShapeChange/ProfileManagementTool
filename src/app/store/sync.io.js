@@ -18,6 +18,8 @@ export default function createSyncIoMiddleware() {
         appActions.setFilter.toString(),
         appActions.toggleFlattenInheritance.toString(),
         appActions.toggleFlattenOninas.toString(),
+        appActions.confirmDelete.toString(),
+        appActions.confirmProfileEdit.toString(),
         actions.updateProfile.toString(),
         actions.updateEditable.toString()
     ], {
@@ -33,7 +35,7 @@ function conditionalExecute(action, emit, next, store, socket) {
         emit('action', action);
     }*/
 
-    if (action.type === actions.updateProfile.toString() || action.type === actions.updateEditable.toString()) {
+    if (action.type === actions.updateProfile.toString() || action.type === actions.updateEditable.toString() || action.type === appActions.confirmDelete.toString() || action.type === appActions.confirmProfileEdit.toString()) {
 
         next(action);
 

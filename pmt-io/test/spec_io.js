@@ -84,12 +84,12 @@ describe('Export', function() {
                 return mem.filter(function(el) {
                     return el.type === 'asc' && ('' + el.parent) === ('' + parent);
                 })
-            }
+            },
+            profiles: model.profiles
         });
 
-        var toMem = through2.obj(function(chunk, enc, cb) {
+        var toMem = through2(function(chunk, enc, cb) {
             exported.push(chunk.toString());
-            //console.log(chunk.toString())
             cb();
         }, function(cb) {
             exported = exported.join('');

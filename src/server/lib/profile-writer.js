@@ -76,7 +76,7 @@ function appendError(error) {
 
     var update = {
         $addToSet: {
-            ['profiles2.' + error.profile + '.errors']: {
+            ['profiles.' + error.profile + '.errors']: {
                 _id: error._id,
                 name: error.name,
                 msg: error.msg
@@ -102,7 +102,7 @@ function clearErrors(clsId, modelId, profile) {
 
     var update = {
         $pull: {
-            ['profiles2.' + profile + '.errors']: {
+            ['profiles.' + profile + '.errors']: {
                 _id: clsId
             }
         }

@@ -22,6 +22,22 @@ const Icons = {
 
 class ModelElement extends Component {
 
+    _highlight = (element, filter, classNames) => {
+        if (filter && filter !== '') {
+            const start = element.name.toLowerCase().indexOf(filter)
+            if (start > -1) {
+                const end = start + filter.length
+                return <span className={ classNames }>{ element.name.substring(0, start) }<span className="bg-highlight">{ element.name.substring(start, end) }</span>
+                       { element.name.substring(end) }
+                       </span>
+            } else if (element.filterMatch) {
+                classNames += ' underscore-highlight'
+            }
+        }
+
+        return <span className={ classNames }>{ element.name }</span>
+    }
+
     render() {
         const {tag: Tag, className, element, depth, color, showExpansionIcons, isExpanded, filter, ...attributes} = this.props;
 
@@ -45,14 +61,7 @@ class ModelElement extends Component {
             elementIcon = <FontAwesome name={ iconName } fixedWidth={ true } className="mr-1" />
         }
 
-        let elementName = <span className="model-element-name">{ element.name }</span>
-        if (filter && filter !== '' && element.name.toLowerCase().indexOf(filter) > -1) {
-            const b = element.name.toLowerCase().indexOf(filter)
-            const e = b + filter.length
-            elementName = <span className="model-element-name">{ element.name.substring(0, b) }<span className="bg-highlight">{ element.name.substring(b, e) }</span>
-                          { element.name.substring(e) }
-                          </span>
-        }
+        let elementName = this._highlight(element, filter, 'model-element-name')
 
         let expansionIconType = 'blank'
         //if (hasChildren)

@@ -52,7 +52,9 @@ const actions = {
     'file/export': exportFile,
     'profile/update': updateProfile,
     'editable/update': updateEditable,
-    'filter/apply': applyFilter
+    'filter/apply': applyFilter,
+    'delete/confirm': deleteItem,
+    'profile/edit/confirm': addOrRenameProfile
 }
 
 function dispatch(socket, action) {
@@ -227,8 +229,23 @@ function importFile(socket, file) {
 }
 
 function exportFile(socket, file) {
+    var progress = 0;
 
-    return mongoExport.exportFile(db, file.stream, file.metadata.id)
+    return mongoExport.exportFile(db, file.stream, file.metadata.id, function(stats) {
+
+        var newProgress = Math.round(((stats.packages + stats.classes + stats.associations) / stats.totalElements) * 100);
+
+        if (newProgress > progress) {
+            progress = newProgress;
+
+            socket.emit('action', {
+                type: 'file/export/stats',
+                payload: {
+                    progress: progress
+                }
+            });
+        }
+    })
         .then(function(stats) {
             console.log('DONE', stats);
 
@@ -292,8 +309,8 @@ function fetchPackage(socket, payload) {
         .then(function(details) {
             var filter;
             if (payload.filter && payload.filter !== '') {
-                if (details.name.toLowerCase().indexOf(payload.filter) === -1 && !(details.descriptors && details.descriptors.alias && details.descriptors.alias.toLowerCase().indexOf(payload.filter) > -1)) {
-                    // if filter does not match package, filter classes
+                // if filter does not match package, filter classes
+                if (!matchesFilter(details, payload.filter)) {
                     filter = payload.filter;
                 }
             }
@@ -301,11 +318,15 @@ function fetchPackage(socket, payload) {
         })
 }
 
+function matchesFilter(details, filter) {
+    return details.name.toLowerCase().indexOf(filter) > -1
+        || (details.descriptors && details.descriptors.alias && details.descriptors.alias.toLowerCase().indexOf(filter) > -1)
+        || (details.descriptors && details.descriptors.description && details.descriptors.description.toLowerCase().indexOf(filter) > -1)
+        || (details.descriptors && details.descriptors.definition && details.descriptors.definition.toLowerCase().indexOf(filter) > -1)
+}
+
 function fetchClasses(socket, pkg, filter) {
     return db.getClassesForPackage(pkg, filter)
-        .then(function(cursor) {
-            return cursor.toArray();
-        })
         .then(function(classes) {
             classes.forEach(function(cls) {
                 cls._id = cls.localId
@@ -339,9 +360,13 @@ function fetchClass(socket, payload) {
             if (details.type === 'cls' || details.type === 'asc') {
                 details._id = details.localId
                 if (payload.filter && payload.filter !== '') {
-                    if (details.name.toLowerCase().indexOf(payload.filter) === -1 && !(details.descriptors && details.descriptors.alias && details.descriptors.alias.toLowerCase().indexOf(payload.filter) > -1)) {
+                    // if filter does not match class, filter properties
+                    if (!matchesFilter(details, payload.filter)) {
                         details.properties = details.properties.filter(function(prp) {
-                            return prp.name.toLowerCase().indexOf(payload.filter) > -1 || (prp.descriptors && prp.descriptors.alias && prp.descriptors.alias.toLowerCase().indexOf(payload.filter) > -1)
+                            return matchesFilter(prp, payload.filter)
+                        }).map(function(prp) {
+                            prp.filterMatch = true;
+                            return prp;
                         })
                     }
                 }
@@ -374,3 +399,59 @@ function applyFilter(socket, payload) {
             });
         })
 }
+
+function deleteItem(socket, payload) {
+    var pr = Promise.resolve();
+
+    if (payload.type === 'mdl') {
+        pr = db.deleteModel(payload.mdlId)
+    } else if (payload.type === 'prf') {
+        pr = db.deleteProfile(payload.prfId, payload.mdlId)
+            .then(function(model) {
+                if (payload.fetch) {
+                    socket.emit('action', {
+                        type: 'model/fetched',
+                        payload: {
+                            fetchedModel: payload.mdlId,
+                            model: model
+                        }
+                    });
+                }
+            })
+    }
+
+    return pr
+        .then(function() {
+            return fetchModels(socket, payload.owner);
+        })
+}
+
+function addOrRenameProfile(socket, payload) {
+    var pr = Promise.resolve();
+
+    if (!payload.oldName) {
+        pr = db.addProfile(payload.name, payload.model)
+    } else {
+        pr = db.renameProfile(payload.oldName, payload.name, payload.model)
+    }
+
+    if (payload.fetch) {
+        pr = pr
+            .then(function(model) {
+                socket.emit('action', {
+                    type: 'model/fetched',
+                    payload: {
+                        fetchedModel: payload.model,
+                        model: model
+                    }
+                });
+            })
+    }
+
+    return pr
+        .then(function() {
+            return fetchModels(socket, payload.owner);
+        })
+}
+
+

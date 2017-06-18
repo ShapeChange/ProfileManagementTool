@@ -197,8 +197,7 @@ function parseModel(outStream, node, options, profiles) {
         type: 'mdl',
         owner: 'unknown',
         created: Date.now(),
-        profiles: profiles,
-        profiles2: profiles.reduce(function(obj, prf) {
+        profiles: profiles.reduce(function(obj, prf) {
             obj[prf] = {
                 _id: prf,
                 name: prf,
@@ -206,6 +205,7 @@ function parseModel(outStream, node, options, profiles) {
             }
             return obj
         }, {}),
+        totalElements: options.stats.packages + options.stats.classes + options.stats.associations,
         element: node
     }
 

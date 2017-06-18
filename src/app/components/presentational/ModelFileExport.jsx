@@ -83,17 +83,20 @@ class ModelFileExport extends Component {
     render() {
         const {hasExport, isExporting, exportStats} = this.props;
 
-        const percent = 0 //exportStats.stats ? Math.round((exportStats.stats.written / exportStats.stats.size) * 100) : 0;
+        const percent = exportStats.stats && exportStats.stats.progress ? Math.min(isExporting ? 99 : 100, exportStats.stats.progress) : 0;
 
         var url = !isExporting && exportStats && exportStats.data ? window.URL.createObjectURL(new Blob(exportStats.data)) : null
         return (
-            <div>
+            <div className="w-100">
                 { hasExport && exportStats.stats
                   && <div className="mb-3">
+                         { isExporting ? 'Exporting... ' : 'Exported ' }
                          { isExporting
-                           ? <FontAwesome name="spinner" pulse className="mr-2" />
-                           : <FontAwesome name="check" className="mr-2" /> }
-                         { 'Exporting ' + exportStats.name }
+                           ? <FontAwesome name="spinner" pulse />
+                           : <FontAwesome name="check" /> }
+                         <Progress color="info" value={ percent } className="my-2">
+                             { percent }%
+                         </Progress>
                          { !isExporting && <div className="d-flex flex-row justify-content-end my-1">
                                                <Button tag="a"
                                                    href={ url }
