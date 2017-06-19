@@ -15,7 +15,8 @@ return {
     getClassesForPackage: getClassesForPackage,
     getAllOfType: getAllOfType,
     getPackageGraph: getPackageGraph,
-    getProjection: getProjection
+    getProjection: getProjection,
+    getClassByProperty: getClassByProperty
 }
 }
 
@@ -167,19 +168,6 @@ function getPackageGraph(id, modelId, projection) {
         .toArray()
 }
 
-function getClass(id, modelId) {
-    return model
-        .findOne({
-            localId: id,
-            model: ObjectID(modelId)
-        }, {
-            localId: 1,
-            'properties._id': 1,
-            "properties.typeId": 1,
-            'properties.optional': 1
-        })
-}
-
 function getFlattenedClass(id, modelId) {
     return model
         .aggregate([
@@ -299,4 +287,43 @@ function getAllOfType(typeId, modelId) {
             "properties.optional": 1
         })
         .toArray();
+}
+
+function getClasses(ids, modelId, projection = null, filter = {}) {
+    return model
+        .find(Object.assign({
+            type: 'cls',
+            model: ObjectID(modelId),
+            localId: {
+                $in: ids
+            }
+        }, filter))
+        .project(projection || getProjection())
+        .toArray()
+}
+
+function getClass(id, modelId, projection = null, filter = {}) {
+    return model
+        .findOne(Object.assign({
+            model: ObjectID(modelId),
+            localId: id
+        }, filter), projection || {
+                localId: 1,
+                'properties._id': 1,
+                "properties.typeId": 1,
+                'properties.optional': 1
+            })
+}
+
+function getClassByProperty(id, modelId, projection = {}, filter = {}) {
+    return model
+        .findOne(Object.assign({
+            model: ObjectID(modelId)
+        }, filter), Object.assign({
+            localId: 1,
+            'properties._id': 1,
+            'properties.name': 1,
+            "properties.typeId": 1,
+            'properties.optional': 1
+        }, projection))
 }

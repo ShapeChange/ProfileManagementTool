@@ -110,11 +110,11 @@ class App extends Component {
                                    </div> }
                         { model && profile && <div className="navbar-text px-3">
                                                   <FontAwesome name="id-card" className="pr-2" />
-                                                  <span>{ model.profiles[profile].name }</span>
+                                                  <span>{ model.profilesInfo[profile].name }</span>
                                               </div> }
                         { model && profile && <div className="navbar-text ml-auto">
                                                   { busy ? <FontAwesome name="spinner" pulse />
-                                                    : model.profiles[profile].errors.length > 0
+                                                    : model.profilesInfo[profile].errors.length > 0
                                                     ? <div>
                                                           <Link id="errors"
                                                               href={ '' }
@@ -124,25 +124,26 @@ class App extends Component {
                                                                             toggleErrors();
                                                                         } }>
                                                           <Badge color="danger" className="rounded-circle">
-                                                              { model.profiles[profile].errors.length }
+                                                              { model.profilesInfo[profile].errors.length }
                                                           </Badge>
                                                           </Link>
                                                           <Popover placement="bottom right"
                                                               isOpen={ isErrorsOpen }
                                                               target="errors"
-                                                              toggle={ toggleErrors }>
+                                                              toggle={ toggleErrors }
+                                                              tether={ { constraints: [{ to: 'scrollParent', attachment: 'together', pin: true }] } }>
                                                               <PopoverTitle>
                                                                   Errors
                                                               </PopoverTitle>
-                                                              <PopoverContent className="p-0">
+                                                              <PopoverContent className="p-0" style={ { overflowY: 'auto', maxHeight: '400px' } }>
                                                                   <ListGroup className="border-0 rounded-0">
-                                                                      { model.profiles[profile].errors.map((err, i) => <ListGroupItem key={ i } className={ `rounded-0 border-left-0 border-right-0 border-bottom-0 ${i === 0 && 'border-top-0'}` }>
-                                                                                                                           <Link href={ `${baseUrls['cls']}/${err._id}` } title={ err.name } className="text-danger">
-                                                                                                                           { `Consistency error in class "${err.name}":` }
-                                                                                                                           <br/>
-                                                                                                                           { err.msg }
-                                                                                                                           </Link>
-                                                                                                                       </ListGroupItem>
+                                                                      { model.profilesInfo[profile].errors.map((err, i) => <ListGroupItem key={ i } className={ `rounded-0 border-left-0 border-right-0 border-bottom-0 ${i === 0 && 'border-top-0'}` }>
+                                                                                                                               <Link href={ `${baseUrls['cls']}/${err._id}` } title={ err.name } className="text-danger">
+                                                                                                                               { `Consistency error in class "${err.name}":` }
+                                                                                                                               <br/>
+                                                                                                                               { err.msg }
+                                                                                                                               </Link>
+                                                                                                                           </ListGroupItem>
                                                                         ) }
                                                                   </ListGroup>
                                                               </PopoverContent>

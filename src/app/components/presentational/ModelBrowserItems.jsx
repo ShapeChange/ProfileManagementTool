@@ -25,7 +25,7 @@ class ModelBrowserItems extends Component {
     }
 
     render() {
-        const {_id, items, type, profiles, baseUrls, urlSuffix, selectedProfile, updateProfile, filter, isFlattenInheritance} = this.props;
+        const {_id, items, type, profiles, infos, baseUrls, urlSuffix, selectedProfile, updateProfile, filter, isFlattenInheritance} = this.props;
 
         let itemClassNames = 'p-0'
 
@@ -40,7 +40,8 @@ class ModelBrowserItems extends Component {
                               const active = item.profiles.indexOf(selectedProfile) > -1
                               const parentActive = type === 'cls' && profiles.indexOf(selectedProfile) > -1
                               const disabled = !item.editable || (type === 'cls' && !parentActive) || (type === 'cls' && parentActive && !item.optional)
-                              const showWarning = isFlattenInheritance && item.type === 'prp' && _id !== item.parent && !disabled
+                              const showWarning = isFlattenInheritance && item.type === 'prp' && (_id !== item.parent || infos.subtypes) && !disabled
+                              const showWarning2 = isFlattenInheritance && item.type === 'prp' && _id !== item.parent && !item.editable && item.optional
                           
                               return <tr key={ item._id } className={ itemClassNames + (!active ? ' model-element-disabled' : '') }>
                                          <td className={ `py-0 px-0 ${i === 0 && 'border-0'}` }>
@@ -51,6 +52,10 @@ class ModelBrowserItems extends Component {
                                                  { showWarning &&
                                                    <Warning id={ `${item._id}-warning` } placement="right">
                                                        Changing this property will affect other classes
+                                                   </Warning> }
+                                                 { showWarning2 &&
+                                                   <Warning id={ `${item._id}-warning2` } placement="right">
+                                                       The property cannot be edited because the package to which its class belongs is not editable
                                                    </Warning> }
                                              </Toggle>
                                          </td>

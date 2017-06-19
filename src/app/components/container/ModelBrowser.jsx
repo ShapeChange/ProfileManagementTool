@@ -35,7 +35,8 @@ const mapStateToProps = (state, props) => {
         baseUrls: {
             pkg: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/package`,
             cls: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/class`,
-            prp: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/property/${state.model.fetchedClass}`
+            prp: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/property/${state.model.fetchedClass}`,
+            prp2: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/property`
         },
         query: state.router.search,
         title: state.model.mdl ? state.model.mdl.name : '',

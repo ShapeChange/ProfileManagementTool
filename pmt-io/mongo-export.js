@@ -41,7 +41,7 @@ return db.getFullModel(modelId)
                     stats = stat;
                 },
                 onStats: onStatsHandler,
-                profiles: model.profiles,
+                profiles: model.profilesInfo,
                 pretty: true,
                 selfClose: true
             });

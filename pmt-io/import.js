@@ -197,7 +197,7 @@ function parseModel(outStream, node, options, profiles) {
         type: 'mdl',
         owner: 'unknown',
         created: Date.now(),
-        profiles: profiles.reduce(function(obj, prf) {
+        profilesInfo: profiles.reduce(function(obj, prf) {
             obj[prf] = {
                 _id: prf,
                 name: prf,
@@ -364,6 +364,18 @@ function reduceNode(node, id, type) {
     var isAttributeIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:isAttribute'
     })
+    var isNavigableIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:isNavigable'
+    })
+    var reversePropertyIdIndex = node.children.findIndex(function(child) {
+        return child.name === 'sc:reversePropertyId'
+    })
+    var end1Index = node.children.findIndex(function(child) {
+        return child.name === 'sc:end1'
+    })
+    var end2Index = node.children.findIndex(function(child) {
+        return child.name === 'sc:end2'
+    })
     var isAbstractIndex = node.children.findIndex(function(child) {
         return child.name === 'sc:isAbstract'
     })
@@ -412,14 +424,20 @@ function reduceNode(node, id, type) {
         }) : [],
         profileParameters: profilesIndex > -1 ? _reduceProfiles(node.children[profilesIndex]) : {},
         cardinality: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value,
-        isAttribute: isAttributeIndex > -1 && node.children[isAttributeIndex].children[0].value,
+        isAttribute: isAttributeIndex === -1 || node.children[isAttributeIndex].children[0].value !== 'false',
+        isNavigable: isNavigableIndex === -1 || node.children[isNavigableIndex].children[0].value !== 'false',
         isAbstract: isAbstractIndex > -1 && node.children[isAbstractIndex].children[0].value === 'true',
         optional: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value && node.children[cardinalityIndex].children[0].value.indexOf('0') === 0,
+        reversePropertyId: reversePropertyIdIndex > -1 && node.children[reversePropertyIdIndex].children[0].value,
+        end1: end1Index > -1 && _reduceEnd(node.children[end1Index], node.children[localIdIndex].children[0].value),
+        end2: end2Index > -1 && _reduceEnd(node.children[end2Index], node.children[localIdIndex].children[0].value),
         typeId: typeIndex > -1 && node.children[typeIndex].children[0].value,
         typeName: typeNameIndex > -1 && node.children[typeNameIndex].children[0].value,
         associationId: associationIdIndex > -1 && node.children[associationIdIndex].children[0].value,
         properties: propertiesIndex > -1 ? _reduceProperties(node.children[propertiesIndex], node.children[localIdIndex].children[0].value) : []
     }
+
+    reduced = _reduceAssociation(reduced);
 
     return _reduceMetaAndReason(reduced, type);
 }
@@ -427,18 +445,22 @@ function reduceNode(node, id, type) {
 
 function _reduceProperties(properties, id) {
     return properties.children.map(function(prop) {
-        let p = reduceNode(prop, null, 'prp');
-
-        p.parent = id;
-        p._id = p.localId;
-        p.element = prop;
-        p.type = 'prp';
-        p.cardinality = p.cardinality || '1..1'
-
-        return p;
+        return _reduceProperty(prop, id);
     }).sort(function(a, b) {
         return a.name > b.name ? 1 : -1
     });
+}
+
+function _reduceProperty(prop, id) {
+    let p = reduceNode(prop, null, 'prp');
+
+    p.parent = id;
+    p._id = p.localId;
+    p.element = prop;
+    p.type = 'prp';
+    p.cardinality = p.cardinality || '1..1'
+
+    return p;
 }
 
 function _reduceProfiles(profiles) {
@@ -455,6 +477,27 @@ function _reduceProfiles(profiles) {
 
         return reduced;
     }, {});
+}
+
+function _reduceEnd(end, id) {
+    if (end.attributes.ref) {
+        return {
+            ref: end.attributes.ref
+        }
+    } else if (end.children)
+        return _reduceProperty(end.children[0], id)
+
+    return false;
+}
+
+function _reduceAssociation(asc) {
+    if (asc.end1 && asc.end1.localId) {
+        asc.properties.push(asc.end1);
+    }
+    if (asc.end2 && asc.end2.localId) {
+        asc.properties.push(asc.end2);
+    }
+    return asc;
 }
 
 function _reduceMetaAndReason(reducedNode, type) {

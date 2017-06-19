@@ -21,15 +21,31 @@ exports.createStream = function(modelReader, errorWriter, profile, onFinish) {
 var tests = requireAll({
     dirname: __dirname,
     filter: function(fileName) {
-        return fileName === 'class-include-parents.js';
-    //return fileName !== 'index.js';
+        //return fileName === 'class-include-parents.js';
+        return fileName !== 'index.js' && fileName;
     },
     resolve: function(test) {
         return test.createStream(modelReader, errorWriter, profile);
-    }
+    },
+    recursive: false
 });
 
-const testArray = Object.keys(tests).map(key => tests[key])
+var testArray = Object.keys(tests).map(key => tests[key])
+
+var init = through2.obj(function(obj, enc, cb) {
+
+    console.log('INIT')
+
+    var prfs = profile ? [profile] : obj.profiles
+
+    prfs.forEach(prf => {
+        errorWriter.clearErrors(obj.localId, obj.model, prf);
+    })
+
+    cb(null, obj);
+});
+
+testArray.unshift(init);
 
 var start = Date.now()
 
@@ -44,7 +60,7 @@ var deadend = writer.obj(function(obj, enc, cb) {
     cb();
 });
 
-var pipeline = multipipe(...testArray);
+var pipeline = multipipe(testArray);
 pipeline.pipe(deadend);
 
 return pipeline;

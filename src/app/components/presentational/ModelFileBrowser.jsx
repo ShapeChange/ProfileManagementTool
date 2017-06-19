@@ -329,7 +329,7 @@ class ModelFileBrowser extends Component {
                     parent: mdl._id
                 })
             }
-            tree = tree.concat(Object.values(mdl.profiles).reduce((arr, prf) => {
+            tree = tree.concat(Object.values(mdl.profilesInfo).reduce((arr, prf) => {
                 arr.push({
                     _id: mdl._id + prf._id,
                     prfId: prf._id,

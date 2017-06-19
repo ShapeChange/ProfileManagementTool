@@ -7,7 +7,7 @@ import Warning from '../common/Warning'
 class ModelBrowserInfos extends Component {
 
     render() {
-        const {infos, taggedValues, baseUrl, urlSuffix, filter, isFlattenInheritance, isFlattenOninas} = this.props;
+        const {infos, taggedValues, baseUrl, baseUrlPrp, urlSuffix, filter, isFlattenInheritance, isFlattenOninas} = this.props;
 
         return (infos &&
             <Table>
@@ -31,6 +31,10 @@ class ModelBrowserInfos extends Component {
                           } else if (key === 'association' && infos[key]) {
                               value = <Link href={ `${baseUrl}/${infos[key].localId}/${urlSuffix || ''}` }>
                                       { infos[key].name }
+                                      </Link>
+                          } else if ((key === 'end1' || key === 'end2') && infos[key]) {
+                              value = <Link href={ `${baseUrlPrp}/${infos[key].localId}/${infos[key].properties[0].localId}/${urlSuffix || ''}` }>
+                                      { infos[key].properties[0].name }
                                       </Link>
                           } else if (filter && filter !== '' && infos[key]) {
                               if (key === 'alias' || key === 'description' || key === 'definition') {

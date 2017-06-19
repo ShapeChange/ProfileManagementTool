@@ -36,6 +36,29 @@ class ModelBrowserParameters extends Component {
         return multiplicity
     }
 
+    _parseGeometries = () => {
+        const {isClass, taggedValues} = this.props;
+
+        const defaultGeometries = ['P', 'C', 'S', 'So', 'MP', 'MC', 'MS', 'MSo']
+
+        let geometries = defaultGeometries
+
+        if (isClass && taggedValues && taggedValues.geometry) {
+            geometries = this._mergeGeometries(geometries, taggedValues.geometry.split(','))
+        }
+
+        return geometries
+    }
+
+    //TODO: to pmt-util
+    _mergeGeometries = (geos, restriction) => {
+        return restriction.reduce((result, g) => {
+            if (geos.indexOf(g) > -1)
+                result.push(g)
+            return result
+        }, [])
+    }
+
     _writeMultiplicity = (multiplicity) => {
 
         return `${multiplicity.minValue}..${multiplicity.maxValueUnbounded ? '*' : multiplicity.maxValue}`
@@ -71,9 +94,11 @@ class ModelBrowserParameters extends Component {
     }
 
     render() {
-        const {isClass, isProperty, infos, profileParameters, selectedProfile, updateProfileParameter} = this.props;
+        const {isClass, isProperty, disabled, infos, profileParameters, selectedProfile, updateProfileParameter} = this.props;
 
-        const multiplicity = this._parseMultiplicity();
+        const multiplicity = isProperty && this._parseMultiplicity();
+
+        const geometries = isClass && this._parseGeometries();
 
         return (
             <div>
@@ -91,24 +116,28 @@ class ModelBrowserParameters extends Component {
                                   <Input type="select"
                                       name="selectMulti"
                                       multiple
+                                      disabled={ disabled }
                                       size="sm"
                                       style={ { width: '75px', height: '150px' } }
                                       defaultValue={ ['P', 'C', 'S', 'So', 'MP', 'MC', 'MS', 'MSo'] }
                                       value={ profileParameters[selectedProfile] && profileParameters[selectedProfile].geometry }
                                       onChange={ e => updateProfileParameter(this.props, 'geometry', [...e.target.selectedOptions].map(o => o.value)) }>
-                                  { ['P', 'C', 'S', 'So', 'MP', 'MC', 'MS', 'MSo'].map(g => <option key={ g }>
-                                                                                                { g }
-                                                                                            </option>) }
+                                  { geometries.map(g => <option key={ g }>
+                                                            { g }
+                                                        </option>) }
                                   </Input>
                               </td>
                           </tr> }
-                        { isProperty && infos && infos.isAttribute === 'false' &&
+                        { isProperty && infos && !infos.isAttribute &&
                           <tr>
                               <td className="pl-0 pr-3 border-0">
                                   <span className="align-self-center">isNavigable</span>
                               </td>
                               <td className="pl-0 border-0 py-0">
-                                  <span className=""><Toggle name="isNavigable" checked={ profileParameters[selectedProfile] && profileParameters[selectedProfile].isNavigable === 'true' } onToggle={ e => updateProfileParameter(this.props, 'isNavigable', profileParameters[selectedProfile] && profileParameters[selectedProfile].isNavigable === 'true' ? 'false' : 'true') }> </Toggle></span>
+                                  <span className=""><Toggle name="isNavigable"
+                                                         disabled={ disabled || !infos.isNavigable }
+                                                         checked={ infos.isNavigable && !(profileParameters[selectedProfile] && profileParameters[selectedProfile].isNavigable === 'false') }
+                                                         onToggle={ e => updateProfileParameter(this.props, 'isNavigable', !(profileParameters[selectedProfile] && profileParameters[selectedProfile].isNavigable === 'false') ? 'false' : 'true') }> </Toggle></span>
                               </td>
                           </tr> }
                         { isProperty &&
@@ -123,6 +152,7 @@ class ModelBrowserParameters extends Component {
                                               size='sm'
                                               name="minOccurs"
                                               style={ { width: '75px' } }
+                                              disabled={ disabled }
                                               value={ multiplicity.minValue }
                                               min={ multiplicity.min }
                                               max={ multiplicity.maxValue }
@@ -136,7 +166,7 @@ class ModelBrowserParameters extends Component {
                                               value={ multiplicity.maxValue }
                                               min={ multiplicity.minValue || 1 }
                                               max={ multiplicity.max }
-                                              disabled={ multiplicity.maxValueUnbounded }
+                                              disabled={ disabled || multiplicity.maxValueUnbounded }
                                               onChange={ this._updateMaxCardinality }
                                               onKeyDown={ e => e.preventDefault() } />
                                           { ' ' }
@@ -144,7 +174,7 @@ class ModelBrowserParameters extends Component {
                                               <Label check>
                                                   <Input type="checkbox"
                                                       checked={ multiplicity.maxValueUnbounded }
-                                                      disabled={ !multiplicity.maxUnbounded }
+                                                      disabled={ disabled || !multiplicity.maxUnbounded }
                                                       onChange={ this._updateMaxCardinality } /> *
                                               </Label>
                                           </FormGroup>

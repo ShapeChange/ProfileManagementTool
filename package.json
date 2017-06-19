@@ -9,7 +9,7 @@
         "build": "webpack --config webpack.config.production.js",
         "win": "cd dist && npmAddScript -k preinstall -v \"stop-service && uninstall-service\" -f && npmAddScript -k postinstall -v \"install-service && start-service\" -f && npe dependencies.pmt-io \"\" && npe dependencies.pmt-validation \"\" && bundled-dependencies",
         "prod": "NODE_ENV=production node dist/server.js",
-        "test": "mocha --recursive ./pmt-io/test ./pmt-dal/test"
+        "test": "mocha --recursive ./pmt-io/test ./pmt-dal/test ./pmt-validation/test"
     },
     "author": "interactive instruments GmbH",
     "license": "GPL-3.0",

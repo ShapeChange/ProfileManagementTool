@@ -7,10 +7,16 @@ const expect = chai.expect;
 const options = require('./setup');
 
 var errors = []
-const validator = require('../index.js').createStream(options.modelReader, {
-    appendError: appendError,
-    clearErrors: function() {}
-});
+var errorWriter = {
+    appendError: function(error) {
+        errors.push(error)
+    },
+    clearErrors: function(id, model, profile) {
+        console.log('CLEAR', id, profile)
+        errors = []
+    }
+}
+const validate = require('../index.js').createStream.bind(null, options.modelReader, errorWriter, null)
 
 
 describe('Consistency checks', function() {
@@ -31,19 +37,37 @@ before(function() {
 });
 
 it('should work', function(done) {
-    var stream = intoStream.obj(params.testClass).pipe(validator);
+    var tests = validate(function() {
+        errors.should.have.length(6)
 
-    stream.on('finish', function() {
-        errors.should.have.length(1)
-        errors[0].should.have.property('_id', params.testClass.localId)
+        errors[0].should.have.property('_id', params.clsId)
+        errors[0].should.have.property('prpId', params.mandatoryPrpId)
+        errors[0].should.have.property('profile', 'B')
+
+        errors[1].should.have.property('_id', params.clsId)
+
+        errors[2].should.have.property('_id', params.clsId)
+        errors[2].should.have.property('prpId', params.optionalPrpId)
+        errors[2].should.have.property('profile', 'C')
+
+        errors[3].should.have.property('_id', params.clsId)
+        errors[3].should.have.property('prpId', params.mandatoryPrpId)
+        errors[3].should.have.property('profile', 'A')
+
+        errors[4].should.have.property('_id', params.clsId)
+        errors[4].should.have.property('prpId', params.mandatoryPrpId)
+        errors[4].should.have.property('profile', 'A')
+
+        errors[5].should.have.property('_id', params.clsId)
+        errors[5].should.have.property('prpId', params.mandatoryPrpId)
+        errors[5].should.have.property('profile', 'A')
 
         console.log('DONE', errors)
         done();
-    })
+    });
+
+    intoStream.obj(params.testClass).pipe(tests);
 });
 
 });
 
-function appendError(error) {
-    errors.push(error)
-}

@@ -56,7 +56,7 @@ class ModelElement extends Component {
 
         if (!elementIcon) {
             let iconName = Icons[element.type] + (isExpanded && element.type === ItemType.PKG ? '-open' : '')
-            if (element.isAttribute && element.isAttribute === 'false')
+            if (element.type === ItemType.PRP && !element.isAttribute)
                 iconName = Icons[StereoType.AR]
             elementIcon = <FontAwesome name={ iconName } fixedWidth={ true } className="mr-1" />
         }

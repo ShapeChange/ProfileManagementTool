@@ -10,7 +10,7 @@ class ModelProfileEdit extends Component {
 
         if (e && e.target) {
             const name = e.target.value;
-            const profiles = Object.keys(model.profiles).concat(Object.values(model.profiles).map(p => p.name))
+            const profiles = Object.keys(model.profilesInfo).concat(Object.values(model.profilesInfo).map(p => p.name))
 
             requestProfileEdit({
                 _id: profile,

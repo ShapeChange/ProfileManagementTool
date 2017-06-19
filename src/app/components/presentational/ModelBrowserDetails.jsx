@@ -22,7 +22,7 @@ class ModelBrowserDetails extends Component {
 
         this._updateEditable(item, {
             editable: !item.editable,
-            recursive: false
+            recursive: true
         });
     }
 
@@ -133,6 +133,7 @@ class ModelBrowserDetails extends Component {
                   <ModelBrowserInfos infos={ infos }
                       taggedValues={ taggedValues }
                       baseUrl={ baseUrls['cls'] }
+                      baseUrlPrp={ baseUrls['prp2'] }
                       urlSuffix={ selectedTab }
                       filter={ filter }
                       isFlattenInheritance={ isFlattenInheritance }

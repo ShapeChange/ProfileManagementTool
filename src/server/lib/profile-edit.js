@@ -19,10 +19,15 @@ function createProfileEditor(mr, pw) {
 }
 
 function getEditableUpdatesForPackage(id, modelId, editable, recursive) {
-    var updates;
+
+    var updates = Promise.all([profileWriter.putPackageUpdate(id, modelId, {
+        $set: {
+            editable: editable
+        }
+    })]);
 
     if (recursive) {
-        updates = modelReader.getPackageGraph(id, modelId)
+        var updates2 = modelReader.getPackageGraph(id, modelId)
             .then(function(pkgs) {
                 return Promise.map(pkgs, function(pkg) {
                     return profileWriter.putPackageUpdate(pkg._id, modelId, {
@@ -32,13 +37,12 @@ function getEditableUpdatesForPackage(id, modelId, editable, recursive) {
                     })
                 })
             })
-    } else {
-        updates = Promise.all([profileWriter.putPackageUpdate(id, modelId, {
-            $set: {
-                editable: editable
-            }
-        })]);
+
+        updates = Promise.join(updates, updates2, function(updates1, updates2) {
+            return updates1.concat(updates2);
+        })
     }
+
 
     return modelReader.getClassesForPackage(id, modelId, recursive)
         .then(function(classes) {
@@ -75,7 +79,7 @@ function getProfileParameterUpdates(clsId, prpId, modelId, profile, parameter) {
             }
             console.log('UPD3', update)
 
-            return Promise.all([profileWriter.putClassUpdate(clsId, modelId, update, modelReader.getProjection('profileParameters', 'properties.profileParameters'))]);
+            return Promise.all([profileWriter.putClassUpdate(clsId, modelId, update)]);
         })
 }
 
@@ -203,8 +207,6 @@ function getProfileUpdatesForPackage(id, modelId, profile, include, onlyMandator
         }
     };
 
-    var projection = modelReader.getProjection('parent');
-
     return modelReader.getClassesForPackage(id, modelId, recursive, !include, {
         editable: true
     })
@@ -213,7 +215,7 @@ function getProfileUpdatesForPackage(id, modelId, profile, include, onlyMandator
                 return cls.localId;
             })
 
-            return buildClassesUpdate(classes, modelId, profile, include, propertyHandler, propertyFilter, classIds, projection);
+            return buildClassesUpdate(classes, modelId, profile, include, propertyHandler, propertyFilter, classIds);
         })
 }
 
@@ -320,7 +322,6 @@ function buildClassUpdate(cls, modelId, profile, include, propertyHandler, prope
             return updates1.concat(updates2);
         })
     }
-
 
     return updates;
 }

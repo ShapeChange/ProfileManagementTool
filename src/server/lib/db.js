@@ -132,7 +132,7 @@ return Promise.resolve(
         .project({
             name: 1,
             created: 1,
-            profiles: 1
+            profilesInfo: 1
         })
         .sort({
             created: -1
@@ -550,6 +550,8 @@ function resolveIds(details, flattenOninas) {
         localids = localids.concat(details.supertypes);
     if (details && details.subtypes)
         localids = localids.concat(details.subtypes);
+    if (details && details.associationId)
+        localids.push(details.associationId)
     if (details && details.properties)
         details.properties.reduce(function(ids, prp) {
             if (prp.typeId) ids.push(prp.typeId)
@@ -563,6 +565,10 @@ function resolveIds(details, flattenOninas) {
                 return ids;
             }, ids);
         }, localids);
+    if (details && details.end1 && details.end1.ref)
+        localids.push(details.end1.ref)
+    if (details && details.end2 && details.end2.ref)
+        localids.push(details.end2.ref)
 
     if (localids.length) {
         return model
@@ -571,16 +577,27 @@ function resolveIds(details, flattenOninas) {
                     $in: ["cls", "asc"]
                 },
                 model: details.model,
-                localId: {
-                    $in: localids
-                }
+                $or: [
+                    {
+                        localId: {
+                            $in: localids
+                        }
+                    },
+                    {
+                        'properties.localId': {
+                            $in: localids
+                        }
+                    }
+                ]
             })
             .project({
                 name: 1,
                 localId: 1,
                 isAbstract: 1,
                 isMeta: 1,
-                isReason: 1
+                isReason: 1,
+                'properties.localId': 1,
+                'properties.name': 1
             })
             .toArray()
             .then(function(resolvedIds) {
@@ -597,6 +614,25 @@ function resolveIds(details, flattenOninas) {
                             return tid.localId === st;
                         });
                     });
+                if (details.associationId)
+                    details.associationId = resolvedIds.find(function(tid) {
+                        return tid.localId === details.associationId;
+                    });
+                if (details && details.end1 && details.end1.ref) {
+                    var eid = details.end1.ref;
+
+                    details.end1 = resolvedIds.find(function(tid) {
+                        return tid.properties.some(prp => prp.localId === eid);
+                    });
+                    details.end1.properties = details.end1.properties.filter(prp => prp.localId === eid);
+                }
+                if (details && details.end2 && details.end2.ref) {
+                    var eid = details.end2.ref;
+                    details.end2 = resolvedIds.find(function(tid) {
+                        return tid.properties.some(prp => prp.localId === eid);
+                    });
+                    details.end2.properties = details.end2.properties.filter(prp => prp.localId === eid);
+                }
                 if (details.properties) {
                     if (flattenOninas && details.metaReasonClasses) {
                         resolvedIds = resolvedIds.concat(details.metaReasonClasses.map(function(t) {
@@ -838,7 +874,7 @@ return model
 exports.deleteProfile = function(id, modelId) {
 var update = {
     $unset: {
-        ['profiles.' + id]: ''
+        ['profilesInfo.' + id]: ''
     }
 }
 
@@ -852,7 +888,7 @@ return updateModel(modelId, update)
 exports.addProfile = function(id, modelId) {
 var update = {
     $set: {
-        ['profiles.' + id]: {
+        ['profilesInfo.' + id]: {
             _id: id,
             name: id,
             errors: []
@@ -870,7 +906,7 @@ return updateModel(modelId, update)
 exports.renameProfile = function(id, name, modelId) {
 var update = {
     $set: {
-        ['profiles.' + id + '.name']: name
+        ['profilesInfo.' + id + '.name']: name
     }
 }
 

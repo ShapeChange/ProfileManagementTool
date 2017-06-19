@@ -76,7 +76,7 @@ function appendError(error) {
 
     var update = {
         $addToSet: {
-            ['profiles.' + error.profile + '.errors']: {
+            ['profilesInfo.' + error.profile + '.errors']: {
                 _id: error._id,
                 name: error.name,
                 msg: error.msg
@@ -102,7 +102,7 @@ function clearErrors(clsId, modelId, profile) {
 
     var update = {
         $pull: {
-            ['profiles.' + profile + '.errors']: {
+            ['profilesInfo.' + profile + '.errors']: {
                 _id: clsId
             }
         }
@@ -121,7 +121,7 @@ function clearErrors(clsId, modelId, profile) {
     )
 }
 
-var minProjection = ['localId', 'name', 'type', 'profiles', 'properties.profiles', 'properties._id', 'model', 'editable'];
+var minProjection = ['localId', 'parent', 'name', 'type', 'profiles', 'profileParameters', 'properties.profiles', 'properties.profileParameters', 'properties._id', 'properties.name', 'properties.typeId', 'properties.isAttribute', 'properties.isNavigable', 'properties.reversePropertyId', 'taggedValues', 'model', 'editable'];
 
 function getProjection() {
     return minProjection.concat([].slice.call(arguments)).reduce(function(prj, key) {

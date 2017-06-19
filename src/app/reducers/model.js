@@ -400,15 +400,24 @@ const _extractDetails = (details) => {
                 name: details.typeName
             }
         }
-        if (details.associationId) {
-            d.association = details.associationId
-        }
         if (details.cardinality) {
             d.cardinality = details.cardinality
         }
         if (details.isAttribute) {
             d.isAttribute = details.isAttribute
         }
+        if (details.isNavigable) {
+            d.isNavigable = details.isNavigable
+        }
+    }
+    if (details && details.associationId) {
+        d.association = details.associationId
+    }
+    if (details && details.end1) {
+        d.end1 = details.end1
+    }
+    if (details && details.end2) {
+        d.end2 = details.end2
     }
     const stereo = stereotypes && stereotypes.length > 0 ? {
         stereotypes: stereotypes.reduce((sts, st) => `${sts}${sts.length ? ', ' : ''}${st}`, '')

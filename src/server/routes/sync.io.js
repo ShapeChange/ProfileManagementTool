@@ -79,10 +79,35 @@ function updateEditable(socket, update) {
                         console.log('ERROR', cls)
                     }
                 })
-                console.log('UPD1', uc)
+                return uc;
+            })
+            .then(function(updatedClasses) {
+                console.log('UPD1', updatedClasses)
+                return new Promise(function(resolve, reject) {
+
+                    var checks = validator.createStream(db.getModelReader(), db.getProfileWriter(), update.profile, function() {
+                        resolve(updatedClasses);
+                    });
+
+
+                    intoStream.obj(updatedClasses.filter(elem => elem.type === 'cls')).pipe(checks)
+                })
+            })
+            .then(function(updatedClasses) {
                 socket.emit('action', {
                     type: 'editable/new',
-                    payload: uc
+                    payload: updatedClasses
+                });
+
+                return db.getModel(update.modelId)
+            })
+            .then(function(model) {
+                socket.emit('action', {
+                    type: 'model/fetched',
+                    payload: {
+                        fetchedModel: update.modelId,
+                        model: model
+                    }
                 });
             })
     }

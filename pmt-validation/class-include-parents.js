@@ -1,17 +1,17 @@
 var through2 = require('through2');
 var Promise = require("bluebird");
+var path = require('path');
 
 exports.createStream = function(modelReader, errorWriter, profile) {
+console.log(path.basename(__filename, '.js'));
 
 return through2.obj(function(obj, enc, cb) {
 
-    //console.log('CHECK', obj)
+    console.log(path.basename(__filename, '.js'));
 
-    if (profile && (!obj.profiles || obj.profiles.indexOf(profile) === -1)) {
+    if (exports.shouldSkip(obj, profile)) {
         console.log('SKIP')
-        errorWriter.clearErrors(obj.localId, obj.model, profile);
-        this.push(obj);
-        cb();
+        cb(null, obj);
         return;
     }
 
@@ -20,7 +20,8 @@ return through2.obj(function(obj, enc, cb) {
             $not: {
                 $all: obj.profiles
             }
-        }
+        },
+        editable: true
     }
 
     modelReader.getClassGraph(obj.localId, obj.model, false, {
@@ -32,26 +33,28 @@ return through2.obj(function(obj, enc, cb) {
             var prfs = profile ? [profile] : obj.profiles
 
             prfs.forEach(function(prf) {
-                errorWriter.clearErrors(obj.localId, obj.model, prf);
-
                 classes.forEach(function(cls) {
-
-                    if (!cls.profiles || cls.profiles.indexOf(prf) === -1) {
-                        errorWriter.appendError({
-                            _id: obj.localId,
-                            name: obj.name,
-                            model: obj.model,
-                            profile: prf,
-                            msg: 'Super class "' + cls.name + '" is not included in profile'
-                        })
+                    if (cls.localId !== obj.localId) {
+                        if (!cls.profiles || cls.profiles.indexOf(prf) === -1) {
+                            errorWriter.appendError({
+                                _id: obj.localId,
+                                name: obj.name,
+                                model: obj.model,
+                                profile: prf,
+                                msg: 'Super class "' + cls.name + '" is not included in profile'
+                            })
+                        }
                     }
                 })
             })
 
-
-            this.push(obj);
-            cb();
-        }.bind(this))
+            cb(null, obj);
+        })
 });
 
+}
+
+exports.shouldSkip = function(cls, profile) {
+return (profile && (!cls.profiles || cls.profiles.indexOf(profile) === -1))
+    || (!cls.profiles || cls.profiles.length === 0)
 }
