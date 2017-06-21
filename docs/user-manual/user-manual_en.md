@@ -168,18 +168,47 @@ The type of each item is indicated by an icon, the coloring of an item indicates
 
 #### Icons
 
-- Package![package](./img/icon-p.png "package")
+- Package
+
+  ![package](./img/icon-p.png "package")
+
 - Class
-  - Feature type![featuretype](./img/icon-ft.png "featuretype")
-  - Type![type](./img/icon-t.png "type")
-  - Data type![datatype](./img/icon-dt.png "datatype")
-  - Code list![codelist](./img/icon-cl.png "codelist")
-  - Enumeration![enumeration](./img/icon-e.png "enumeration")
-  - Union![union](./img/icon-u.png "union")
-  - No stereo type![class](./img/icon-c.png "class")
+  - Feature type
+
+    ![featuretype](./img/icon-ft.png "featuretype")
+
+  - Type
+
+    ![type](./img/icon-t.png "type")
+
+  - Data type
+
+    ![datatype](./img/icon-dt.png "datatype")
+
+  - Code list
+
+    ![codelist](./img/icon-cl.png "codelist")
+
+  - Enumeration
+
+    ![enumeration](./img/icon-e.png "enumeration")
+
+  - Union
+
+    ![union](./img/icon-u.png "union")
+
+  - No stereo type
+
+    ![class](./img/icon-c.png "class")
+
 - Property
-  - Attribute![attribute](./img/icon-a.png "attribute")
-  - Association role![association role](./img/icon-ar.png "association role")
+  - Attribute
+
+    ![attribute](./img/icon-a.png "attribute")
+
+  - Association role
+
+    ![association role](./img/icon-ar.png "association role")
 
 #### States
 
