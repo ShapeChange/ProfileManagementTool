@@ -71,3 +71,16 @@ The value needs to be a valid MongoDB Connection String URI, see https://docs.mo
 ### Application settings
 
 If you want to change the allowed geometries for *featuretype*s, you can change the setting of `app.geometry` in the configuration file.
+
+## Internationalization
+
+The *PMT* is prepared for user interface internationalization, so it is possible to add additional languages besides English. For this purpose it uses [i18next](https://www.i18next.com). 
+
+However you cannot just add new languages to your installation, because the *JavaScript* files in the *PMT* release are optimized and compressed for performance reasons. 
+
+The easiest way to add a new language to the *PMT* would be a pull request to the *Github* repository at https://github.com/ShapeChange/ProfileManagementTool. 
+
+You would have to copy the file at https://github.com/ShapeChange/ProfileManagementTool/tree/master/pmt-app/locales/en/app.json to a new folder according to its locale. So for example a German translation would be found at  https://github.com/ShapeChange/ProfileManagementTool/tree/master/pmt-app/locales/de/app.json.
+
+After an accepted pull request, a new version of the  *PMT* would be released that includes the added language.
+
