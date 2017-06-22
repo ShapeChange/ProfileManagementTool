@@ -47,8 +47,8 @@ return webpackMerge(commonConfig(), {
                 to: '../../app/assets/favicon'
             },
             {
-                from: '../server/cfg/config.docker.js',
-                to: '../../cfg/config.js'
+                from: '../server/cfg',
+                to: '../../cfg'
             },
             {
                 from: '../server/routes',
@@ -56,6 +56,10 @@ return webpackMerge(commonConfig(), {
             },
             {
                 from: '../server/server.js',
+                to: '../../'
+            },
+            {
+                from: '../server/config.js',
                 to: '../../'
             },
             {

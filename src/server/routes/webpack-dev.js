@@ -12,7 +12,7 @@ exports.addRoutes = function(app, config) {
 
 // rewrite urls without a dot to index.html
 app.use(historyApiFallback({
-    index: (config.server.path || '') + '/index.html'
+    index: config.get('server.path') + '/index.html'
 }));
 
 // serve webpack compiled assets
@@ -22,7 +22,7 @@ app.use(devMid);
 app.use(hotMiddleware(compiler));
 
 // serve static assets
-app.use((config.server.path || '') + '/assets', express.static(path.resolve(__dirname, '../../app/assets')));
+app.use(config.get('server.path') + '/assets', express.static(path.resolve(config.get('server.distFolder'), 'assets')));
 
 return Promise.promisifyAll(devMid);
 };

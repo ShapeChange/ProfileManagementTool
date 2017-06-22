@@ -35,6 +35,14 @@ var classes = {
             }
         ],
         profiles: ['A', 'B'],
+        profileParameters: {
+            A: {
+                geometry: 'P,C,S,XYZ'
+            }
+        },
+        taggedValues: {
+            geometry: 'P,C,S,ABC'
+        },
         editable: true
     },
     2: {

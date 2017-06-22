@@ -16,7 +16,10 @@ var errorWriter = {
         errors = []
     }
 }
-const validate = require('../index.js').createStream.bind(null, options.modelReader, errorWriter, null)
+const config = {
+    geometry: ["P", "C", "S", "So", "MP", "MC", "MS", "MSo"]
+}
+const validate = require('../index.js').createStream.bind(null, config, options.modelReader, errorWriter, null)
 
 
 describe('Consistency checks', function() {
@@ -38,7 +41,9 @@ before(function() {
 
 it('should work', function(done) {
     var tests = validate(function() {
-        errors.should.have.length(6)
+        console.log('DONE', errors)
+
+        errors.should.have.length(9)
 
         errors[0].should.have.property('_id', params.clsId)
         errors[0].should.have.property('prpId', params.mandatoryPrpId)
@@ -47,22 +52,28 @@ it('should work', function(done) {
         errors[1].should.have.property('_id', params.clsId)
 
         errors[2].should.have.property('_id', params.clsId)
-        errors[2].should.have.property('prpId', params.optionalPrpId)
-        errors[2].should.have.property('profile', 'C')
 
         errors[3].should.have.property('_id', params.clsId)
-        errors[3].should.have.property('prpId', params.mandatoryPrpId)
-        errors[3].should.have.property('profile', 'A')
 
         errors[4].should.have.property('_id', params.clsId)
-        errors[4].should.have.property('prpId', params.mandatoryPrpId)
-        errors[4].should.have.property('profile', 'A')
 
         errors[5].should.have.property('_id', params.clsId)
-        errors[5].should.have.property('prpId', params.mandatoryPrpId)
-        errors[5].should.have.property('profile', 'A')
+        errors[5].should.have.property('prpId', params.optionalPrpId)
+        errors[5].should.have.property('profile', 'C')
 
-        console.log('DONE', errors)
+        errors[6].should.have.property('_id', params.clsId)
+        errors[6].should.have.property('prpId', params.mandatoryPrpId)
+        errors[6].should.have.property('profile', 'A')
+
+        errors[7].should.have.property('_id', params.clsId)
+        errors[7].should.have.property('prpId', params.mandatoryPrpId)
+        errors[7].should.have.property('profile', 'A')
+
+        errors[8].should.have.property('_id', params.clsId)
+        errors[8].should.have.property('prpId', params.mandatoryPrpId)
+        errors[8].should.have.property('profile', 'A')
+
+
         done();
     });
 

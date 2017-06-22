@@ -2,7 +2,7 @@ var through2 = require('through2');
 var Promise = require("bluebird");
 var path = require('path');
 
-exports.createStream = function(modelReader, errorWriter, profile) {
+exports.createStream = function(config, modelReader, errorWriter, profile) {
 
 return through2.obj(function(obj, enc, cb) {
 
@@ -16,7 +16,7 @@ return through2.obj(function(obj, enc, cb) {
 
     var prfs = profile ? [profile] : obj.profiles
 
-    const defaultGeometries = ['P', 'C', 'S', 'So', 'MP', 'MC', 'MS', 'MSo']
+    const defaultGeometries = config.geometry;
 
     if (obj.taggedValues && obj.taggedValues.geometry) {
 
@@ -27,7 +27,7 @@ return through2.obj(function(obj, enc, cb) {
                     name: obj.name,
                     model: obj.model,
                     profile: prf,
-                    msg: 'Tagged value geometry (' + obj.taggedValues.geometry + ') does not match configured geometries'
+                    msg: 'Tagged value geometry (' + obj.taggedValues.geometry + ') does not match configured geometries (' + defaultGeometries.join(',') + ')'
                 })
             });
         }
@@ -48,7 +48,7 @@ return through2.obj(function(obj, enc, cb) {
                     name: obj.name,
                     model: obj.model,
                     profile: prf,
-                    msg: 'The value for parameter geometry (' + obj.profileParameters[prf].geometry + ') does not match the configured geometries or the tagged value geometry'
+                    msg: 'The value for parameter geometry (' + obj.profileParameters[prf].geometry + ') does not match the configured geometries (' + defaultGeometries.join(',') + ') or the tagged value geometry (' + obj.taggedValues.geometry + ')'
                 })
             }
         }

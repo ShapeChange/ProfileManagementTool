@@ -2,7 +2,7 @@ var through2 = require('through2');
 var Promise = require("bluebird");
 var path = require('path');
 
-exports.createStream = function(modelReader, errorWriter, profile) {
+exports.createStream = function(config, modelReader, errorWriter, profile) {
 console.log(path.basename(__filename, '.js'));
 
 return through2.obj(function(obj, enc, cb) {

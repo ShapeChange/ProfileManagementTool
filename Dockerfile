@@ -5,7 +5,7 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 EXPOSE 8000
-ENV NODE_ENV=production
+ENV NODE_ENV=production PMT_PLATFORM=docker
 CMD [ "node", "server.js" ]
 
 # Build inside container

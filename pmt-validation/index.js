@@ -16,7 +16,7 @@ var multipipe = require('multipipe');
 var requireAll = require('require-all');
 var writer = require('flush-write-stream')
 
-exports.createStream = function(modelReader, errorWriter, profile, onFinish) {
+exports.createStream = function(config, modelReader, errorWriter, profile, onFinish) {
 
 var tests = requireAll({
     dirname: __dirname,
@@ -25,7 +25,7 @@ var tests = requireAll({
         return fileName !== 'index.js' && fileName;
     },
     resolve: function(test) {
-        return test.createStream(modelReader, errorWriter, profile);
+        return test.createStream(config, modelReader, errorWriter, profile);
     },
     recursive: false
 });

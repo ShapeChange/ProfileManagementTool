@@ -9,10 +9,16 @@ try {
         name: 'ProfileManagementTool',
         description: '',
         script: binary,
-        env: {
-            name: "NODE_ENV",
-            value: 'production'
-        }
+        env: [
+            {
+                name: "NODE_ENV",
+                value: 'production'
+            },
+            {
+                name: "PMT_PLATFORM",
+                value: 'windows'
+            }
+        ]
     });
 
     return svc;

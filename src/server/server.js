@@ -6,7 +6,7 @@ var compression = require('compression');
 //var logger = require('morgan');
 var socketio = require('socket.io');
 var db = require('./lib/db');
-var config = require('./cfg/config.js');
+var config = require('./config.js');
 
 var app = express();
 //app.use(logger('combined'));
@@ -16,28 +16,29 @@ var server = http.createServer(app);
 server = httpShutdown(server);
 server = Promise.promisifyAll(server);
 
+// TODO: inject path to frontend with server side rendering
 var io = socketio(server, {
-    path: (config.server.path || '') + '/socket.io'
+    path: config.get('server.path') + '/socket.io'
 });
 
-var devMid;
+var devMiddleware;
 
-db.connect(config.db.url)
+db.connect(config.get('db.url'))
     .then(function() {
         require('./routes/sync.io').addRoutes(app, config, db, io);
 
-        if (config.devEnv) {
+        if (config.get('env') === 'development') {
             // TODO: this should not be reachable in production env, needs separate start file
             console.log('DEV');
-            devMid = require('./routes/webpack-dev').addRoutes(app, config);
+            devMiddleware = require('./routes/webpack-dev').addRoutes(app, config);
         } else {
             require('./routes/static').addRoutes(app, config);
         }
 
-        return server.listenAsync(config.server.port);
+        return server.listenAsync(config.get('server.port'));
     })
     .then(function() {
-        console.log('Started ProfileManagementTool Server - listening on port: ' + config.server.port);
+        console.log('Started ProfileManagementTool Server - listening on port: ' + config.get('server.port'));
     });
 
 process.on('SIGINT', shutdown);
@@ -47,8 +48,8 @@ process.on('SIGQUIT', shutdown);
 
 function shutdown() {
     var pr = Promise.resolve();
-    if (config.devEnv && devMid) {
-        pr = devMid.closeAsync();
+    if (devMiddleware) {
+        pr = devMiddleware.closeAsync();
     }
 
     return pr
