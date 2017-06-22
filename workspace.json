@@ -1,0 +1,8 @@
+{
+    "links": {
+        "pmt-backend": "pmt-backend",
+        "pmt-data-access": "pmt-data-access",
+        "pmt-io": "pmt-io",
+        "pmt-validation": "pmt-validation"
+    }
+}

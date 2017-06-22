@@ -10,7 +10,7 @@ const extractSass = new ExtractTextPlugin({
 
 module.exports = function() {
 return {
-    context: resolve(__dirname, 'src/app'),
+    context: resolve(__dirname, 'pmt-app'),
 
     entry: [
         './index.jsx'

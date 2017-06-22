@@ -21,8 +21,7 @@ exports.createStream = function(config, modelReader, errorWriter, profile, onFin
 var tests = requireAll({
     dirname: __dirname,
     filter: function(fileName) {
-        //return fileName === 'class-include-parents.js';
-        return fileName !== 'index.js' && fileName;
+        return fileName !== 'index.js' && fileName.substr(fileName.length - 3) === '.js' && fileName;
     },
     resolve: function(test) {
         return test.createStream(config, modelReader, errorWriter, profile);

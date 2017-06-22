@@ -47,35 +47,19 @@ return webpackMerge(commonConfig(), {
                 to: '../../app/assets/favicon'
             },
             {
-                from: '../server/cfg',
+                from: '../cfg',
                 to: '../../cfg'
             },
             {
-                from: '../server/routes',
-                to: '../../routes'
-            },
-            {
-                from: '../server/server.js',
+                from: '../server.js',
                 to: '../../'
             },
             {
-                from: '../server/config.js',
+                from: '../config.js',
                 to: '../../'
             },
             {
-                from: '../server/lib',
-                to: '../../lib'
-            },
-            {
-                from: '../../pmt-io',
-                to: '../../node_modules/pmt-io'
-            },
-            {
-                from: '../../pmt-validation',
-                to: '../../node_modules/pmt-validation'
-            },
-            {
-                from: '../../package.json',
+                from: '../package.json',
                 to: '../../'
             }
         ])

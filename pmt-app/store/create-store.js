@@ -22,7 +22,7 @@ export default function(routes, data) {
 
     // Be sure to ONLY add this middleware in development!
     const middleware = process.env.NODE_ENV !== 'production' ?
-        [require('redux-immutable-state-invariant')(), socketIoMiddleware, routerMiddleware] :
+        [require('redux-immutable-state-invariant').default(), socketIoMiddleware, routerMiddleware] :
         [socketIoMiddleware, routerMiddleware];
 
     const store = createStore(

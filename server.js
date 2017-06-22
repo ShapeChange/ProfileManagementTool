@@ -4,8 +4,8 @@ var httpShutdown = require('http-shutdown');
 var express = require('express');
 var compression = require('compression');
 //var logger = require('morgan');
-var socketio = require('socket.io');
-var db = require('./lib/db');
+var db = require('pmt-data-access');
+var backend = require('pmt-backend');
 var config = require('./config.js');
 
 var app = express();
@@ -16,24 +16,9 @@ var server = http.createServer(app);
 server = httpShutdown(server);
 server = Promise.promisifyAll(server);
 
-// TODO: inject path to frontend with server side rendering
-var io = socketio(server, {
-    path: config.get('server.path') + '/socket.io'
-});
-
-var devMiddleware;
-
 db.connect(config.get('db.url'))
     .then(function() {
-        require('./routes/sync.io').addRoutes(app, config, db, io);
-
-        if (config.get('env') === 'development') {
-            // TODO: this should not be reachable in production env, needs separate start file
-            console.log('DEV');
-            devMiddleware = require('./routes/webpack-dev').addRoutes(app, config);
-        } else {
-            require('./routes/static').addRoutes(app, config);
-        }
+        backend.addRoutes(server, app, config, db);
 
         return server.listenAsync(config.get('server.port'));
     })
@@ -47,12 +32,7 @@ process.on('SIGHUP', shutdown);
 process.on('SIGQUIT', shutdown);
 
 function shutdown() {
-    var pr = Promise.resolve();
-    if (devMiddleware) {
-        pr = devMiddleware.closeAsync();
-    }
-
-    return pr
+    return backend.onShutdown()
         .then(function() {
             return server.shutdownAsync();
         })

@@ -1,0 +1,29 @@
+{
+    "name": "pmt-io",
+    "version": "1.0.0",
+    "description": "",
+    "private": true,
+    "main": "index.js",
+    "scripts": {
+        "test": "mocha --recursive ./test"
+    },
+    "author": "interactive instruments GmbH",
+    "license": "GPL-3.0",
+    "devDependencies": {
+        "chai": "^3.5.0",
+        "chai-xml": "^0.3.1",
+        "mocha": "^3.3.0"
+    },
+    "dependencies": {
+        "bluebird": "^3.5.0",
+        "flush-write-stream": "^1.0.2",
+        "into-stream": "^3.1.0",
+        "mongodb": "^2.2.26",
+        "multipipe": "^1.0.2",
+        "read-xml": "^2.0.0",
+        "through2": "^2.0.3",
+        "unzip-stream": "^0.1.2",
+        "xml-reader": "^2.4.3",
+        "yazl": "^2.4.2"
+    }
+}

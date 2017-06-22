@@ -5,7 +5,7 @@ var webpack = require('webpack');
 var devMiddleware = require("webpack-dev-middleware");
 var hotMiddleware = require("webpack-hot-middleware");
 var historyApiFallback = require('connect-history-api-fallback');
-var webpackConfig = require('../../../webpack.config.development')();
+var webpackConfig = require('../webpack.config.development')();
 var compiler = webpack(webpackConfig);
 
 exports.addRoutes = function(app, config) {

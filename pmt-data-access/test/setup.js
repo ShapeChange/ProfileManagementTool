@@ -1,5 +1,5 @@
 var Promise = require("bluebird");
-var profileEdit = require('../../src/server/lib/profile-edit');
+var profileEdit = require('../profile-edit');
 
 var classes = {
     1: {

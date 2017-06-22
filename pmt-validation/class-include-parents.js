@@ -3,7 +3,6 @@ var Promise = require("bluebird");
 var path = require('path');
 
 exports.createStream = function(config, modelReader, errorWriter, profile) {
-console.log(path.basename(__filename, '.js'));
 
 return through2.obj(function(obj, enc, cb) {
 

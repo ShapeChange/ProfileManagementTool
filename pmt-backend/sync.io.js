@@ -3,10 +3,9 @@ var path = require('path');
 var fs = require('fs');
 var through2 = require('through2');
 var intoStream = require('into-stream');
-var mongoImport = process.env.NODE_ENV === 'production' ? require('pmt-io/mongo-import') : require('../../../pmt-io/mongo-import');
-var mongoExport = process.env.NODE_ENV === 'production' ? require('pmt-io/mongo-export') : require('../../../pmt-io/mongo-export');
-var validator = process.env.NODE_ENV === 'production' ? require('pmt-validation') : require('../../../pmt-validation');
-var auth = require('../lib/auth');
+var pmtIo = require('pmt-io');
+var validator = require('pmt-validation');
+var auth = require('./auth');
 
 var db;
 var actions;
@@ -228,7 +227,7 @@ function importFile(socket, user, file) {
     var written = 0;
     var progress = 0;
 
-    return mongoImport.importFile(db.getModelCollection(), file.stream, file.metadata, user._id, function(chunkLength) {
+    return pmtIo.importFile(db.getModelCollection(), file.stream, file.metadata, user._id, function(chunkLength) {
         written += chunkLength;
 
         var newProgress = Math.round((written / file.metadata.size) * 50);
@@ -297,7 +296,7 @@ function importFile(socket, user, file) {
 function exportFile(socket, user, file) {
     var progress = 0;
 
-    return mongoExport.exportFile(db, file.stream, file.metadata.id, function(stats) {
+    return pmtIo.exportFile(db, file.stream, file.metadata.id, function(stats) {
 
         var newProgress = Math.round(((stats.packages + stats.classes + stats.associations) / stats.totalElements) * 100);
 
