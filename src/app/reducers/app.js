@@ -1,5 +1,6 @@
 import { createAction, createActions, handleActions } from 'redux-actions';
 import { actions as modelActions } from './model';
+import { actions as authActions } from './auth';
 import update from 'immutability-helper';
 
 export const ItemType = {
@@ -63,9 +64,12 @@ const initialState = {
     useSmallerFont: false,
     menuOpen: false,
     errorsOpen: false,
-    submenusOpen: {},
+    submenusOpen: {
+        'View': true,
+        'Model Files': true
+    },
     flattenInheritance: false,
-    flattenOninas: true,
+    flattenOninas: false,
     fileImport: {},
     fileExport: {},
     pendingFilter: {
@@ -74,11 +78,13 @@ const initialState = {
     },
     filter: '',
     deleteRequested: [],
-    profileEdit: {}
+    profileEdit: {},
+    allowedGeometries: []
 }
 
 // reducer
 export default handleActions({
+    [actions.initApp]: initApp,
     [actions.selectModel]: selectModel,
     [actions.selectPackage]: selectPackage,
     [actions.selectClass]: selectClass,
@@ -116,8 +122,17 @@ export default handleActions({
     [modelActions.updateEditable]: updateEditable,
     [modelActions.updatedProfile]: updatedProfile,
     [modelActions.updatedEditable]: updatedEditable,
+    [authActions.onUserLogin]: openMenu
 }, initialState);
 
+
+
+function initApp(state, action) {
+    return {
+        ...state,
+        allowedGeometries: action.payload.geometry
+    }
+}
 
 function selectModel(state, action) {
     return action.payload === state.selectedModel
@@ -184,6 +199,13 @@ function toggleMenu(state) {
     return {
         ...state,
         menuOpen: !state.menuOpen
+    }
+}
+
+function openMenu(state) {
+    return {
+        ...state,
+        menuOpen: true
     }
 }
 
@@ -491,6 +513,7 @@ export const getBrowserDisabled = (state) => state.app.disableBrowser
 export const isBusy = (state) => state.app.busy
 export const getDeleteRequested = (state) => state.app.deleteRequested
 export const getProfileEdit = (state) => state.app.profileEdit
+export const getAllowedGeometries = (state) => state.app.allowedGeometries
 
 // is backend sync needed
 const doesChangeSelectedPackage = (state, action) => state.app.selectedPackage !== action.payload

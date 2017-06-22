@@ -66,7 +66,8 @@ function parseOptions(options, modelName) {
         },
         modelName: modelName,
         nsPrefix: '',
-        stats: stats
+        stats: stats,
+        owner: 'unknown'
     }, options);
 
     opts.modelId = opts.generateId();
@@ -195,7 +196,7 @@ function parseModel(outStream, node, options, profiles) {
         _id: options.modelId,
         name: options.modelName,
         type: 'mdl',
-        owner: 'unknown',
+        owner: options.owner,
         created: Date.now(),
         profilesInfo: profiles.reduce(function(obj, prf) {
             obj[prf] = {

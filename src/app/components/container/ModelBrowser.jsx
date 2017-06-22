@@ -3,7 +3,7 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux';
 import { Card, CardHeader } from 'reactstrap';
 
-import { useThreePaneView, useSmallerFont, getPendingFilter, getFilter, getBrowserDisabled, isFlattenInheritance, isFlattenOninas, Font, View, actions } from '../../reducers/app'
+import { useThreePaneView, useSmallerFont, getPendingFilter, getFilter, getBrowserDisabled, isFlattenInheritance, isFlattenOninas, getAllowedGeometries, Font, View, actions } from '../../reducers/app'
 import { getSelectedModel, getSelectedProfile, getSelectedPackage, getSelectedClass, getSelectedProperty, getSelectedTab, getDetails, getPackages, getPackage, getClasses, getClass, getProperties, getExpandedItems, actions as modelActions } from '../../reducers/model'
 
 import ModelBrowserPanes from '../presentational/ModelBrowserPanes'
@@ -45,7 +45,8 @@ const mapStateToProps = (state, props) => {
         filter: getFilter(state),
         disabled: getBrowserDisabled(state),
         isFlattenInheritance: isFlattenInheritance(state),
-        isFlattenOninas: isFlattenOninas(state)
+        isFlattenOninas: isFlattenOninas(state),
+        allowedGeometries: getAllowedGeometries(state)
     }
 }
 
@@ -110,7 +111,7 @@ class ModelBrowser extends Component {
             editable: !pkg || pkg.editable
         })) : [];
 
-        const propertyTree = selectedClass && properties ? properties.filter(prp => prp && prp.parent === selectedClass).map(prp => Object.assign({}, prp, {
+        const propertyTree = selectedClass && properties ? properties.map(prp => Object.assign({}, prp, {
             editable: !pkg || pkg.editable
         })) : [];
 

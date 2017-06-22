@@ -4,25 +4,10 @@ import FontAwesome from 'react-fontawesome';
 import { Link } from 'redux-little-router';
 import Toggle from '../common/Toggle'
 import ModelElement from './ModelElement'
-import Warning from '../common/Warning'
+import TooltipIcon from '../common/TooltipIcon'
 
 
 class ModelBrowserItems extends Component {
-
-    constructor(props) {
-        super(props);
-
-        this.toggle = this.toggle.bind(this);
-        this.state = {
-            tooltipOpen: false
-        };
-    }
-
-    toggle() {
-        this.setState({
-            tooltipOpen: !this.state.tooltipOpen
-        });
-    }
 
     render() {
         const {_id, items, type, profiles, infos, baseUrls, urlSuffix, selectedProfile, updateProfile, filter, isFlattenInheritance} = this.props;
@@ -50,13 +35,19 @@ class ModelBrowserItems extends Component {
                                                  disabled={ disabled }
                                                  onToggle={ e => updateProfile(item) }>
                                                  { showWarning &&
-                                                   <Warning id={ `${item._id}-warning` } placement="right">
+                                                   <TooltipIcon id={ `${item._id}-warning` }
+                                                       placement="right"
+                                                       icon="warning"
+                                                       color="warning">
                                                        Changing this property will affect other classes
-                                                   </Warning> }
+                                                   </TooltipIcon> }
                                                  { showWarning2 &&
-                                                   <Warning id={ `${item._id}-warning2` } placement="right">
+                                                   <TooltipIcon id={ `${item._id}-warning2` }
+                                                       placement="right"
+                                                       icon="warning"
+                                                       color="warning">
                                                        The property cannot be edited because the package to which its class belongs is not editable
-                                                   </Warning> }
+                                                   </TooltipIcon> }
                                              </Toggle>
                                          </td>
                                          <td className={ `py-0 px-0 ${i === 0 && 'border-0'}` }>
@@ -75,9 +66,13 @@ class ModelBrowserItems extends Component {
                                                                                          { isFlattenInheritance && item.typeId.isAbstract
                                                                                            ? <div>
                                                                                                  { item.typeId.name }
-                                                                                                 <Warning id={ `${item._id}-type-warning` } className="ml-1" placement="left">
+                                                                                                 <TooltipIcon id={ `${item._id}-type-warning` }
+                                                                                                     className="ml-1"
+                                                                                                     placement="left"
+                                                                                                     icon="warning"
+                                                                                                     color="warning">
                                                                                                      This class is hidden due to the view settings
-                                                                                                 </Warning>
+                                                                                                 </TooltipIcon>
                                                                                              </div>
                                                                                            : <Link href={ `${baseUrls['cls']}/${item.typeId.localId}/${urlSuffix ? urlSuffix : ''}` } title={ item.typeId.name }>
                                                                                              { item.typeId.name }

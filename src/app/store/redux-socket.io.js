@@ -29,10 +29,10 @@ export default function createSocketIoMiddleware(socket, criteria = [], {eventNa
             matched = option(type, action);
         } else if (typeof option === 'string') {
             // String prefix
-            matched = type.indexOf(option) === 0;
+            matched = type === option //type.indexOf(option) === 0;
         } else if (Array.isArray(option)) {
             // Array of types
-            matched = option.some(item => type.indexOf(item) === 0);
+            matched = option.some(item => type === item /*type.indexOf(item) === 0*/ );
         }
         return matched;
     }

@@ -1,12 +1,13 @@
 import React, { Component, PropTypes } from 'react';
 
 import { Button, Form, FormGroup, FormFeedback, Label, Input, Progress } from 'reactstrap';
+import TooltipIcon from '../common/TooltipIcon'
 
 
 class ModelProfileEdit extends Component {
 
     _changeName = (e, profile, model) => {
-        const {requestProfileEdit, fetch, oldName} = this.props;
+        const {requestProfileEdit, fetch, oldName, user} = this.props;
 
         if (e && e.target) {
             const name = e.target.value;
@@ -18,8 +19,7 @@ class ModelProfileEdit extends Component {
                 model: model._id,
                 valid: this._isNameValid(name, profiles, oldName),
                 oldName: oldName,
-                //TODO
-                owner: 'unknown',
+                owner: user._id,
                 fetch: fetch
             });
         }
@@ -66,16 +66,23 @@ class ModelProfileEdit extends Component {
     }
 
     render() {
-        const {profileEdit, profile, model, title, children, oldName} = this.props;
+        const {profileEdit, profile, model, title, children, oldName, description} = this.props;
         if (!profileEdit[profile])
-            return <div>
+            return <div className="truncate">
                        { children[0] }
                        { !oldName
                          ? <a href="" onClick={ (e) => this._requestProfileEdit(e, profile) }>
                                { children[1] }
                                { title }
                            </a>
-                         : <span>{ children[1] } { title }</span> }
+                         : <span className="truncate">{ children[1] } <span className="truncate">{ title }</span>
+                           { description && <TooltipIcon id={ `${profile}-type-info` }
+                                                className="ml-2"
+                                                placement="bottom"
+                                                icon="info-circle">
+                                                { description }
+                                            </TooltipIcon> }
+                           </span> }
                    </div>
 
         return (
@@ -104,7 +111,7 @@ class ModelProfileEdit extends Component {
                         className="rounded-0 ml-1 py-0"
                         disabled={ !profileEdit[profile].valid }
                         onClick={ (e) => this._confirmProfileEdit(e, profileEdit[profile]) }>
-                        Add
+                        { oldName ? 'Save' : 'Add' }
                     </Button>
                     <Button size="sm"
                         color="danger"

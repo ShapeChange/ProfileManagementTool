@@ -29,7 +29,7 @@ associations:  6
 
 var batchSize = 16;
 
-exports.importFile = function(db, stream, metadata, onStats) {
+exports.importFile = function(db, stream, metadata, owner, onStats) {
 return new Promise(function(resolve, reject) {
     var stats;
 
@@ -45,7 +45,8 @@ return new Promise(function(resolve, reject) {
         },
         setStats: function(stat) {
             stats = stat;
-        }
+        },
+        owner: owner
     });
 
     var toMongo = mongoStream.create(db, {

@@ -35,7 +35,7 @@ class ModelFileBrowser extends Component {
     }
 
     _confirmDelete = (e, leaf) => {
-        const {confirmDelete, selectedModel, selectedProfile} = this.props;
+        const {confirmDelete, selectedModel, selectedProfile, user} = this.props;
 
         if (e && (selectedModel !== leaf.dropId && selectedProfile !== leaf.dropId)) {
             e.preventDefault();
@@ -54,8 +54,7 @@ class ModelFileBrowser extends Component {
             type: leaf.dropType,
             mdlId: mdlId,
             prfId: prfId,
-            // TODO
-            owner: 'unknown',
+            owner: user._id,
             fetch: leaf.dropType === 'prf' && selectedProfile !== leaf.dropId && selectedModel === mdlId
         });
     }
@@ -106,7 +105,7 @@ class ModelFileBrowser extends Component {
     }
 
     _renderLeaf = (leaf, isFirst, isLast, isSelected, isExpanded, hasChildren, depth, onSelect, onExpand) => {
-        const {focus, showExpansionIcons, useSmallerFont, baseUrls, selected, selectedModel, toggleMenu, startFileExport, isExporting, hasExport, exportStats, hasImport, clearFileExport, profileEdit, requestProfileEdit, confirmProfileEdit, cancelProfileEdit, models} = this.props;
+        const {focus, showExpansionIcons, useSmallerFont, baseUrls, selected, selectedModel, toggleMenu, startFileExport, isExporting, hasExport, exportStats, hasImport, clearFileExport, profileEdit, requestProfileEdit, confirmProfileEdit, cancelProfileEdit, models, user} = this.props;
 
         let classNames = 'border-left-0 border-right-0 rounded-0 sidemenu-active'
         if (isFirst || leaf.type === 'export' || leaf.type === 'drop')
@@ -125,7 +124,7 @@ class ModelFileBrowser extends Component {
         let expansionIconType = 'blank'
         let leafIconType = leaf.type === 'prf' ? 'id-card' : leaf.type === 'add' ? 'plus' : null
 
-        let leafIcon = leafIconType ? <FontAwesome name={ leafIconType } fixedWidth={ true } className="pr-4" /> : null
+        let leafIcon = leafIconType ? <FontAwesome name={ leafIconType } fixedWidth={ true } className="mr-1" /> : null
         //if (hasChildren)
         if (leaf.type !== 'prp')
             expansionIconType = isExpanded ? 'angle-down' : 'angle-right'
@@ -154,7 +153,8 @@ class ModelFileBrowser extends Component {
                                        title={ leaf.name }
                                        requestProfileEdit={ requestProfileEdit }
                                        confirmProfileEdit={ confirmProfileEdit }
-                                       cancelProfileEdit={ cancelProfileEdit }>
+                                       cancelProfileEdit={ cancelProfileEdit }
+                                       user={ user }>
                                        { depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }
                                        { leafIcon }
                                    </ModelProfileEdit>
@@ -198,27 +198,37 @@ class ModelFileBrowser extends Component {
                            title={ leaf.name }
                            className={ classNames }
                            onClick={ (e) => profileEdit[leaf._id] ? e.preventDefault() : toggleMenu() }>
-                           <div className="w-100 d-flex flex-row">
+                           <div className="w-100 d-flex flex-row justify-content-between">
                                <div className="truncate">
                                    <ModelProfileEdit profileEdit={ profileEdit }
                                        profile={ leaf._id }
                                        model={ models.find(mdl => mdl._id === leaf.parent) }
                                        fetch={ selectedModel === leaf.parent }
                                        title={ leaf.name }
+                                       description={ 'bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla ' }
                                        oldName={ leaf.name }
                                        requestProfileEdit={ requestProfileEdit }
                                        confirmProfileEdit={ confirmProfileEdit }
-                                       cancelProfileEdit={ cancelProfileEdit }>
+                                       cancelProfileEdit={ cancelProfileEdit }
+                                       user={ user }>
                                        { depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }
                                        { leafIcon }
                                    </ModelProfileEdit>
                                </div>
-                               { !profileEdit[leaf._id] && <div className="ml-auto">
+                               { !profileEdit[leaf._id] && <div className="">
+                                                               <Button size="sm"
+                                                                   color="info"
+                                                                   title="Copy Profile"
+                                                                   disabled={ hasExport || hasImport }
+                                                                   className="rounded-0 py-0"
+                                                                   onClick={ (e) => this._requestProfileEdit(e, leaf._id, leaf.name) }>
+                                                                   Copy
+                                                               </Button>
                                                                <Button size="sm"
                                                                    color="secondary"
                                                                    title="Edit Profile"
                                                                    disabled={ hasExport || hasImport }
-                                                                   className="rounded-0 py-0"
+                                                                   className="rounded-0 ml-1 py-0"
                                                                    onClick={ (e) => this._requestProfileEdit(e, leaf._id, leaf.name) }>
                                                                    Edit
                                                                </Button>

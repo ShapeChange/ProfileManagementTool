@@ -63,7 +63,8 @@ const routes = {
                     }
                 }
             }
-        }
+        },
+        '/login(/)': {}
     }
 }
 

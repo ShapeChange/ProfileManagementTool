@@ -5,23 +5,30 @@ var ObjectID = require('mongodb').ObjectID;
 var profileEdit = require('./profile-edit');
 var mr = require('./model-reader');
 var pw = require('./profile-writer');
+var urw = require('./user-rw');
 
 var MODELS = 'models';
+var USERS = 'users';
 var db;
 var model;
+var users;
 var dbEdit;
 var modelReader;
 var profileWriter;
+var userReaderWriter;
 
 function setConnection(connection) {
     db = connection;
     model = db.collection(MODELS);
-    //dbEdit = dbProfile.create(model);
+    users = db.collection(USERS);
+
     modelReader = mr.create(model, MODELS)
     profileWriter = pw.create(model)
+    userReaderWriter = urw.create(users)
+
     dbEdit = profileEdit(modelReader, profileWriter);
 
-    model.createIndexes([{
+    return model.createIndexes([{
         key: {
             'parent': 1
         }
@@ -88,6 +95,16 @@ function setConnection(connection) {
     }*/ ])
         .then(function(indexName) {
             console.log('Created indexes ', indexName)
+
+            return users.createIndexes([{
+                key: {
+                    'name': 1
+                },
+                unique: true
+            }])
+                .then(function(indexName) {
+                    console.log('Created indexes ', indexName)
+                })
         })
         .catch(function(error) {
             console.log('Error on creating indexes: ', error)
@@ -102,6 +119,10 @@ return modelReader;
 
 exports.getProfileWriter = function() {
 return profileWriter;
+}
+
+exports.getUserReaderWriter = function() {
+return userReaderWriter;
 }
 
 exports.connect = function(url) {
@@ -120,6 +141,10 @@ return MongoClient
 
 exports.getModelCollection = function() {
 return model;
+}
+
+exports.getUserCollection = function() {
+return users;
 }
 
 exports.getModels = function(owner) {

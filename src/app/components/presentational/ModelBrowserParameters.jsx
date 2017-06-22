@@ -37,11 +37,11 @@ class ModelBrowserParameters extends Component {
     }
 
     _parseGeometries = () => {
-        const {isClass, taggedValues} = this.props;
+        const {isClass, taggedValues, allowedGeometries} = this.props;
 
-        const defaultGeometries = ['P', 'C', 'S', 'So', 'MP', 'MC', 'MS', 'MSo']
+        //const defaultGeometries = ['P', 'C', 'S', 'So', 'MP', 'MC', 'MS', 'MSo']
 
-        let geometries = defaultGeometries
+        let geometries = allowedGeometries
 
         if (isClass && taggedValues && taggedValues.geometry) {
             geometries = this._mergeGeometries(geometries, taggedValues.geometry.split(','))

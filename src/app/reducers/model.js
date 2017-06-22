@@ -2,6 +2,7 @@
 import update from 'immutability-helper';
 import { createAction, createActions, handleActions } from 'redux-actions';
 import { LOCATION_CHANGED } from 'redux-little-router';
+import { actions as authActions } from './auth';
 
 //import pkgs from '../../../pmt-io/pkgs'
 //import clazzes from '../../../pmt-io/classes'
@@ -62,8 +63,13 @@ export default handleActions({
     [actions.fetchedClass]: fetchedClass,
     [actions.fetchedClasses]: fetchedClasses,
     [actions.updatedProfile]: updatedProfile,
-    [actions.updatedEditable]: updatedEditable
+    [actions.updatedEditable]: updatedEditable,
+    [authActions.logoutUser]: clear
 }, initialState);
+
+function clear(state) {
+    return initialState;
+}
 
 function onLocationChange(state, action) {
     let newState = state
@@ -396,8 +402,8 @@ const _extractDetails = (details) => {
     if (details && details.type === 'prp') {
         if (details.typeId) {
             d.type = {
-                _id: details.typeId,
-                name: details.typeName
+                ...details.typeId,
+                _id: details.typeId.localId
             }
         }
         if (details.cardinality) {

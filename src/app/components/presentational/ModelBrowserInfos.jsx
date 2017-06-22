@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Table } from 'reactstrap';
 import { Link } from 'redux-little-router';
-import Warning from '../common/Warning'
+import TooltipIcon from '../common/TooltipIcon'
 
 
 class ModelBrowserInfos extends Component {
@@ -19,15 +19,30 @@ class ModelBrowserInfos extends Component {
                           }
                           if ((key === 'supertypes' || key === 'subtypes') && infos[key]) {
                               value = infos[key].map((st, j) => <span key={ st._id }>{ isFlattenOninas && (st.isMeta || st.isReason)
-                                             ? <span>{ st.name } <Warning id={ `${st._id}-type-warning` } className="ml-1" placement="left"> This class is hidden due to the view settings </Warning></span>
+                                             ? <span>{ st.name } <TooltipIcon id={ `${st._id}-type-warning` }
+                                                                                 className="ml-1"
+                                                                                 placement="left"
+                                                                                 icon="warning"
+                                                                                 color="warning"> This class is hidden due to the view settings </TooltipIcon></span>
                                              : <Link href={ `${baseUrl}/${st.localId}/${urlSuffix || ''}` } title={ st.name }>
                                                { st.name }
                                                </Link> }<br/></span>
                               )
                           } else if (key === 'type' && infos[key]) {
-                              value = <Link href={ `${baseUrl}/${infos[key]._id}/${urlSuffix || ''}` }>
-                                      { infos[key].name }
-                                      </Link>
+                              value = isFlattenInheritance && infos[key].isAbstract
+                                  ? <div>
+                                        { infos[key].name }
+                                        <TooltipIcon id={ `${infos[key]._id}-type-warning` }
+                                            className="ml-1"
+                                            placement="left"
+                                            icon="warning"
+                                            color="warning">
+                                            This class is hidden due to the view settings
+                                        </TooltipIcon>
+                                    </div>
+                                  : <Link href={ `${baseUrl}/${infos[key]._id}/${urlSuffix || ''}` }>
+                                    { infos[key].name }
+                                    </Link>
                           } else if (key === 'association' && infos[key]) {
                               value = <Link href={ `${baseUrl}/${infos[key].localId}/${urlSuffix || ''}` }>
                                       { infos[key].name }

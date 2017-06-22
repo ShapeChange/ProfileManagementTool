@@ -6,44 +6,18 @@ var intoStream = require('into-stream');
 var mongoImport = process.env.NODE_ENV === 'production' ? require('pmt-io/mongo-import') : require('../../../pmt-io/mongo-import');
 var mongoExport = process.env.NODE_ENV === 'production' ? require('pmt-io/mongo-export') : require('../../../pmt-io/mongo-export');
 var validator = process.env.NODE_ENV === 'production' ? require('pmt-validation') : require('../../../pmt-validation');
+var auth = require('../lib/auth');
 
 var db;
+var actions;
+var cfg;
 
 exports.addRoutes = function(app, config, dbs, io) {
 
 db = dbs;
+cfg = config;
 
-io.on('connection', function(socket) {
-    socket.on('action', function(action) {
-        dispatch(socket, action);
-    });
-
-    ss(socket).on('import', function(stream, metadata) {
-        dispatch(socket, {
-            type: 'file/import',
-            payload: {
-                owner: 'unknown',
-                stream: stream,
-                metadata: metadata
-            }
-        });
-    });
-
-    ss(socket).on('export', function(stream, metadata) {
-        dispatch(socket, {
-            type: 'file/export',
-            payload: {
-                owner: 'unknown',
-                stream: stream,
-                metadata: metadata
-            }
-        });
-    });
-});
-
-};
-
-const actions = {
+actions = {
     'models/fetch': fetchModels,
     'model/fetch': fetchModel,
     'package/fetch': fetchPackage,
@@ -54,17 +28,84 @@ const actions = {
     'editable/update': updateEditable,
     'filter/apply': applyFilter,
     'delete/confirm': deleteItem,
-    'profile/edit/confirm': addOrRenameProfile
+    'profile/edit/confirm': addOrRenameProfile,
+    'user/create': auth.createUser.bind(auth, db.getUserReaderWriter()),
+    'user/login': auth.loginUser.bind(auth, db.getUserReaderWriter())
 }
+
+io.on('connection', function(socket) {
+    socket.on('action', function(action) {
+        dispatch(socket, action);
+    });
+
+    ss(socket).on('import', function(stream, payload) {
+        dispatch(socket, {
+            type: 'file/import',
+            payload: {
+                stream: stream,
+                metadata: payload.metadata,
+                token: payload.token
+            }
+        });
+    });
+
+    ss(socket).on('export', function(stream, payload) {
+        dispatch(socket, {
+            type: 'file/export',
+            payload: {
+                stream: stream,
+                metadata: payload.metadata,
+                token: payload.token
+            }
+        });
+    });
+
+    socket.emit('action', {
+        type: 'app/init',
+        payload: config.get('app')
+    });
+});
+
+};
+
+
 
 function dispatch(socket, action) {
     console.log(action);
 
-    if (actions[action.type])
-        actions[action.type](socket, action.payload);
+    // TODO: channel per user (or model???), send changes after write to whole channel 
+
+    if (actions[action.type]) {
+        if (action.type !== 'user/create' && action.type !== 'user/login') {
+            if (action.payload && action.payload.token) {
+                auth.verifyToken(action.payload.token)
+                    .then(function(user) {
+                        console.log('VRFY', user)
+                        actions[action.type](socket, user, action.payload)
+                            .catch(function(error) {
+                                socket.emit('action', {
+                                    type: 'server/error',
+                                    payload: error
+                                });
+                            });
+                    })
+                    .catch(function() {
+                        socket.emit('action', {
+                            type: 'user/logout'
+                        });
+                    })
+            } else {
+                socket.emit('action', {
+                    type: 'user/logout'
+                });
+            }
+        } else {
+            actions[action.type](socket, action.payload)
+        }
+    }
 }
 
-function updateEditable(socket, update) {
+function updateEditable(socket, user, update) {
     var pr = db.updatePackageEditable(update.id, update.modelId, update.editable, update.recursive);
 
     if (pr) {
@@ -85,7 +126,7 @@ function updateEditable(socket, update) {
                 console.log('UPD1', updatedClasses)
                 return new Promise(function(resolve, reject) {
 
-                    var checks = validator.createStream(db.getModelReader(), db.getProfileWriter(), update.profile, function() {
+                    var checks = validator.createStream(cfg.get('app'), db.getModelReader(), db.getProfileWriter(), update.profile, function() {
                         resolve(updatedClasses);
                     });
 
@@ -113,7 +154,7 @@ function updateEditable(socket, update) {
     }
 }
 
-function updateProfile(socket, update) {
+function updateProfile(socket, user, update) {
     var pr;
 
     if (update.type === 'pkg')
@@ -149,7 +190,7 @@ function updateProfile(socket, update) {
                 console.log('UPD1', updatedClasses)
                 return new Promise(function(resolve, reject) {
 
-                    var checks = validator.createStream(db.getModelReader(), db.getProfileWriter(), update.profile, function() {
+                    var checks = validator.createStream(cfg.get('app'), db.getModelReader(), db.getProfileWriter(), update.profile, function() {
                         resolve(updatedClasses);
                     });
 
@@ -182,12 +223,12 @@ function updateProfile(socket, update) {
     }
 }
 
-function importFile(socket, file) {
+function importFile(socket, user, file) {
     console.log(file.metadata);
     var written = 0;
     var progress = 0;
 
-    return mongoImport.importFile(db.getModelCollection(), file.stream, file.metadata, function(chunkLength) {
+    return mongoImport.importFile(db.getModelCollection(), file.stream, file.metadata, user._id, function(chunkLength) {
         written += chunkLength;
 
         var newProgress = Math.round((written / file.metadata.size) * 50);
@@ -208,7 +249,7 @@ function importFile(socket, file) {
 
             return new Promise(function(resolve, reject) {
 
-                var checks = validator.createStream(db.getModelReader(), db.getProfileWriter(), null, function() {
+                var checks = validator.createStream(cfg.get('app'), db.getModelReader(), db.getProfileWriter(), null, function() {
                     resolve(stats);
                 });
 
@@ -249,11 +290,11 @@ function importFile(socket, file) {
             });
         })
         .then(function() {
-            return fetchModels(socket, file.owner);
+            return fetchModels(socket, user);
         });
 }
 
-function exportFile(socket, file) {
+function exportFile(socket, user, file) {
     var progress = 0;
 
     return mongoExport.exportFile(db, file.stream, file.metadata.id, function(stats) {
@@ -287,8 +328,10 @@ function exportFile(socket, file) {
         })
 }
 
-function fetchModels(socket, owner) {
-    return db.getModels(owner)
+function fetchModels(socket, user) {
+    if (!user) return;
+
+    return db.getModels(user._id)
         .then(function(cursor) {
             return cursor.toArray();
         })
@@ -300,7 +343,7 @@ function fetchModels(socket, owner) {
         })
 }
 
-function fetchModel(socket, payload) {
+function fetchModel(socket, user, payload) {
     return fetchPackages(socket, payload.id, payload.filter)
         .then(function() {
             return db.getModel(payload.id)
@@ -329,7 +372,7 @@ function fetchPackages(socket, mdl, filter) {
         })
 }
 
-function fetchPackage(socket, payload) {
+function fetchPackage(socket, user, payload) {
     return fetchPackageDetails(socket, payload.id)
         .then(function(details) {
             var filter;
@@ -377,7 +420,7 @@ function fetchPackageDetails(socket, id) {
         })
 }
 
-function fetchClass(socket, payload) {
+function fetchClass(socket, user, payload) {
     var cls = payload.flattenInheritance || payload.flattenOninas ? db.getFlattenedClass(payload.id, payload.modelId, payload.flattenInheritance, payload.flattenOninas) : db.getDetails(payload.id, payload.modelId)
 
     return cls
@@ -407,14 +450,14 @@ function fetchClass(socket, payload) {
         })
         .then(function(details) {
             if (details.type === 'cls')
-                return fetchPackage(socket, {
+                return fetchPackage(socket, user, {
                     id: details.parent.toString(),
                     filter: payload.filter
                 });
         })
 }
 
-function applyFilter(socket, payload) {
+function applyFilter(socket, user, payload) {
     return db.getFilteredPackages(payload.model, payload.filter)
         .then(function(pkgs) {
             console.log(pkgs)
@@ -425,7 +468,7 @@ function applyFilter(socket, payload) {
         })
 }
 
-function deleteItem(socket, payload) {
+function deleteItem(socket, user, payload) {
     var pr = Promise.resolve();
 
     if (payload.type === 'mdl') {
@@ -447,11 +490,11 @@ function deleteItem(socket, payload) {
 
     return pr
         .then(function() {
-            return fetchModels(socket, payload.owner);
+            return fetchModels(socket, user);
         })
 }
 
-function addOrRenameProfile(socket, payload) {
+function addOrRenameProfile(socket, user, payload) {
     var pr = Promise.resolve();
 
     if (!payload.oldName) {
@@ -475,8 +518,10 @@ function addOrRenameProfile(socket, payload) {
 
     return pr
         .then(function() {
-            return fetchModels(socket, payload.owner);
+            return fetchModels(socket, user);
         })
 }
+
+
 
 

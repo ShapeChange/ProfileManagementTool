@@ -6,6 +6,14 @@ $yellow-light: rgba(255,213,0,.33);
 	height: 100%;
 }*/
 
+.bg-gray {
+	background-color: $gray;
+}
+
+.bg-white {
+	background-color: white;
+}
+
 .list-group-item.active.nofocus, .text-really-muted {
     -webkit-filter: opacity(60%); 
     filter: opacity(60%);
@@ -36,6 +44,11 @@ a:focus, a:hover {
 
 	&.active, &:hover {
 		color: $brand-info !important;
+	}
+
+	&.hidden {
+		color: $gray-dark !important;
+		cursor: default;
 	}
 }
 

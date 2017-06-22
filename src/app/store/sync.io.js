@@ -2,9 +2,10 @@ import createSocketIoMiddleware from './redux-socket.io';
 import io from 'socket.io-client';
 import ss from 'socket.io-stream';
 import escapeStringRegexp from 'escape-string-regexp';
-import { LOCATION_CHANGED } from 'redux-little-router';
+import { LOCATION_CHANGED, push } from 'redux-little-router';
 import { actions as appActions, doesChangeState, getFilter, getPendingFilter, isFlattenInheritance, isFlattenOninas } from '../reducers/app'
 import { actions, getModels, getPendingModel, getPendingPackage, getPendingClass, getSelectedModel, getSelectedPackage, getSelectedClass } from '../reducers/model'
+import { actions as authActions, getToken, getUser } from '../reducers/auth'
 
 export default function createSyncIoMiddleware() {
     const socket = io({
@@ -21,7 +22,10 @@ export default function createSyncIoMiddleware() {
         appActions.confirmDelete.toString(),
         appActions.confirmProfileEdit.toString(),
         actions.updateProfile.toString(),
-        actions.updateEditable.toString()
+        actions.updateEditable.toString(),
+        authActions.createUser.toString(),
+        authActions.loginUser.toString(),
+        authActions.onUserLogin.toString()
     ], {
         execute: conditionalExecute
     });
@@ -30,12 +34,37 @@ export default function createSyncIoMiddleware() {
 var timer;
 
 // where to put/get fetch metadata? what was fetched last?
-function conditionalExecute(action, emit, next, store, socket) {
+function conditionalExecute(action, emitOrig, next, store, socket) {
     /*if (doesChangeState(store.getState(), action)) {
         emit('action', action);
     }*/
 
-    if (action.type === actions.updateProfile.toString() || action.type === actions.updateEditable.toString() || action.type === appActions.confirmDelete.toString() || action.type === appActions.confirmProfileEdit.toString()) {
+    var emit = emitOrig;
+    var token;
+
+    if (action.type !== authActions.loginUser.toString() && action.type !== authActions.createUser.toString() && action.type !== authActions.onUserLogin.toString() && !(action.type === LOCATION_CHANGED && action.payload.pathname.indexOf('/login') === 0)) {
+        token = getToken(store.getState());
+
+        if (!token) {
+            return next(push('/login'))
+        }
+
+        emit = function(channel, action) {
+            action.payload.token = token;
+
+            emitOrig(channel, action);
+        }
+    }
+
+    if (action.type === authActions.onUserLogin.toString()) {
+        next(action);
+
+        return store.dispatch(push('/'))
+    }
+
+    if (action.type === actions.updateProfile.toString() || action.type === actions.updateEditable.toString()
+            || action.type === appActions.confirmDelete.toString() || action.type === appActions.confirmProfileEdit.toString()
+            || action.type === authActions.createUser.toString() || action.type === authActions.loginUser.toString()) {
 
         next(action);
 
@@ -48,7 +77,10 @@ function conditionalExecute(action, emit, next, store, socket) {
 
         const stream = ss.createStream();
         // upload a file to the server. 
-        ss(socket).emit('import', stream, action.payload.metadata);
+        ss(socket).emit('import', stream, {
+            metadata: action.payload.metadata,
+            token: token
+        });
         const blobStream = ss.createBlobReadStream(action.payload.file);
 
         blobStream.pipe(stream);
@@ -73,7 +105,10 @@ function conditionalExecute(action, emit, next, store, socket) {
             store.dispatch(appActions.endFileExport(fileBuffer))
         });
 
-        ss(socket).emit('export', stream, action.payload);
+        ss(socket).emit('export', stream, {
+            metadata: action.payload,
+            token: token
+        });
 
     } else if (action.type === appActions.setFilter.toString()) {
 
@@ -141,10 +176,18 @@ function conditionalExecute(action, emit, next, store, socket) {
 
     } else {
 
-        // TODO: get owner from auth
+        const user = getUser(store.getState());
+
+        if (!user)
+            return next(action);
+        ;
+
         const models = getModels(store.getState());
+
         if (!models || models.length === 0) {
-            emit('action', actions.fetchModels('unknown'));
+            emit('action', actions.fetchModels({
+                owner: user._id
+            }));
         }
 
         const previousPendingModel = getPendingModel(store.getState())

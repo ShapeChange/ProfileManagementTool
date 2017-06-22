@@ -4,6 +4,7 @@ import { connect } from 'react-redux'
 
 import { isMenuOpen, getSubmenusOpen, hasFileImport, hasPendingFileImport, getFileImport, hasFileExport, hasPendingFileExport, getFileExport, isFlattenInheritance, isFlattenOninas, getDeleteRequested, getProfileEdit, actions } from '../../reducers/app'
 import { getModels, getSelectedModel, getSelectedProfile } from '../../reducers/model'
+import { actions as authActions, getUser } from '../../reducers/auth'
 
 import { Card, CardHeader, CardBlock, CardText, ModalHeader, ModalBody, ModalFooter, Button, ListGroup, ListGroupItem, Collapse } from 'reactstrap';
 import { Link } from 'redux-little-router';
@@ -35,12 +36,14 @@ const mapStateToProps = (state, props) => {
         hasExport: hasFileExport(state),
         exportStats: getFileExport(state),
         deleteRequested: getDeleteRequested(state),
-        profileEdit: getProfileEdit(state)
+        profileEdit: getProfileEdit(state),
+        user: getUser(state)
     }
 }
 
 const mapDispatchToProps = (dispatch) => ({
-    ...bindActionCreators(actions, dispatch)
+    ...bindActionCreators(actions, dispatch),
+    ...bindActionCreators(authActions, dispatch)
 });
 
 class SideMenu extends Component {
@@ -73,7 +76,7 @@ class SideMenu extends Component {
     }
 
     render() {
-        const {isMenuOpen, submenusOpen, setSubmenusOpen, toggleMenu, isFlattenInheritance, toggleFlattenInheritance, isFlattenOninas, toggleFlattenOninas, models, selectedModel, selectedProfile} = this.props;
+        const {isMenuOpen, submenusOpen, setSubmenusOpen, toggleMenu, isFlattenInheritance, toggleFlattenInheritance, isFlattenOninas, toggleFlattenOninas, models, selectedModel, selectedProfile, user, logoutUser} = this.props;
         const {createFileImport, startFileImport, clearFileImport, isImporting, hasImport, importStats, startFileExport, clearFileExport, isExporting, hasExport, exportStats, deleteRequested, requestDelete, confirmDelete, cancelDelete, profileEdit, requestProfileEdit, confirmProfileEdit, cancelProfileEdit} = this.props;
 
         let expanded = []
@@ -99,12 +102,10 @@ class SideMenu extends Component {
                                         size='lg'
                                         fixedWidth={ true }
                                         className="pr-4 text-info" />
-                                    <span className="">user123</span>
+                                    <span className="">{ user.name }</span>
                                 </div>
                                 <div className="ml-auto">
-                                    <Link href={ '/logout' } title="Logout" onClick={ (e) => {
-                                                                                          e.preventDefault();
-                                                                                      } }>
+                                    <Link href={ '/login' } title="Logout" onClick={ e => logoutUser() }>
                                     <FontAwesome name="sign-out" size='lg' fixedWidth={ true } />
                                     </Link>
                                 </div>
@@ -161,7 +162,8 @@ class SideMenu extends Component {
                                         requestProfileEdit={ requestProfileEdit }
                                         confirmProfileEdit={ confirmProfileEdit }
                                         cancelProfileEdit={ cancelProfileEdit }
-                                        clearFileExport={ clearFileExport } />
+                                        clearFileExport={ clearFileExport }
+                                        user={ user } />
                                 </AccordionItem>
                             </Accordion>
                         </CardBlock>
