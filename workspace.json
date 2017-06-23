@@ -1,5 +1,6 @@
 {
     "links": {
+        "pmt-app": "pmt-app",
         "pmt-backend": "pmt-backend",
         "pmt-data-access": "pmt-data-access",
         "pmt-io": "pmt-io",

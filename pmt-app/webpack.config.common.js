@@ -3,21 +3,23 @@ const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
 
+
+module.exports = function(env) {
+
 const extractSass = new ExtractTextPlugin({
     filename: "[name].[contenthash].css",
-    disable: process.env.NODE_ENV !== "production"
+    disable: env !== "production"
 });
 
-module.exports = function() {
 return {
-    context: resolve(__dirname, 'pmt-app'),
+    context: resolve(__dirname),
 
     entry: [
         './index.jsx'
     ],
     output: {
         filename: '[name].js',
-        path: resolve(__dirname, 'dist/app/assets')
+        path: resolve(__dirname, 'dist/assets')
     },
 
     devtool: 'eval',
@@ -41,26 +43,12 @@ return {
             },
             {
                 test: /\.scss$/,
-                /*use: [
-                    {
-                        loader: 'style-loader'
-                    }, {
-                        loader: 'css-loader'
-                    },
-                    {
-                        loader: 'sass-loader',
-                        options: {
-                            includePaths: [resolve(__dirname, 'src/app/less'), resolve(__dirname, 'node_modules')]
-                        }
-                    }
-                ],*/
                 use: extractSass.extract({
                     use: [{
                         loader: "css-loader"
                     }, {
                         loader: "sass-loader"
                     }],
-                    // use style-loader in development
                     fallback: "style-loader"
                 })
             },
@@ -82,7 +70,7 @@ return {
             }
         }),
         new webpack.optimize.CommonsChunkPlugin({
-            name: 'manifest',
+            name: 'manifest'
         }),
 
         extractSass

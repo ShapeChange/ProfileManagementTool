@@ -17,8 +17,7 @@
         "bluebird": "3.x",
         "express": "4.x",
         "pmt-io": "1.x",
-        "pmt-validation": "1.x",
-        "webpack": "2.x"
+        "pmt-validation": "1.x"
     },
     "dependencies": {
         "connect-history-api-fallback": "^1.3.0",

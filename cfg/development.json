@@ -1,5 +1,5 @@
 {
     "server": {
-        "distFolder": "../../dist/app"
+        "distFolder": "pmt-app"
     }
 }
