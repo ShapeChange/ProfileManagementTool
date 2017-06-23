@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 
 import { Card, CardHeader, CardBlock, ListGroupItem, Collapse } from 'reactstrap';
 import FontAwesome from 'react-fontawesome';
