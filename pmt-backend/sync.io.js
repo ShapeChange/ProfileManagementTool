@@ -1,3 +1,4 @@
+var Promise = require("bluebird");
 var ss = require('socket.io-stream');
 var path = require('path');
 var fs = require('fs');
@@ -29,16 +30,18 @@ actions = {
     'delete/confirm': deleteItem,
     'profile/edit/confirm': addOrRenameProfile,
     'user/create': auth.createUser.bind(auth, db.getUserReaderWriter()),
-    'user/login': auth.loginUser.bind(auth, db.getUserReaderWriter())
+    'user/login': auth.loginUser.bind(auth, db.getUserReaderWriter()),
+    'user/logout': logout
 }
 
 io.on('connection', function(socket) {
+    console.log('CONNECT', socket.rooms);
     socket.on('action', function(action) {
-        dispatch(socket, action);
+        dispatch(io, socket, action);
     });
 
     ss(socket).on('import', function(stream, payload) {
-        dispatch(socket, {
+        dispatch(io, socket, {
             type: 'file/import',
             payload: {
                 stream: stream,
@@ -49,7 +52,7 @@ io.on('connection', function(socket) {
     });
 
     ss(socket).on('export', function(stream, payload) {
-        dispatch(socket, {
+        dispatch(io, socket, {
             type: 'file/export',
             payload: {
                 stream: stream,
@@ -69,8 +72,8 @@ io.on('connection', function(socket) {
 
 
 
-function dispatch(socket, action) {
-    console.log(action);
+function dispatch(io, socket, action) {
+    console.log('ACTION', action);
 
     // TODO: channel per user (or model???), send changes after write to whole channel 
 
@@ -79,7 +82,13 @@ function dispatch(socket, action) {
             if (action.payload && action.payload.token) {
                 auth.verifyToken(action.payload.token)
                     .then(function(user) {
-                        console.log('VRFY', user)
+                        console.log('VRFY', user, socket.rooms)
+
+                        return ensureLogin(socket, user);
+                    })
+                    .then(function(user) {
+                        console.log('DISPATCH', user.name)
+                        user.socket = io.to(user.name)
                         actions[action.type](socket, user, action.payload)
                             .catch(function(error) {
                                 socket.emit('action', {
@@ -89,14 +98,10 @@ function dispatch(socket, action) {
                             });
                     })
                     .catch(function() {
-                        socket.emit('action', {
-                            type: 'user/logout'
-                        });
+                        logout(socket);
                     })
             } else {
-                socket.emit('action', {
-                    type: 'user/logout'
-                });
+                logout(socket);
             }
         } else {
             actions[action.type](socket, action.payload)
@@ -104,7 +109,43 @@ function dispatch(socket, action) {
     }
 }
 
+function ensureLogin(socket, user) {
+    if (!socket.rooms[user.name]) {
+        return logout(socket, user)
+            .then(function() {
+                return new Promise(function(resolve, reject) {
+                    socket.join(user.name, resolve)
+                })
+            })
+            .then(function() {
+                console.log('JOINED', user.name, socket.rooms)
+                return user;
+            })
+    }
+    return Promise.resolve(user);
+}
+
+function logout(socket, user) {
+    return Promise.map(Object.keys(socket.rooms), function(room) {
+        if (room !== socket.id) {
+            console.log('LEAVING', room)
+            return new Promise(function(resolve, reject) {
+                socket.leave(room, resolve)
+            })
+        }
+        return Promise.resolve();
+    })
+        .then(function() {
+            if (!user) {
+                socket.emit('action', {
+                    type: 'user/logout'
+                });
+            }
+        })
+}
+
 function updateEditable(socket, user, update) {
+    socket = user.socket
     var pr = db.updatePackageEditable(update.id, update.modelId, update.editable, update.recursive);
 
     if (pr) {
@@ -139,7 +180,7 @@ function updateEditable(socket, user, update) {
                     payload: updatedClasses
                 });
 
-                return db.getModel(update.modelId)
+                return db.getModel(update.modelId, user._id)
             })
             .then(function(model) {
                 socket.emit('action', {
@@ -154,6 +195,7 @@ function updateEditable(socket, user, update) {
 }
 
 function updateProfile(socket, user, update) {
+    socket = user.socket
     var pr;
 
     if (update.type === 'pkg')
@@ -208,7 +250,7 @@ function updateProfile(socket, user, update) {
                     payload: updatedClasses
                 });
 
-                return db.getModel(update.modelId)
+                return db.getModel(update.modelId, user._id)
             })
             .then(function(model) {
                 socket.emit('action', {
@@ -289,7 +331,7 @@ function importFile(socket, user, file) {
             });
         })
         .then(function() {
-            return fetchModels(socket, user);
+            return fetchModels(user.socket, user);
         });
 }
 
@@ -343,9 +385,11 @@ function fetchModels(socket, user) {
 }
 
 function fetchModel(socket, user, payload) {
+    if (!user) return;
+
     return fetchPackages(socket, payload.id, payload.filter)
         .then(function() {
-            return db.getModel(payload.id)
+            return db.getModel(payload.id, user._id)
                 .then(function(details) {
                     return {
                         fetchedModel: payload.id,
@@ -489,7 +533,7 @@ function deleteItem(socket, user, payload) {
 
     return pr
         .then(function() {
-            return fetchModels(socket, user);
+            return fetchModels(user.socket, user);
         })
 }
 
@@ -517,7 +561,7 @@ function addOrRenameProfile(socket, user, payload) {
 
     return pr
         .then(function() {
-            return fetchModels(socket, user);
+            return fetchModels(user.socket, user);
         })
 }
 

@@ -815,10 +815,11 @@ return model
     })
 }
 
-exports.getModel = function(id) {
+exports.getModel = function(id, owner) {
 return model
     .findOne({
-        _id: ObjectID(id)
+        _id: ObjectID(id),
+        owner: owner
     }, {
         element: 0
     })

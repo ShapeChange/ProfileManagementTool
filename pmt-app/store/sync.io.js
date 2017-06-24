@@ -5,7 +5,7 @@ import escapeStringRegexp from 'escape-string-regexp';
 import { LOCATION_CHANGED, push } from 'redux-little-router';
 import { actions as appActions, doesChangeState, getFilter, getPendingFilter, isFlattenInheritance, isFlattenOninas } from '../reducers/app'
 import { actions, getModels, getPendingModel, getPendingPackage, getPendingClass, getSelectedModel, getSelectedPackage, getSelectedClass } from '../reducers/model'
-import { actions as authActions, getToken, getUser } from '../reducers/auth'
+import { actions as authActions, getToken, getUser, getLastPath } from '../reducers/auth'
 
 export default function createSyncIoMiddleware() {
     const socket = io({
@@ -25,7 +25,8 @@ export default function createSyncIoMiddleware() {
         actions.updateEditable.toString(),
         authActions.createUser.toString(),
         authActions.loginUser.toString(),
-        authActions.onUserLogin.toString()
+        authActions.onUserLogin.toString(),
+        authActions.logoutUser.toString()
     ], {
         execute: conditionalExecute
     });
@@ -45,7 +46,12 @@ function conditionalExecute(action, emitOrig, next, store, socket) {
     if (action.type !== authActions.loginUser.toString() && action.type !== authActions.createUser.toString() && action.type !== authActions.onUserLogin.toString() && !(action.type === LOCATION_CHANGED && action.payload.pathname.indexOf('/login') === 0)) {
         token = getToken(store.getState());
 
-        if (!token) {
+        if (!token && action.type !== authActions.logoutUser.toString()) {
+            if (action.type === LOCATION_CHANGED)
+                store.dispatch(authActions.setLastPath({
+                    pathname: action.payload.pathname
+                }))
+
             return next(push('/login'))
         }
 
@@ -59,12 +65,17 @@ function conditionalExecute(action, emitOrig, next, store, socket) {
     if (action.type === authActions.onUserLogin.toString()) {
         next(action);
 
+        const lastPath = getLastPath(store.getState());
+        if (lastPath && lastPath !== '/login')
+            return store.dispatch(push(lastPath))
+
         return store.dispatch(push('/'))
     }
 
     if (action.type === actions.updateProfile.toString() || action.type === actions.updateEditable.toString()
             || action.type === appActions.confirmDelete.toString() || action.type === appActions.confirmProfileEdit.toString()
-            || action.type === authActions.createUser.toString() || action.type === authActions.loginUser.toString()) {
+            || action.type === authActions.createUser.toString() || action.type === authActions.loginUser.toString()
+            || action.type === authActions.logoutUser.toString()) {
 
         next(action);
 
@@ -175,6 +186,10 @@ function conditionalExecute(action, emitOrig, next, store, socket) {
         }
 
     } else {
+
+        if (action.payload.pathname.length <= 1) {
+            store.dispatch(appActions.openMenu());
+        }
 
         const user = getUser(store.getState());
 

@@ -1,8 +1,11 @@
 import { createStore, applyMiddleware, combineReducers } from 'redux'
 import { composeWithDevTools } from 'redux-devtools-extension/developmentOnly';
-//import { routerReducer, routerMiddleware } from 'react-router-redux'
 import { routerForBrowser, initializeCurrentLocation, push } from 'redux-little-router';
+import { persistStore } from 'redux-persist'
+import { createFilter } from 'redux-persist-transform-filter';
+import createActionBuffer from 'redux-action-buffer'
 import * as reducers from '../reducers'
+import { actions as appActions } from '../reducers/app'
 import createSyncIoMiddleware from './sync.io.js';
 
 export default function(routes, data) {
@@ -19,6 +22,7 @@ export default function(routes, data) {
     const socketIoMiddleware = createSyncIoMiddleware();
     //const reduxRouterMiddleware = routerMiddleware(history)
 
+    const initMiddleware = createActionBuffer(appActions.initApp);
 
     // Be sure to ONLY add this middleware in development!
     const middleware = process.env.NODE_ENV !== 'production' ?
@@ -35,6 +39,24 @@ export default function(routes, data) {
         )
     );
 
+    const persistingStore = persistStore(store, {
+        keyPrefix: 'PMT.',
+        debounce: 1000,
+        whitelist: ['auth', 'app'],
+        transforms: [
+            createFilter(
+                'app',
+                ['useThreePaneView', 'useSmallerFont', 'menuOpen', 'flattenInheritance', 'flattenOninas']
+            )
+        ]
+    }, () => {
+        // ...after creating your store
+        const initialLocation = store.getState().router;
+        if (initialLocation) {
+            store.dispatch(initializeCurrentLocation(initialLocation));
+        }
+    });
+
     if (module && module.hot) {
         // Enable Webpack hot module replacement for reducers
         module.hot.accept('../reducers', () => {
@@ -43,15 +65,7 @@ export default function(routes, data) {
         });
     }
 
-    // ...after creating your store
-    const initialLocation = store.getState().router;
-    //console.log(initialLocation)
-    if (initialLocation) {
-        //if (!initialLocation.params || !initialLocation.params.profileId)
-        //    store.dispatch(push('/profile/DGIF_IV_2016-2_Stand_Stewardbearbeitung/HG/'));
-        //else
-        store.dispatch(initializeCurrentLocation(initialLocation));
-    }
 
-    return store
+
+    return store;
 }

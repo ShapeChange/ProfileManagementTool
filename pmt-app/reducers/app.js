@@ -2,6 +2,7 @@ import { createAction, createActions, handleActions } from 'redux-actions';
 import { actions as modelActions } from './model';
 import { actions as authActions } from './auth';
 import update from 'immutability-helper';
+import { REHYDRATE } from 'redux-persist/constants'
 
 export const ItemType = {
     PKG: 'pkg',
@@ -30,6 +31,7 @@ export const actions = {
     setView: createAction('view/set'),
     setFont: createAction('font/set'),
     toggleMenu: createAction('menu/toggle'),
+    openMenu: createAction('menu/open'),
     toggleErrors: createAction('errors/toggle'),
     setSubmenusOpen: createAction('submenus/set'),
     toggleFlattenInheritance: createAction('flatten/inheritance/toggle'),
@@ -92,6 +94,7 @@ export default handleActions({
     [actions.setView]: setView,
     [actions.setFont]: setFont,
     [actions.toggleMenu]: toggleMenu,
+    [actions.openMenu]: openMenu,
     [actions.toggleErrors]: toggleErrors,
     [actions.setSubmenusOpen]: setSubmenusOpen,
     [actions.toggleFlattenInheritance]: toggleFlattenInheritance,
@@ -122,16 +125,38 @@ export default handleActions({
     [modelActions.updateEditable]: updateEditable,
     [modelActions.updatedProfile]: updatedProfile,
     [modelActions.updatedEditable]: updatedEditable,
-    [authActions.onUserLogin]: openMenu
+    [authActions.logoutUser]: closeMenu,
+    [authActions.onUserLogin]: initUser,
+    [REHYDRATE]: rehydrate
 }, initialState);
 
 
 
+
+function rehydrate(state, action) {
+
+    return {
+        ...state,
+        ...action.payload.app
+    }
+}
+
 function initApp(state, action) {
     return {
         ...state,
-        allowedGeometries: action.payload.geometry
+        allowedGeometries: action.payload.geometry,
+        flattenInheritance: action.payload.flattenInheritance || false,
+        flattenOninas: action.payload.flattenOninas || false
     }
+}
+
+function initUser(state, action) {
+    return state
+/*return {
+    ...state,
+    flattenInheritance: action.payload.user.flattenInheritance || false,
+    flattenOninas: action.payload.user.flattenOninas || false
+}*/
 }
 
 function selectModel(state, action) {
@@ -206,6 +231,13 @@ function openMenu(state) {
     return {
         ...state,
         menuOpen: true
+    }
+}
+
+function closeMenu(state) {
+    return {
+        ...state,
+        menuOpen: false
     }
 }
 
