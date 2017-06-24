@@ -59,6 +59,16 @@ var config = convict({
             doc: "Allowed geometries for feature types",
             format: Array,
             default: ["P", "C", "S", "So", "MP", "MC", "MS", "MSo"]
+        },
+        flattenInheritance: {
+            doc: "Flatten model inheritance",
+            format: Boolean,
+            default: false
+        },
+        flattenOninas: {
+            doc: "Flatten model ONINAs",
+            format: Boolean,
+            default: false
         }
     }
 });

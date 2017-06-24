@@ -1,5 +1,8 @@
 {
     "server": {
         "distFolder": "pmt-app"
+    },
+    "app": {
+        "flattenInheritance": true
     }
 }
