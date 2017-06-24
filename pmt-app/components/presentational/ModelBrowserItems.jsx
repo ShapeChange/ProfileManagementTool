@@ -10,14 +10,14 @@ import TooltipIcon from '../common/TooltipIcon'
 class ModelBrowserItems extends Component {
 
     render() {
-        const {_id, items, type, profiles, infos, baseUrls, urlSuffix, selectedProfile, updateProfile, filter, isFlattenInheritance} = this.props;
+        const {_id, items, type, profiles, infos, baseUrls, urlSuffix, selectedProfile, updateProfile, filter, isFlattenInheritance, t} = this.props;
 
         let itemClassNames = 'p-0'
 
         return (
             <div>
                 <div className="font-weight-bold py-1">
-                    Included in profile
+                    { t('included') }
                 </div>
                 <Table>
                     <tbody>
@@ -39,14 +39,14 @@ class ModelBrowserItems extends Component {
                                                        placement="right"
                                                        icon="warning"
                                                        color="warning">
-                                                       Changing this property will affect other classes
+                                                       { t('changingAffectOther') }
                                                    </TooltipIcon> }
                                                  { showWarning2 &&
                                                    <TooltipIcon id={ `${item._id}-warning2` }
                                                        placement="right"
                                                        icon="warning"
                                                        color="warning">
-                                                       The property cannot be edited because the package to which its class belongs is not editable
+                                                       { t('propNotEditable') }
                                                    </TooltipIcon> }
                                              </Toggle>
                                          </td>
@@ -71,7 +71,7 @@ class ModelBrowserItems extends Component {
                                                                                                      placement="left"
                                                                                                      icon="warning"
                                                                                                      color="warning">
-                                                                                                     This class is hidden due to the view settings
+                                                                                                     { t('hiddenView') }
                                                                                                  </TooltipIcon>
                                                                                              </div>
                                                                                            : <Link href={ `${baseUrls['cls']}/${item.typeId.localId}/${urlSuffix ? urlSuffix : ''}` } title={ item.typeId.name }>

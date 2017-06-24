@@ -5,7 +5,7 @@ import Toggle from '../common/Toggle'
 class ModelViewSettings extends Component {
 
     render() {
-        const {isFlattenInheritance, toggleFlattenInheritance, isFlattenOninas, toggleFlattenOninas} = this.props;
+        const {isFlattenInheritance, toggleFlattenInheritance, isFlattenOninas, toggleFlattenOninas, t} = this.props;
         return (
             <div>
                 <div className="mb-1">
@@ -14,7 +14,7 @@ class ModelViewSettings extends Component {
                         color="info"
                         checked={ isFlattenInheritance }
                         onToggle={ e => toggleFlattenInheritance() }>
-                        Flatten inheritance tree
+                        { t('flattenInheritance') }
                     </Toggle>
                 </div>
                 <Toggle name="onina"
@@ -22,7 +22,7 @@ class ModelViewSettings extends Component {
                     color="info"
                     checked={ isFlattenOninas }
                     onToggle={ e => toggleFlattenOninas() }>
-                    Flatten ONINAs
+                    { t('flattenOninas') }
                 </Toggle>
             </div>
         );

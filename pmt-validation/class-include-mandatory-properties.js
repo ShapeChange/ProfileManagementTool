@@ -21,13 +21,12 @@ return through2.obj(function(obj, enc, cb) {
             if (!prp.optional) {
                 prfs.forEach(prf => {
                     if (!prp.profiles || prp.profiles.indexOf(prf) === -1) {
-                        errorWriter.appendError({
+                        errorWriter.appendError(obj.model, prf, {
                             _id: obj.localId,
                             prpId: prp._id,
+                            prpName: prp.name,
                             name: obj.name,
-                            model: obj.model,
-                            profile: prf,
-                            msg: 'Mandatory Property "' + prp.name + '" is not included in profile'
+                            msg: 'mandatoryPropertyNotIncluded'
                         })
                     }
                 });

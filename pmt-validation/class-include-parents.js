@@ -35,12 +35,11 @@ return through2.obj(function(obj, enc, cb) {
                 classes.forEach(function(cls) {
                     if (cls.localId !== obj.localId) {
                         if (!cls.profiles || cls.profiles.indexOf(prf) === -1) {
-                            errorWriter.appendError({
+                            errorWriter.appendError(obj.model, prf, {
                                 _id: obj.localId,
                                 name: obj.name,
-                                model: obj.model,
-                                profile: prf,
-                                msg: 'Super class "' + cls.name + '" is not included in profile'
+                                clsName: cls.name,
+                                msg: 'superClassNotIncluded'
                             })
                         }
                     }

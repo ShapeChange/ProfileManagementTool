@@ -10,7 +10,7 @@ import TooltipIcon from '../common/TooltipIcon'
 class ModelBrowserActions extends Component {
 
     render() {
-        const {_id, name, type, optional, infos, pkg, cls, profiles, profileParameters, selectedProfile, updateProfile, updateProfileForChildren, updateEditable, updateEditableForChildren, updateProfileParameter, isFlattenInheritance} = this.props;
+        const {_id, name, type, optional, infos, pkg, cls, profiles, profileParameters, selectedProfile, updateProfile, updateProfileForChildren, updateEditable, updateEditableForChildren, updateProfileParameter, isFlattenInheritance, t} = this.props;
 
         const isPackage = type === 'pkg'
         const isClass = type === 'cls'
@@ -26,149 +26,133 @@ class ModelBrowserActions extends Component {
                           disabled={ !editable || (type === 'prp' && cls.profiles.indexOf(selectedProfile) === -1) || (type === 'prp' && !optional) }
                           onToggle={ e => updateProfile(this.props) }
                           size="2x">
-                          <span className={ `align-self-center ${profiles.indexOf(selectedProfile) > -1 && 'font-weight-bold'} ${!editable && 'text-muted'}` }><span className="font-italic">{ name }</span> is
-                          { profiles.indexOf(selectedProfile) === -1 && ' not ' } included in profile</span>
+                          <span className={ `align-self-center ${profiles.indexOf(selectedProfile) > -1 && 'font-weight-bold'} ${!editable && 'text-muted'}` }><span className="font-italic">{ name }</span>
+                          { profiles.indexOf(selectedProfile) === -1 ? t('isNotIncluded') : t('isIncluded') }
+                          </span>
                       </Toggle> }
                     { isPackage &&
                       <Toggle name="editableSelf"
                           checked={ editable }
                           onToggle={ e => updateEditable(this.props) }
                           size="2x">
-                          <span className="align-self-center"><span className="font-italic">{ name }</span> is
-                          { !editable && ' not ' } editable</span>
+                          <span className="align-self-center"><span className="font-italic">{ name }</span>
+                          { editable ? t('editable') : t('notEditable') }
+                          </span>
                       </Toggle> }
                 </FormGroup>
                 { (isPackage || isClass) &&
                   <div className="font-weight-bold">
-                      Inclusion Actions
+                      { t('inclusionActions') }
                   </div> }
                 { isPackage &&
                   <div>
                       <div className="d-flex py-1">
-                          <span className={ !editable && 'text-muted' }>Add direct child classes with mandatory properties to profile</span>
+                          <span className={ !editable && 'text-muted' }>{ t('addDirectMandatory') }</span>
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
                               disabled={ !editable }
                               onClick={ e => updateProfileForChildren(this.props, true, true, false) }>
-                              Apply
+                              { t('apply') }
                           </Button>
                       </div>
                       <div className="d-flex py-1">
-                          <span className={ !editable && 'text-muted' }>Add direct child classes with all properties to profile</span>
+                          <span className={ !editable && 'text-muted' }>{ t('addDirectAll') }</span>
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
                               disabled={ !editable }
                               onClick={ e => updateProfileForChildren(this.props, true, false, false) }>
-                              Apply
+                              { t('apply') }
                           </Button>
                       </div>
                       <div className="d-flex py-1">
-                          <span className={ !editable && 'text-muted' }>Add all classes in subpackages with mandatory properties to profile</span>
+                          <span className={ !editable && 'text-muted' }>{ t('addAllMandatory') }</span>
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
                               disabled={ !editable }
                               onClick={ e => updateProfileForChildren(this.props, true, true, true) }>
-                              Apply
+                              { t('apply') }
                           </Button>
                       </div>
                       <div className="d-flex py-1">
-                          <span className={ !editable && 'text-muted' }>Add all classes in subpackages with all properties to profile</span>
+                          <span className={ !editable && 'text-muted' }>{ t('addAllAll') }</span>
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
                               disabled={ !editable }
                               onClick={ e => updateProfileForChildren(this.props, true, false, true) }>
-                              Apply
+                              { t('apply') }
                           </Button>
                       </div>
-                      { /*<div className="d-flex py-1">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      <span>Mark all subpackages as editable</span>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      <Button size="sm"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          color="primary"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          className="ml-auto mt-auto"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          onClick={ e => updateEditableForChildren(this.props, true) }>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          Apply
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </Button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  </div>*/ }
                   </div> }
                 { isClass &&
                   <div>
                       <div className="d-flex py-1">
-                          <span className={ !editable && 'text-muted' }>Add all properties to profile</span>
+                          <span className={ !editable && 'text-muted' }>{ t('addAll') }</span>
                           { isFlattenInheritance && editable && (infos.supertypes || infos.subtypes) &&
                             <TooltipIcon id={ `${_id}-add-warning` }
                                 placement="right"
                                 className="ml-1"
                                 icon="warning"
                                 color="warning">
-                                Applying this action will affect other classes
+                                { t('actionAffectOther') }
                             </TooltipIcon> }
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
                               disabled={ !editable }
                               onClick={ e => updateProfileForChildren(this.props, true, false, isFlattenInheritance) }>
-                              Apply
+                              { t('apply') }
                           </Button>
                       </div>
                   </div> }
                 { (isPackage || isClass) &&
                   <div className="font-weight-bold py-1">
-                      Exclusion Actions
+                      { t('exclusionActions') }
                   </div> }
                 { isPackage &&
                   <div>
                       <div className="d-flex py-1">
-                          <span className={ !editable && 'text-muted' }>Remove direct child classes with all properties from profile</span>
+                          <span className={ !editable && 'text-muted' }>{ t('removeDirect') }</span>
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
                               disabled={ !editable }
                               onClick={ e => updateProfileForChildren(this.props, false, false, false) }>
-                              Apply
+                              { t('apply') }
                           </Button>
                       </div>
                       <div className="d-flex py-1">
-                          <span className={ !editable && 'text-muted' }>Remove all classes in subpackages with all properties from profile</span>
+                          <span className={ !editable && 'text-muted' }>{ t('removeAll') }</span>
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
                               disabled={ !editable }
                               onClick={ e => updateProfileForChildren(this.props, false, false, true) }>
-                              Apply
+                              { t('apply') }
                           </Button>
                       </div>
-                      { /*<div className="d-flex py-1">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      <span>Mark all subpackages as non-editable</span>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      <Button size="sm"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          color="primary"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          className="ml-auto mt-auto"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          onClick={ e => updateEditableForChildren(this.props, false) }>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          Apply
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </Button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  </div>*/ }
                   </div> }
                 { isClass &&
                   <div>
                       <div className="d-flex py-1">
-                          <span className={ !editable && 'text-muted' }>Remove optional properties from profile</span>
+                          <span className={ !editable && 'text-muted' }>{ t('removeOptional') }</span>
                           { isFlattenInheritance && editable && (infos.supertypes || infos.subtypes) &&
                             <TooltipIcon id={ `${_id}-remove-warning` }
                                 placement="right"
                                 className="ml-1"
                                 icon="warning"
                                 color="warning">
-                                Applying this action will affect other classes
+                                { t('actionAffectOther') }
                             </TooltipIcon> }
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
                               disabled={ !editable }
                               onClick={ e => updateProfileForChildren(this.props, false, true, isFlattenInheritance) }>
-                              Apply
+                              { t('apply') }
                           </Button>
                       </div>
                   </div> }

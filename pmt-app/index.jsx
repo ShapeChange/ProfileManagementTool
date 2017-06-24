@@ -4,9 +4,11 @@ import { Provider } from 'react-redux'
 import { AppContainer } from 'react-hot-loader';
 import createHistory from 'history/createBrowserHistory'
 import { RouterProvider } from 'redux-little-router';
+import { I18nextProvider } from 'react-i18next';
 import createStore from './store/create-store'
 import App from './components/container/App'
 import { actions } from './reducers/app'
+import i18n from './i18n';
 
 
 const render = (Component, store, history) => {
@@ -14,7 +16,9 @@ const render = (Component, store, history) => {
         <AppContainer>
             <Provider store={ store }>
                 <RouterProvider store={ store }>
-                    <Component history={ history } />
+                    <I18nextProvider i18n={ i18n }>
+                        <Component history={ history } />
+                    </I18nextProvider>
                 </RouterProvider>
             </Provider>
         </AppContainer>,

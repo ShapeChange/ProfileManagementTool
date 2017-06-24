@@ -24,13 +24,12 @@ return through2.obj(function(obj, enc, cb) {
                 if (prp.profiles.indexOf(prf) > -1 && prp.profileParameters[prf] && prp.profileParameters[prf].isNavigable) {
 
                     if (prp.isAttribute) {
-                        return errorWriter.appendError({
+                        return errorWriter.appendError(obj.model, prf, {
                             _id: obj.localId,
                             prpId: prp._id,
+                            prpName: prp.name,
                             name: obj.name,
-                            model: obj.model,
-                            profile: prf,
-                            msg: 'Property "' + prp.name + '" is not an association role, it should not have profile parameter "isNavigable"'
+                            msg: 'notAnAssociationRole'
                         })
                     } else if (prp.profileParameters[prf].isNavigable === 'false') {
                         return modelReader.getClassByProperty(prp.reversePropertyId, obj.model, {
@@ -53,13 +52,12 @@ return through2.obj(function(obj, enc, cb) {
                         })
                             .then(function(cls) {
                                 if (cls) {
-                                    return errorWriter.appendError({
+                                    return errorWriter.appendError(obj.model, prf, {
                                         _id: obj.localId,
                                         prpId: prp._id,
+                                        prpName: prp.name,
                                         name: obj.name,
-                                        model: obj.model,
-                                        profile: prf,
-                                        msg: 'Profile parameter isNavigable for property "' + prp.name + '" should not have value "false", that renders the association unnavigable'
+                                        msg: 'rendersAssociationUnnavigable'
                                     })
                                 }
                             });

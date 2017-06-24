@@ -70,23 +70,19 @@ function putPackageUpdate(id, modelId, update, projection) {
     )
 }
 
-function appendError(error) {
+function appendError(modelId, profile, error) {
     if (!error._id)
         return //throw new Error()
 
     var update = {
         $addToSet: {
-            ['profilesInfo.' + error.profile + '.errors']: {
-                _id: error._id,
-                name: error.name,
-                msg: error.msg
-            }
+            ['profilesInfo.' + profile + '.errors']: error
         }
     }
     console.log('APPEND', update)
     return model
         .findAndModify({
-            _id: ObjectID(error.model)
+            _id: ObjectID(modelId)
         },
             [],
             update,

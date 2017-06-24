@@ -37,13 +37,13 @@ return through2.obj(function(obj, enc, cb) {
                         if (type) {
                             return Promise.map(prfs, prf => {
                                 if (prp.profiles.indexOf(prf) > -1 && type.profiles.indexOf(prf) === -1) {
-                                    return errorWriter.appendError({
+                                    return errorWriter.appendError(obj.model, prf, {
                                         _id: obj.localId,
                                         prpId: prp._id,
+                                        prpName: prp.name,
+                                        typeName: type.name,
                                         name: obj.name,
-                                        model: obj.model,
-                                        profile: prf,
-                                        msg: 'Property "' + prp.name + '" is included in profile, but its type "' + type.name + '" is not'
+                                        msg: 'typeNotIncluded'
                                     })
                                 }
                             });

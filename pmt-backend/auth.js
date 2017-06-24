@@ -12,15 +12,18 @@ return users.createUser(payload.name)
         });
     })
     .catch(function(error) {
-        var msg = 'Unknown error when creating user, please try again';
+        var msg = {
+            msg: 'registerError'
+        }
         if (error.code === 11000)
-            msg = 'A user with name \'' + payload.name + '\' already exists'
+            msg = {
+                msg: 'userExists',
+                name: payload.name
+        }
 
         socket.emit('action', {
             type: 'user/create/error',
-            payload: {
-                msg: msg
-            }
+            payload: msg
         });
     })
 }
@@ -39,7 +42,8 @@ return pr
             socket.emit('action', {
                 type: 'user/login/error',
                 payload: {
-                    msg: 'A user with name \'' + payload.name + '\' does not exist'
+                    msg: 'unkownUser',
+                    name: payload.name
                 }
             });
         } else {
@@ -57,7 +61,7 @@ return pr
         socket.emit('action', {
             type: 'user/login/error',
             payload: {
-                msg: 'Unknown error when logging in user, please try again'
+                msg: 'loginError'
             }
         });
     })

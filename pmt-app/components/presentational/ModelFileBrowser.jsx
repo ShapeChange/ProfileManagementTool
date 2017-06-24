@@ -106,7 +106,7 @@ class ModelFileBrowser extends Component {
     }
 
     _renderLeaf = (leaf, isFirst, isLast, isSelected, isExpanded, hasChildren, depth, onSelect, onExpand) => {
-        const {focus, showExpansionIcons, useSmallerFont, baseUrls, selected, selectedModel, toggleMenu, startFileExport, isExporting, hasExport, exportStats, hasImport, clearFileExport, profileEdit, requestProfileEdit, confirmProfileEdit, cancelProfileEdit, models, user} = this.props;
+        const {focus, showExpansionIcons, useSmallerFont, baseUrls, selected, selectedModel, toggleMenu, startFileExport, isExporting, hasExport, exportStats, hasImport, clearFileExport, profileEdit, requestProfileEdit, confirmProfileEdit, cancelProfileEdit, models, user, t} = this.props;
 
         let classNames = 'border-left-0 border-right-0 rounded-0 sidemenu-active'
         if (isFirst || leaf.type === 'export' || leaf.type === 'drop')
@@ -140,7 +140,8 @@ class ModelFileBrowser extends Component {
                                <ModelFileExport isExporting={ isExporting }
                                    hasExport={ hasExport }
                                    exportStats={ exportStats }
-                                   clearFileExport={ clearFileExport } />
+                                   clearFileExport={ clearFileExport }
+                                   t={ t } />
                            </div>
                        </ListGroupItem>
         } else if (leaf.type === 'add') {
@@ -155,7 +156,8 @@ class ModelFileBrowser extends Component {
                                        requestProfileEdit={ requestProfileEdit }
                                        confirmProfileEdit={ confirmProfileEdit }
                                        cancelProfileEdit={ cancelProfileEdit }
-                                       user={ user }>
+                                       user={ user }
+                                       t={ t }>
                                        { depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }
                                        { leafIcon }
                                    </ModelProfileEdit>
@@ -168,8 +170,7 @@ class ModelFileBrowser extends Component {
                                { depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }
                                <div>
                                    <div>
-                                       Do you really want to delete this
-                                       { leaf.dropType === 'mdl' ? ' model' : ' profile' }?
+                                       { leaf.dropType === 'mdl' ? t('deleteModel') : t('deleteProfile') }?
                                    </div>
                                    <div className="d-flex flex-row justify-content-end my-1">
                                        <Button tag={ Link }
@@ -179,14 +180,14 @@ class ModelFileBrowser extends Component {
                                            outline
                                            className="rounded-0 ml-1 py-0"
                                            onClick={ (e) => this._confirmDelete(e, leaf) }>
-                                           Delete
+                                           { t('delete') }
                                        </Button>
                                        <Button size="sm"
                                            color="danger"
                                            outline
                                            className="rounded-0 ml-1 py-0"
                                            onClick={ (e) => this._cancelDelete(e, leaf) }>
-                                           Cancel
+                                           { t('cancel') }
                                        </Button>
                                    </div>
                                </div>
@@ -211,7 +212,8 @@ class ModelFileBrowser extends Component {
                                        requestProfileEdit={ requestProfileEdit }
                                        confirmProfileEdit={ confirmProfileEdit }
                                        cancelProfileEdit={ cancelProfileEdit }
-                                       user={ user }>
+                                       user={ user }
+                                       t={ t }>
                                        { depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }
                                        { leafIcon }
                                    </ModelProfileEdit>
@@ -223,7 +225,7 @@ class ModelFileBrowser extends Component {
                                                                    disabled={ hasExport || hasImport }
                                                                    className="rounded-0 py-0"
                                                                    onClick={ (e) => this._requestProfileEdit(e, leaf._id, leaf.name) }>
-                                                                   Copy
+                                                                   { t('copy') }
                                                                </Button>
                                                                <Button size="sm"
                                                                    color="secondary"
@@ -231,7 +233,7 @@ class ModelFileBrowser extends Component {
                                                                    disabled={ hasExport || hasImport }
                                                                    className="rounded-0 ml-1 py-0"
                                                                    onClick={ (e) => this._requestProfileEdit(e, leaf._id, leaf.name) }>
-                                                                   Edit
+                                                                   { t('edit') }
                                                                </Button>
                                                                <Button size="sm"
                                                                    color="danger"
@@ -239,7 +241,7 @@ class ModelFileBrowser extends Component {
                                                                    disabled={ hasExport || hasImport }
                                                                    className="rounded-0 ml-1 py-0"
                                                                    onClick={ (e) => this._requestDelete(e, leaf) }>
-                                                                   Drop
+                                                                   { t('drop') }
                                                                </Button>
                                                            </div> }
                            </div>
@@ -275,7 +277,7 @@ class ModelFileBrowser extends Component {
                                                                 title="Edit Profile"
                                                                 disabled={ true }
                                                                 className="rounded-0 py-0">
-                                                                Edit
+                                                                { t('edit') }
                                                             </Button>
                                                             <Button size="sm"
                                                                 color="danger"
@@ -283,7 +285,7 @@ class ModelFileBrowser extends Component {
                                                                 disabled={ hasExport || hasImport }
                                                                 className="rounded-0 ml-1 py-0"
                                                                 onClick={ (e) => this._requestDelete(e, leaf) }>
-                                                                Drop
+                                                                { t('drop') }
                                                             </Button>
                                                         </div> }
                                { leaf.type === 'mdl' && <div className="ml-auto">
@@ -293,7 +295,7 @@ class ModelFileBrowser extends Component {
                                                                 disabled={ hasExport || hasImport }
                                                                 className="rounded-0 ml-1 py-0"
                                                                 onClick={ (e) => this._fileExport(e, leaf) }>
-                                                                Export
+                                                                { t('export') }
                                                             </Button>
                                                             <Button size="sm"
                                                                 color="danger"
@@ -301,7 +303,7 @@ class ModelFileBrowser extends Component {
                                                                 disabled={ hasExport || hasImport }
                                                                 className="rounded-0 ml-1 py-0"
                                                                 onClick={ (e) => this._requestDelete(e, leaf) }>
-                                                                Drop
+                                                                { t('drop') }
                                                             </Button>
                                                         </div> }
                            </div>
@@ -312,7 +314,7 @@ class ModelFileBrowser extends Component {
     }
 
     render() {
-        const {models, hasExport, exportStats, deleteRequested} = this.props;
+        const {models, hasExport, exportStats, deleteRequested, t} = this.props;
 
         let tree = models.map(mdl => {
             return {
@@ -362,7 +364,7 @@ class ModelFileBrowser extends Component {
             }, []).sort((a, b) => a.name > b.name ? 1 : -1))
             tree.push({
                 _id: mdl._id + 'add',
-                name: 'Add Profile',
+                name: t('addProfile'),
                 type: 'add',
                 parent: mdl._id
             })

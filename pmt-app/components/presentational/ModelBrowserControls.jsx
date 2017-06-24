@@ -11,7 +11,7 @@ class ModelBrowserControls extends Component {
     }
 
     render() {
-        const {useThreePaneView, onSetThreePaneView, onSetSinglePaneView, useSmallerFont, onSetNormalFont, onSetSmallFont, pendingFilter, isFilterPending, onSearch, filter, disabled} = this.props;
+        const {useThreePaneView, onSetThreePaneView, onSetSinglePaneView, useSmallerFont, onSetNormalFont, onSetSmallFont, pendingFilter, isFilterPending, onSearch, filter, disabled, t} = this.props;
 
         const searchIcon = isFilterPending ? 'spinner' : (pendingFilter !== '' ? 'close' : 'search')
         const onCancel = !isFilterPending && pendingFilter !== '' ? onSearch.bind(null, null) : () => {
@@ -30,7 +30,7 @@ class ModelBrowserControls extends Component {
                     <Button color="primary"
                         size="sm"
                         outline
-                        title="Single Column Layout"
+                        title={ t('singleColumnLayout') }
                         active={ !useThreePaneView }
                         onClick={ onSetSinglePaneView }>
                         <FontAwesome name="align-left" />
@@ -38,7 +38,7 @@ class ModelBrowserControls extends Component {
                     <Button color="primary"
                         size="sm"
                         outline
-                        title="Three Column Layout"
+                        title={ t('threeColumnLayout') }
                         active={ useThreePaneView }
                         onClick={ onSetThreePaneView }>
                         <FontAwesome name="columns" />
@@ -48,7 +48,7 @@ class ModelBrowserControls extends Component {
                     <Button color="primary"
                         size="sm"
                         outline
-                        title="Normal Font Size"
+                        title={ t('normalFont') }
                         active={ !useSmallerFont }
                         onClick={ onSetNormalFont }>
                         <FontAwesome name="font" />
@@ -56,7 +56,7 @@ class ModelBrowserControls extends Component {
                     <Button color="primary"
                         size="sm"
                         outline
-                        title="Small Font Size"
+                        title={ t('smallFont') }
                         style={ { fontSize: '.600rem' } }
                         active={ useSmallerFont }
                         onClick={ onSetSmallFont }>

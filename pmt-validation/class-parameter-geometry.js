@@ -22,12 +22,12 @@ return through2.obj(function(obj, enc, cb) {
 
         if (!containsGeometries(defaultGeometries, obj.taggedValues.geometry.split(','))) {
             prfs.forEach(prf => {
-                errorWriter.appendError({
+                errorWriter.appendError(obj.model, prf, {
                     _id: obj.localId,
                     name: obj.name,
-                    model: obj.model,
-                    profile: prf,
-                    msg: 'Tagged value geometry (' + obj.taggedValues.geometry + ') does not match configured geometries (' + defaultGeometries.join(',') + ')'
+                    taggedValueGeometry: obj.taggedValues.geometry,
+                    defaultGeometries: defaultGeometries.join(','),
+                    msg: 'taggedValueGeometryInvalid'
                 })
             });
         }
@@ -43,12 +43,13 @@ return through2.obj(function(obj, enc, cb) {
         if (obj.profiles.indexOf(prf) > -1 && obj.profileParameters && obj.profileParameters[prf] && obj.profileParameters[prf].geometry) {
 
             if (!containsGeometries(geometries, obj.profileParameters[prf].geometry.split(','))) {
-                errorWriter.appendError({
+                errorWriter.appendError(obj.model, prf, {
                     _id: obj.localId,
                     name: obj.name,
-                    model: obj.model,
-                    profile: prf,
-                    msg: 'The value for parameter geometry (' + obj.profileParameters[prf].geometry + ') does not match the configured geometries (' + defaultGeometries.join(',') + ') or the tagged value geometry (' + obj.taggedValues.geometry + ')'
+                    parameterGeometry: obj.profileParameters[prf].geometry,
+                    taggedValueGeometry: obj.taggedValues.geometry,
+                    defaultGeometries: defaultGeometries.join(','),
+                    msg: 'parameterGeometryInvalid'
                 })
             }
         }

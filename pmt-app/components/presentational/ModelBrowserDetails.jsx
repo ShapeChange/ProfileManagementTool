@@ -83,7 +83,7 @@ class ModelBrowserDetails extends Component {
     }
 
     render() {
-        const {_id, name, type, items, infos, taggedValues, parameters, selectedTab, baseUrls, urlSuffix, filter, isFlattenInheritance, isFlattenOninas} = this.props;
+        const {_id, name, type, items, infos, taggedValues, parameters, selectedTab, baseUrls, urlSuffix, filter, isFlattenInheritance, isFlattenOninas, t} = this.props;
 
         const baseUrl = `${baseUrls[type]}/${_id}`;
         const isInfo = infos && selectedTab === 'info'
@@ -97,13 +97,13 @@ class ModelBrowserDetails extends Component {
                     { type !== 'asc' &&
                       <NavItem>
                           <NavLink tag={ Link } href={ `${baseUrl}/profile${urlSuffix}` } active={ isProfile }>
-                              Profile
+                              { t('profile') }
                           </NavLink>
                       </NavItem> }
                     { items &&
                       <NavItem>
                           <NavLink tag={ Link } href={ `${baseUrl}/items${urlSuffix}` } active={ selectedTab === 'items' }>
-                              { type === 'pkg' ? 'Classes' : 'Properties' }
+                              { type === 'pkg' ? t('classes') : t('properties') }
                           </NavLink>
                       </NavItem> }
                     { infos &&
@@ -112,13 +112,7 @@ class ModelBrowserDetails extends Component {
                               href={ selectedTab !== 'info' ? `${baseUrl}/info${urlSuffix}` : '' }
                               active={ selectedTab === 'info' }
                               disabled={ !infos || selectedTab === 'info' }>
-                              Info
-                          </NavLink>
-                      </NavItem> }
-                    { parameters &&
-                      <NavItem>
-                          <NavLink tag={ Link } disabled href={ `${baseUrl}/parameters${urlSuffix}` }>
-                              Parameters
+                              { t('info') }
                           </NavLink>
                       </NavItem> }
                 </Nav>
@@ -137,11 +131,12 @@ class ModelBrowserDetails extends Component {
                       urlSuffix={ selectedTab }
                       filter={ filter }
                       isFlattenInheritance={ isFlattenInheritance }
-                      isFlattenOninas={ isFlattenOninas } /> }
+                      isFlattenOninas={ isFlattenOninas }
+                      t={ t } /> }
                 { isItems &&
                   <ModelBrowserItems {...this.props} urlSuffix={ selectedTab } updateProfile={ this._updateProfileForElement } /> }
                 { isParameters &&
-                  <ModelBrowserParameters parameters={ parameters } /> }
+                  <ModelBrowserParameters parameters={ parameters } t={ t } /> }
             </div>
         );
     }

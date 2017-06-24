@@ -8,7 +8,8 @@ const options = require('./setup');
 
 var errors = []
 var errorWriter = {
-    appendError: function(error) {
+    appendError: function(model, profile, error) {
+        error.profile = profile
         errors.push(error)
     },
     clearErrors: function(id, model, profile) {

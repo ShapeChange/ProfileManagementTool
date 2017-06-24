@@ -19,7 +19,7 @@ class Navbar extends Component {
     }
 
     render() {
-        const {isMenuOpen, isErrorsOpen, toggleMenu, toggleErrors, model, profile, busy, baseUrls, user} = this.props;
+        const {isMenuOpen, isErrorsOpen, toggleMenu, toggleErrors, model, profile, busy, baseUrls, user, t} = this.props;
 
         return (
             <BSNavbar color="inverse"
@@ -48,7 +48,7 @@ class Navbar extends Component {
                                             ? <div>
                                                   <Link id="errors"
                                                       href={ '' }
-                                                      title="Show Errors"
+                                                      title={ t('showErrors') }
                                                       onClick={ (e) => {
                                                                     e.preventDefault();
                                                                     toggleErrors();
@@ -63,15 +63,15 @@ class Navbar extends Component {
                                                       toggle={ toggleErrors }
                                                       tether={ { constraints: [{ to: 'scrollParent', attachment: 'together', pin: true }] } }>
                                                       <PopoverTitle>
-                                                          Errors
+                                                          { t('errors') }
                                                       </PopoverTitle>
                                                       <PopoverContent className="p-0" style={ { overflowY: 'auto', maxHeight: '400px' } }>
                                                           <ListGroup className="border-0 rounded-0">
                                                               { model.profilesInfo[profile].errors.map((err, i) => <ListGroupItem key={ i } className={ `rounded-0 border-left-0 border-right-0 border-bottom-0 ${i === 0 && 'border-top-0'}` }>
                                                                                                                        <Link href={ `${baseUrls['cls']}/${err._id}` } title={ err.name } className="text-danger">
-                                                                                                                       { `Consistency error in class "${err.name}":` }
+                                                                                                                       { t('validation:consistencyError', err) }
                                                                                                                        <br/>
-                                                                                                                       { err.msg }
+                                                                                                                       { t('validation:' + err.msg, err) }
                                                                                                                        </Link>
                                                                                                                    </ListGroupItem>
                                                                 ) }

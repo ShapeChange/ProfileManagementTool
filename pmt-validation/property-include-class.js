@@ -19,13 +19,12 @@ return through2.obj(function(obj, enc, cb) {
             var prfs = profile ? (prp.profiles.indexOf(profile) > -1 ? [profile] : []) : prp.profiles
             prfs.forEach(prf => {
                 if (prp.profiles.indexOf(prf) > -1 && obj.profiles.indexOf(prf) === -1) {
-                    errorWriter.appendError({
+                    errorWriter.appendError(obj.model, prf, {
                         _id: obj.localId,
                         prpId: prp._id,
+                        prpName: prp.name,
                         name: obj.name,
-                        model: obj.model,
-                        profile: prf,
-                        msg: 'Property "' + prp.name + '" is included in profile, but its class "' + obj.name + '" is not'
+                        msg: 'classNotIncluded'
                     })
                 }
             });

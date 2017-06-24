@@ -21,13 +21,14 @@ return through2.obj(function(obj, enc, cb) {
                 if (prp.profiles.indexOf(prf) > -1 && prp.profileParameters[prf] && prp.profileParameters[prf].multiplicity) {
 
                     if (!containsCardinality(parseCardinality(prp.cardinality), parseCardinality(prp.profileParameters[prf].multiplicity))) {
-                        errorWriter.appendError({
+                        errorWriter.appendError(obj.model, prf, {
                             _id: obj.localId,
                             prpId: prp._id,
+                            prpName: prp.name,
+                            prpCardinality: prp.cardinality,
                             name: obj.name,
-                            model: obj.model,
-                            profile: prf,
-                            msg: 'The value for parameter multiplicity (' + prp.profileParameters[prf].multiplicity + ') of property "' + prp.name + '" is not contained in properties cardinality (' + prp.cardinality + ')'
+                            parameterMultiplicity: prp.profileParameters[prf].multiplicity,
+                            msg: 'parameterMultiplicityOutOfBounds'
                         })
                     }
                 }

@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux';
 import { Card, CardHeader } from 'reactstrap';
+import { translate } from 'react-i18next';
 
 import { useThreePaneView, useSmallerFont, getPendingFilter, getFilter, getBrowserDisabled, isFlattenInheritance, isFlattenOninas, getAllowedGeometries, Font, View, actions } from '../../reducers/app'
 import { getSelectedModel, getSelectedProfile, getSelectedPackage, getSelectedClass, getSelectedProperty, getSelectedTab, getDetails, getPackages, getPackage, getClasses, getClass, getProperties, getExpandedItems, actions as modelActions } from '../../reducers/model'
@@ -11,49 +12,54 @@ import ModelBrowserTree from '../presentational/ModelBrowserTree'
 import ModelBrowserDetails from '../presentational/ModelBrowserDetails'
 import ModelElement from '../presentational/ModelElement'
 
-const mapStateToProps = (state, props) => {
-    return {
-        pkg: getPackage(state),
-        packages: getPackages(state),
-        cls: getClass(state),
-        classes: getClasses(state),
-        properties: getProperties(state),
-        details: getDetails(state), //isFocusOnPackage(state) ? getPackageDetails(state) : isFocusOnClass(state) ? getClassDetails(state) : isFocusOnProperty(state) ? getPropertyDetails(state, getSelectedProperty(state)) : null,
-        selectedModel: getSelectedModel(state),
-        selectedProfile: getSelectedProfile(state),
-        selectedPackage: getSelectedPackage(state),
-        selectedClass: getSelectedClass(state),
-        selectedProperty: getSelectedProperty(state),
-        selectedTab: getSelectedTab(state),
-        isFocusOnPackage: getDetails(state).type === 'pkg', //isFocusOnPackage(state),
-        isFocusOnClass: getDetails(state).type === 'cls', //isFocusOnClass(state),
-        isFocusOnProperty: getDetails(state).type === 'prp', //isFocusOnProperty(state),
-        useThreePaneView: useThreePaneView(state),
-        useSmallerFont: useSmallerFont(state),
-        expanded: getExpandedItems(state),
-        // TODO: normalize urls in LOCATION_CHANGE handler, use relative Links
-        baseUrls: {
-            pkg: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/package`,
-            cls: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/class`,
-            prp: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/property/${state.model.fetchedClass}`,
-            prp2: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/property`
-        },
-        query: state.router.search,
-        title: state.model.mdl ? state.model.mdl.name : '',
-        pendingFilter: getPendingFilter(state).filter,
-        isFilterPending: getPendingFilter(state).pending > 0,
-        filter: getFilter(state),
-        disabled: getBrowserDisabled(state),
-        isFlattenInheritance: isFlattenInheritance(state),
-        isFlattenOninas: isFlattenOninas(state),
-        allowedGeometries: getAllowedGeometries(state)
-    }
-}
 
-const mapDispatchToProps = (dispatch) => ({
-    ...bindActionCreators(actions, dispatch),
-    ...bindActionCreators(modelActions, dispatch)
-});
+@connect(
+    (state, props) => {
+        return {
+            pkg: getPackage(state),
+            packages: getPackages(state),
+            cls: getClass(state),
+            classes: getClasses(state),
+            properties: getProperties(state),
+            details: getDetails(state), //isFocusOnPackage(state) ? getPackageDetails(state) : isFocusOnClass(state) ? getClassDetails(state) : isFocusOnProperty(state) ? getPropertyDetails(state, getSelectedProperty(state)) : null,
+            selectedModel: getSelectedModel(state),
+            selectedProfile: getSelectedProfile(state),
+            selectedPackage: getSelectedPackage(state),
+            selectedClass: getSelectedClass(state),
+            selectedProperty: getSelectedProperty(state),
+            selectedTab: getSelectedTab(state),
+            isFocusOnPackage: getDetails(state).type === 'pkg', //isFocusOnPackage(state),
+            isFocusOnClass: getDetails(state).type === 'cls', //isFocusOnClass(state),
+            isFocusOnProperty: getDetails(state).type === 'prp', //isFocusOnProperty(state),
+            useThreePaneView: useThreePaneView(state),
+            useSmallerFont: useSmallerFont(state),
+            expanded: getExpandedItems(state),
+            // TODO: normalize urls in LOCATION_CHANGE handler, use relative Links
+            baseUrls: {
+                pkg: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/package`,
+                cls: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/class`,
+                prp: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/property/${state.model.fetchedClass}`,
+                prp2: `/profile/${state.router.params.modelId}/${state.router.params.profileId}/property`
+            },
+            query: state.router.search,
+            title: state.model.mdl ? state.model.mdl.name : '',
+            pendingFilter: getPendingFilter(state).filter,
+            isFilterPending: getPendingFilter(state).pending > 0,
+            filter: getFilter(state),
+            disabled: getBrowserDisabled(state),
+            isFlattenInheritance: isFlattenInheritance(state),
+            isFlattenOninas: isFlattenOninas(state),
+            allowedGeometries: getAllowedGeometries(state)
+        }
+    },
+    (dispatch) => {
+        return {
+            ...bindActionCreators(actions, dispatch),
+            ...bindActionCreators(modelActions, dispatch)
+        }
+    })
+
+@translate()
 
 class ModelBrowser extends Component {
 
@@ -179,6 +185,6 @@ class ModelBrowser extends Component {
 }
 ;
 
-const ConnectedModelBrowser = connect(mapStateToProps, mapDispatchToProps)(ModelBrowser)
+//const ConnectedModelBrowser = connect(mapStateToProps, mapDispatchToProps)(ModelBrowser)
 
-export default ConnectedModelBrowser
+export default ModelBrowser

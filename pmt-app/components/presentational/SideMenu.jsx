@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux'
+import { translate } from 'react-i18next';
 
 import { isMenuOpen, getSubmenusOpen, hasFileImport, hasPendingFileImport, getFileImport, hasFileExport, hasPendingFileExport, getFileExport, isFlattenInheritance, isFlattenOninas, getDeleteRequested, getProfileEdit, actions } from '../../reducers/app'
 import { getModels, getSelectedModel, getSelectedProfile } from '../../reducers/model'
@@ -21,31 +22,35 @@ import ModelViewSettings from './ModelViewSettings'
 import styles from './SideMenu.scss'
 
 
-const mapStateToProps = (state, props) => {
-    return {
-        isMenuOpen: isMenuOpen(state),
-        submenusOpen: getSubmenusOpen(state),
-        isFlattenInheritance: isFlattenInheritance(state),
-        isFlattenOninas: isFlattenOninas(state),
-        models: getModels(state),
-        selectedModel: getSelectedModel(state),
-        selectedProfile: getSelectedProfile(state),
-        isImporting: hasPendingFileImport(state),
-        hasImport: hasFileImport(state),
-        importStats: getFileImport(state),
-        isExporting: hasPendingFileExport(state),
-        hasExport: hasFileExport(state),
-        exportStats: getFileExport(state),
-        deleteRequested: getDeleteRequested(state),
-        profileEdit: getProfileEdit(state),
-        user: getUser(state)
-    }
-}
+@connect(
+    (state, props) => {
+        return {
+            isMenuOpen: isMenuOpen(state),
+            submenusOpen: getSubmenusOpen(state),
+            isFlattenInheritance: isFlattenInheritance(state),
+            isFlattenOninas: isFlattenOninas(state),
+            models: getModels(state),
+            selectedModel: getSelectedModel(state),
+            selectedProfile: getSelectedProfile(state),
+            isImporting: hasPendingFileImport(state),
+            hasImport: hasFileImport(state),
+            importStats: getFileImport(state),
+            isExporting: hasPendingFileExport(state),
+            hasExport: hasFileExport(state),
+            exportStats: getFileExport(state),
+            deleteRequested: getDeleteRequested(state),
+            profileEdit: getProfileEdit(state),
+            user: getUser(state)
+        }
+    },
+    (dispatch) => {
+        return {
+            ...bindActionCreators(actions, dispatch),
+            ...bindActionCreators(authActions, dispatch)
+        }
+    })
 
-const mapDispatchToProps = (dispatch) => ({
-    ...bindActionCreators(actions, dispatch),
-    ...bindActionCreators(authActions, dispatch)
-});
+@translate()
 
 class SideMenu extends Component {
 
@@ -77,7 +82,7 @@ class SideMenu extends Component {
     }
 
     render() {
-        const {isMenuOpen, submenusOpen, setSubmenusOpen, toggleMenu, isFlattenInheritance, toggleFlattenInheritance, isFlattenOninas, toggleFlattenOninas, models, selectedModel, selectedProfile, user, logoutUser} = this.props;
+        const {isMenuOpen, submenusOpen, setSubmenusOpen, toggleMenu, isFlattenInheritance, toggleFlattenInheritance, isFlattenOninas, toggleFlattenOninas, models, selectedModel, selectedProfile, user, logoutUser, t} = this.props;
         const {createFileImport, startFileImport, clearFileImport, isImporting, hasImport, importStats, startFileExport, clearFileExport, isExporting, hasExport, exportStats, deleteRequested, requestDelete, confirmDelete, cancelDelete, profileEdit, requestProfileEdit, confirmProfileEdit, cancelProfileEdit} = this.props;
 
         let expanded = []
@@ -106,7 +111,7 @@ class SideMenu extends Component {
                                     <span className="">{ user.name }</span>
                                 </div>
                                 <div className="ml-auto">
-                                    <Link href={ '/login' } title="Logout" onClick={ e => logoutUser() }>
+                                    <Link href={ '/login' } title={ t('logout') } onClick={ e => logoutUser({}) }>
                                     <FontAwesome name="sign-out" size='lg' fixedWidth={ true } />
                                     </Link>
                                 </div>
@@ -119,21 +124,22 @@ class SideMenu extends Component {
                                 ref={ this.onAccordionLoad }>
                                 <AccordionItem header={ <div className="w-100 d-flex flex-row">
                                                             <FontAwesome name="eye" fixedWidth={ true } className="mr-2 align-self-center" />
-                                                            <span className="">View</span>
+                                                            <span className="">{ t('view') }</span>
                                                         </div> } title="View">
                                     <ModelViewSettings isFlattenInheritance={ isFlattenInheritance }
                                         isFlattenOninas={ isFlattenOninas }
                                         toggleFlattenInheritance={ toggleFlattenInheritance }
-                                        toggleFlattenOninas={ toggleFlattenOninas } />
+                                        toggleFlattenOninas={ toggleFlattenOninas }
+                                        t={ t } />
                                 </AccordionItem>
                                 <AccordionItem header={ <div className="w-100 d-flex flex-row justify-content-between">
-                                                            <span><FontAwesome name="sitemap" fixedWidth={ true } className="pr-4" />Model Files</span>
+                                                            <span><FontAwesome name="sitemap" fixedWidth={ true } className="pr-4" />{ t('modelFiles') }</span>
                                                             <Button size="sm"
                                                                 color="info"
                                                                 className="rounded-0 py-0"
                                                                 disabled={ hasImport || hasExport }
                                                                 onClick={ this.chooseFile }>
-                                                                Add File
+                                                                { t('addFile') }
                                                             </Button>
                                                         </div> } title="Model Files">
                                     <ModelFileImport models={ models }
@@ -143,6 +149,7 @@ class SideMenu extends Component {
                                         isImporting={ isImporting }
                                         hasImport={ hasImport }
                                         importStats={ importStats }
+                                        t={ t }
                                         ref={ this.onFileImportLoad } />
                                     <ModelFileBrowser models={ models }
                                         selectedModel={ selectedModel }
@@ -164,7 +171,8 @@ class SideMenu extends Component {
                                         confirmProfileEdit={ confirmProfileEdit }
                                         cancelProfileEdit={ cancelProfileEdit }
                                         clearFileExport={ clearFileExport }
-                                        user={ user } />
+                                        user={ user }
+                                        t={ t } />
                                 </AccordionItem>
                             </Accordion>
                         </CardBlock>
@@ -183,6 +191,4 @@ SideMenu.propTypes = {
 SideMenu.defaultProps = {
 };
 
-const ConnectedSideMenu = connect(mapStateToProps, mapDispatchToProps)(SideMenu)
-
-export default ConnectedSideMenu
+export default SideMenu

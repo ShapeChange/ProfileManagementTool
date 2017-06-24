@@ -82,7 +82,7 @@ class ModelFileExport extends Component {
     }
 
     render() {
-        const {hasExport, isExporting, exportStats} = this.props;
+        const {hasExport, isExporting, exportStats, t} = this.props;
 
         const percent = exportStats.stats && exportStats.stats.progress ? Math.min(isExporting ? 99 : 100, exportStats.stats.progress) : 0;
 
@@ -91,7 +91,7 @@ class ModelFileExport extends Component {
             <div className="w-100">
                 { hasExport && exportStats.stats
                   && <div className="mb-3">
-                         { isExporting ? 'Exporting... ' : 'Exported ' }
+                         { isExporting ? (t('exporting') + '... ') : t('exported') }
                          { isExporting
                            ? <FontAwesome name="spinner" pulse />
                            : <FontAwesome name="check" /> }
@@ -107,7 +107,7 @@ class ModelFileExport extends Component {
                                                    color="info"
                                                    outline
                                                    onClick={ (e) => this.finishFileExport(e, url) }>
-                                                   Download
+                                                   { t('download') }
                                                </Button>
                                            </div> }
                      </div> }

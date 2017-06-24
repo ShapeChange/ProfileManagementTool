@@ -94,7 +94,7 @@ class ModelBrowserParameters extends Component {
     }
 
     render() {
-        const {isClass, isProperty, disabled, infos, profileParameters, selectedProfile, updateProfileParameter} = this.props;
+        const {isClass, isProperty, disabled, infos, profileParameters, selectedProfile, updateProfileParameter, t} = this.props;
 
         const multiplicity = isProperty && this._parseMultiplicity();
 
@@ -103,14 +103,14 @@ class ModelBrowserParameters extends Component {
         return (
             <div>
                 <div className="font-weight-bold py-1">
-                    Parameter
+                    { t('parameter') }
                 </div>
                 <Table size="sm" reflow>
                     <tbody>
                         { isClass && infos && infos.stereotypes === 'featuretype' &&
                           <tr>
                               <td className="pl-0 pr-3 border-0">
-                                  <span className="align-self-center">geometry</span>
+                                  <span className="align-self-center">{ t('geometry') }</span>
                               </td>
                               <td className="pl-0 border-0 py-0" style={ { width: '100%' } }>
                                   <Input type="select"
@@ -131,7 +131,7 @@ class ModelBrowserParameters extends Component {
                         { isProperty && infos && !infos.isAttribute &&
                           <tr>
                               <td className="pl-0 pr-3 border-0">
-                                  <span className="align-self-center">isNavigable</span>
+                                  <span className="align-self-center">{ t('isNavigable') }</span>
                               </td>
                               <td className="pl-0 border-0 py-0">
                                   <span className=""><Toggle name="isNavigable"
@@ -143,7 +143,7 @@ class ModelBrowserParameters extends Component {
                         { isProperty &&
                           <tr>
                               <td className="pl-0 pr-3 border-0">
-                                  cardinality
+                                  { t('cardinality') }
                               </td>
                               <td className="pl-0 border-0" style={ { width: '100%' } }>
                                   <Form inline>

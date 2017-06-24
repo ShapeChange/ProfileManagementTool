@@ -77,7 +77,7 @@ class ModelFileImport extends Component {
     }
 
     render() {
-        const {hasImport, isImporting, importStats} = this.props;
+        const {hasImport, isImporting, importStats, t} = this.props;
 
         const percent = importStats.stats ? Math.min(isImporting ? 99 : 100, importStats.stats.progress) : 0;
 
@@ -85,7 +85,7 @@ class ModelFileImport extends Component {
             <div>
                 { hasImport && (importStats.stats
                       ? <div className="mb-3">
-                            { 'Importing ' + importStats.name }
+                            { (isImporting ? t('importing') : t('imported')) + ' ' + importStats.name }
                             <Progress color="info" value={ percent } className="my-2">
                                 { percent }%
                             </Progress>
@@ -94,7 +94,7 @@ class ModelFileImport extends Component {
                                                       color="info"
                                                       outline
                                                       onClick={ this.finishFileImport }>
-                                                      Ok
+                                                      { t('ok') }
                                                   </Button>
                                               </div> }
                         </div>
@@ -102,8 +102,8 @@ class ModelFileImport extends Component {
                             <FormGroup color={ importStats.valid ? 'success' : 'danger' } className="m-0">
                                 <FormFeedback className="mt-0 mb-1">
                                     { importStats.valid
-                                      ? 'This name is not taken yet'
-                                      : 'This name is already taken' }
+                                      ? t('nameNotTaken')
+                                      : t('nameTaken') }
                                 </FormFeedback>
                                 <Input type="text"
                                     name="newModel"
@@ -119,13 +119,15 @@ class ModelFileImport extends Component {
                                     className="mr-1"
                                     disabled={ !importStats.valid }
                                     onClick={ this.uploadFile }>
-                                    Import
+                                    { t('import') }
                                 </Button>
                                 <Button size="sm"
                                     color="danger"
                                     outline
                                     onClick={ this.cancelUpload }>
-                                    Cancel
+                                    {
+    t('cancel')
+}
                                 </Button>
                             </div>
                         </div>) }

@@ -67,7 +67,7 @@ class ModelProfileEdit extends Component {
     }
 
     render() {
-        const {profileEdit, profile, model, title, children, oldName, description} = this.props;
+        const {profileEdit, profile, model, title, children, oldName, description, t} = this.props;
         if (!profileEdit[profile])
             return <div className="truncate">
                        { children[0] }
@@ -102,7 +102,7 @@ class ModelProfileEdit extends Component {
                     <FormFeedback className="mt-0 mb-1 text-right">
                         { profileEdit[profile].valid
                           ? ''
-                          : 'This name is not valid' }
+                          : t('nameNotValid') }
                     </FormFeedback>
                 </FormGroup>
                 <div className="d-flex flex-row justify-content-end my-1">
@@ -112,14 +112,14 @@ class ModelProfileEdit extends Component {
                         className="rounded-0 ml-1 py-0"
                         disabled={ !profileEdit[profile].valid }
                         onClick={ (e) => this._confirmProfileEdit(e, profileEdit[profile]) }>
-                        { oldName ? 'Save' : 'Add' }
+                        { oldName ? t('save') : t('add') }
                     </Button>
                     <Button size="sm"
                         color="danger"
                         outline
                         className="rounded-0 ml-1 py-0"
                         onClick={ (e) => this._cancelProfileEdit(e, profile) }>
-                        Cancel
+                        { t('cancel') }
                     </Button>
                 </div>
             </div>

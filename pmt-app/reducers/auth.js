@@ -2,6 +2,7 @@ import { createAction, createActions, handleActions } from 'redux-actions';
 import update from 'immutability-helper';
 import { REHYDRATE } from 'redux-persist/constants'
 import { LOCATION_CHANGED } from 'redux-little-router';
+import i18n from '../i18n';
 
 
 // action creators
@@ -78,7 +79,9 @@ function onUserCreated(state, action) {
         signupState: {
             pending: false,
             error: false,
-            msg: `User with name '${action.payload.name}' was created successfully, proceed to login`
+            msg: i18n.t('userCreated', {
+                name: action.payload.name
+            })
         }
     }
 }
@@ -90,7 +93,7 @@ function onUserCreateError(state, action) {
         signupState: {
             pending: false,
             error: true,
-            msg: action.payload.msg
+            msg: i18n.t(action.payload.msg, action.payload)
         }
     }
 }
@@ -112,7 +115,9 @@ function onUserLogin(state, action) {
         loginState: {
             pending: false,
             error: false,
-            msg: `User with name '${action.payload.user.name}' was logged in successfully`
+            msg: i18n.t('userLoggedIn', {
+                name: action.payload.user.name
+            })
         },
         user: action.payload.user,
         token: action.payload.token
@@ -126,7 +131,7 @@ function onUserLoginError(state, action) {
         loginState: {
             pending: false,
             error: true,
-            msg: action.payload.msg
+            msg: i18n.t(action.payload.msg, action.payload)
         }
     }
 }
