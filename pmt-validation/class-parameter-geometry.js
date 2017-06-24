@@ -14,6 +14,8 @@ return through2.obj(function(obj, enc, cb) {
         return;
     }
 
+    var pr = Promise.resolve();
+
     var prfs = profile ? [profile] : obj.profiles
 
     const defaultGeometries = config.geometry;
@@ -21,13 +23,15 @@ return through2.obj(function(obj, enc, cb) {
     if (obj.taggedValues && obj.taggedValues.geometry) {
 
         if (!containsGeometries(defaultGeometries, obj.taggedValues.geometry.split(','))) {
-            prfs.forEach(prf => {
-                errorWriter.appendError(obj.model, prf, {
-                    _id: obj.localId,
-                    name: obj.name,
-                    taggedValueGeometry: obj.taggedValues.geometry,
-                    defaultGeometries: defaultGeometries.join(','),
-                    msg: 'taggedValueGeometryInvalid'
+            pr = pr.then(() => {
+                return Promise.map(prfs, prf => {
+                    return errorWriter.appendError(obj.model, prf, {
+                        _id: obj.localId,
+                        name: obj.name,
+                        taggedValueGeometry: obj.taggedValues.geometry,
+                        defaultGeometries: defaultGeometries.join(','),
+                        msg: 'taggedValueGeometryInvalid'
+                    })
                 })
             });
         }
@@ -39,23 +43,29 @@ return through2.obj(function(obj, enc, cb) {
         geometries = _mergeGeometries(geometries, obj.taggedValues.geometry.split(','))
     }
 
-    prfs.forEach(prf => {
-        if (obj.profiles.indexOf(prf) > -1 && obj.profileParameters && obj.profileParameters[prf] && obj.profileParameters[prf].geometry) {
+    pr = pr.then(() => {
+        return Promise.map(prfs, prf => {
+            if (obj.profiles.indexOf(prf) > -1 && obj.profileParameters && obj.profileParameters[prf] && obj.profileParameters[prf].geometry) {
 
-            if (!containsGeometries(geometries, obj.profileParameters[prf].geometry.split(','))) {
-                errorWriter.appendError(obj.model, prf, {
-                    _id: obj.localId,
-                    name: obj.name,
-                    parameterGeometry: obj.profileParameters[prf].geometry,
-                    taggedValueGeometry: obj.taggedValues.geometry,
-                    defaultGeometries: defaultGeometries.join(','),
-                    msg: 'parameterGeometryInvalid'
-                })
+                if (!containsGeometries(geometries, obj.profileParameters[prf].geometry.split(','))) {
+                    return errorWriter.appendError(obj.model, prf, {
+                        _id: obj.localId,
+                        name: obj.name,
+                        parameterGeometry: obj.profileParameters[prf].geometry,
+                        taggedValueGeometry: obj.taggedValues.geometry,
+                        defaultGeometries: defaultGeometries.join(','),
+                        msg: 'parameterGeometryInvalid'
+                    })
+                }
             }
-        }
+        })
     });
 
-    cb(null, obj);
+    pr.then(function() {
+        cb(null, obj);
+    }).catch(function() {
+        cb(null, obj);
+    })
 });
 
 }

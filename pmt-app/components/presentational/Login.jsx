@@ -11,7 +11,8 @@ class Login extends Component {
 
         this.state = {
             loginName: '',
-            signupName: ''
+            signupName: '',
+            signupValid: true
         };
     }
 
@@ -19,10 +20,20 @@ class Login extends Component {
         const value = e.target.type === 'checkbox' ? e.target.checked : (e.option ? e.option.value : e.target.value);
         const name = e.target.name;
 
-        //TODO: validate
-
-        this.setState({
+        const newState = {
             [name]: value
+        }
+
+        //TODO: validate
+        if (name === 'signupName')
+            newState.signupValid = value && value.length >= 2
+
+        this.setState(newState);
+    }
+
+    _validate = (e) => {
+        this.setState({
+            signupValid: this.state.signupName && this.state.signupName.length >= 2
         });
     }
 
@@ -51,13 +62,16 @@ class Login extends Component {
             e.stopPropagation();
         }
 
-        createUser({
-            name: this.state.signupName
-        })
+        if (this.state.signupValid) {
+            createUser({
+                name: this.state.signupName
+            })
 
-        this.setState({
-            signupName: ''
-        });
+            this.setState({
+                signupName: '',
+                signupValid: true
+            });
+        }
     }
 
     render() {
@@ -104,7 +118,7 @@ class Login extends Component {
                             </CardHeader>
                             <CardBlock className="pb-5 h-100">
                                 <Form onSubmit={ this._signup } className="h-100 d-flex flex-column justify-content-between">
-                                    <FormGroup color={ signupState.error ? 'danger' : signupState.msg ? 'success' : 'default' }>
+                                    <FormGroup color={ (signupState.error || !this.state.signupValid) ? 'danger' : signupState.msg ? 'success' : 'default' }>
                                         <p className="text-muted">
                                             { t('register') }
                                         </p>
@@ -116,14 +130,18 @@ class Login extends Component {
                                                 value={ this.state.signupName }
                                                 placeholder={ t('newUsername') }
                                                 className="rounded-0"
-                                                state={ signupState.error ? 'danger' : '' }
-                                                onChange={ this._handleInputChange } />
+                                                state={ (signupState.error || !this.state.signupValid) ? 'danger' : '' }
+                                                onChange={ this._handleInputChange }
+                                                onFocus={ this._validate } />
                                         </InputGroup>
                                         <FormFeedback>
                                             { signupState.msg || <span><br/><br/></span> }
                                         </FormFeedback>
                                     </FormGroup>
-                                    <Button type="submit" color="secondary" className="rounded-0">
+                                    <Button type="submit"
+                                        color="secondary"
+                                        className="rounded-0"
+                                        disabled={ !this.state.signupValid || this.state.signupName === '' }>
                                         { t('signUp') }
                                     </Button>
                                 </Form>

@@ -14,14 +14,16 @@ return through2.obj(function(obj, enc, cb) {
         return;
     }
 
+    var pr = Promise.resolve();
+
     if (obj.properties) {
         obj.properties.forEach(prp => {
             var prfs = profile ? (prp.profiles.indexOf(profile) > -1 ? [profile] : []) : prp.profiles
-            prfs.forEach(prf => {
+            pr = Promise.map(prfs, prf => {
                 if (prp.profiles.indexOf(prf) > -1 && prp.profileParameters[prf] && prp.profileParameters[prf].multiplicity) {
 
                     if (!containsCardinality(parseCardinality(prp.cardinality), parseCardinality(prp.profileParameters[prf].multiplicity))) {
-                        errorWriter.appendError(obj.model, prf, {
+                        return errorWriter.appendError(obj.model, prf, {
                             _id: obj.localId,
                             prpId: prp._id,
                             prpName: prp.name,
@@ -36,7 +38,11 @@ return through2.obj(function(obj, enc, cb) {
         })
     }
 
-    cb(null, obj);
+    pr.then(function() {
+        cb(null, obj);
+    }).catch(function() {
+        cb(null, obj);
+    })
 });
 
 }

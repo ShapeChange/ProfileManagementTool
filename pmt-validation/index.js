@@ -16,7 +16,7 @@ var multipipe = require('multipipe');
 var requireAll = require('require-all');
 var writer = require('flush-write-stream')
 
-exports.createStream = function(config, modelReader, errorWriter, profile, onFinish) {
+exports.createStream = function(config, modelReader, errorWriter, profile, onFinish, onCount) {
 
 var tests = requireAll({
     dirname: __dirname,
@@ -37,18 +37,26 @@ var init = through2.obj(function(obj, enc, cb) {
 
     var prfs = profile ? [profile] : obj.profiles
 
-    prfs.forEach(prf => {
-        errorWriter.clearErrors(obj.localId, obj.model, prf);
+    Promise.map(prfs, prf => {
+        return errorWriter.clearErrors(obj.localId, obj.model, prf);
     })
-
-    cb(null, obj);
+        .then(function() {
+            cb(null, obj);
+        })
+        .catch(function() {
+            cb(null, obj);
+        })
 });
 
 testArray.unshift(init);
 
 var start = Date.now()
+var count = 0;
 
 var deadend = writer.obj(function(obj, enc, cb) {
+    if (onCount)
+        onCount(++count);
+    console.log(count)
     cb();
 }, function(cb) {
     if (onFinish)

@@ -68,6 +68,8 @@ return through2.obj(function(obj, enc, cb) {
     }
     pr.then(function() {
         cb(null, obj);
+    }).catch(function() {
+        cb(null, obj);
     })
 
 });

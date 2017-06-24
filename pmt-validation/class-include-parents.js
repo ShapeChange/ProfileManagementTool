@@ -31,11 +31,11 @@ return through2.obj(function(obj, enc, cb) {
 
             var prfs = profile ? [profile] : obj.profiles
 
-            prfs.forEach(function(prf) {
-                classes.forEach(function(cls) {
+            return Promise.map(prfs, prf => {
+                return Promise.map(classes, cls => {
                     if (cls.localId !== obj.localId) {
                         if (!cls.profiles || cls.profiles.indexOf(prf) === -1) {
-                            errorWriter.appendError(obj.model, prf, {
+                            return errorWriter.appendError(obj.model, prf, {
                                 _id: obj.localId,
                                 name: obj.name,
                                 clsName: cls.name,
@@ -45,7 +45,11 @@ return through2.obj(function(obj, enc, cb) {
                     }
                 })
             })
-
+        })
+        .then(function() {
+            cb(null, obj);
+        })
+        .catch(function() {
             cb(null, obj);
         })
 });

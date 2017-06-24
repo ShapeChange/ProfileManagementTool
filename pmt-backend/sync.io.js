@@ -292,9 +292,22 @@ function importFile(socket, user, file) {
 
                 var checks = validator.createStream(cfg.get('app'), db.getModelReader(), db.getProfileWriter(), null, function() {
                     resolve(stats);
+                }, function(count) {
+                    var newProgress = Math.round((count / stats.classes) * 50) + 50;
+
+                    if (newProgress > progress) {
+                        progress = newProgress;
+
+                        socket.emit('action', {
+                            type: 'file/import/stats',
+                            payload: {
+                                progress: progress
+                            }
+                        });
+                    }
                 });
 
-                written = 0;
+                /*written = 0;
                 var logger = through2.obj(function(obj, enc, cb) {
                     written++;
 
@@ -312,11 +325,11 @@ function importFile(socket, user, file) {
                     }
 
                     cb(null, obj);
-                });
+                });*/
 
                 db.getClasses(stats.model)
                     .then(function(cursor) {
-                        cursor.pipe(logger).pipe(checks)
+                        cursor.pipe(checks)
                     })
             });
         })

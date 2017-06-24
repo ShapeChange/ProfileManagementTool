@@ -14,14 +14,16 @@ return through2.obj(function(obj, enc, cb) {
         return;
     }
 
+    var pr = Promise.resolve();
+
     var prfs = profile ? [profile] : obj.profiles
 
     if (obj.properties) {
-        obj.properties.forEach(prp => {
+        pr = Promise.map(obj.properties, prp => {
             if (!prp.optional) {
-                prfs.forEach(prf => {
+                return Promise.map(prfs, prf => {
                     if (!prp.profiles || prp.profiles.indexOf(prf) === -1) {
-                        errorWriter.appendError(obj.model, prf, {
+                        return errorWriter.appendError(obj.model, prf, {
                             _id: obj.localId,
                             prpId: prp._id,
                             prpName: prp.name,
@@ -34,7 +36,11 @@ return through2.obj(function(obj, enc, cb) {
         })
     }
 
-    cb(null, obj);
+    pr.then(function() {
+        cb(null, obj);
+    }).catch(function() {
+        cb(null, obj);
+    })
 });
 
 }
