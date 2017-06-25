@@ -13,7 +13,7 @@
         "prod": "NODE_ENV=production node dist/server.js",
         "installTest": "cd pmt-data-access && npm install && cd .. && cd pmt-io && npm install && cd .. && cd pmt-validation && npm install",
         "test": "mocha --recursive ./pmt-io/test ./pmt-data-access/test ./pmt-validation/test",
-        "win": "cd dist && npmAddScript -k preinstall -v \"stop-service && uninstall-service\" -f && npmAddScript -k postinstall -v \"install-service && start-service\" -f && npe dependencies.pmt-io \"\" && npe dependencies.pmt-validation \"\" && bundled-dependencies"
+        "win": "cd dist && npmAddScript -k preinstall -v \"stop-service && uninstall-service\" -f && npmAddScript -k postinstall -v \"install-service && start-service\" -f && bundled-dependencies && rm npm-shrinkwrap.json"
     },
     "author": "interactive instruments GmbH",
     "license": "GPL-3.0",
