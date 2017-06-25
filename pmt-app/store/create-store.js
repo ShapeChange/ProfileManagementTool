@@ -46,7 +46,7 @@ export default function(routes, data) {
         transforms: [
             createFilter(
                 'app',
-                ['useThreePaneView', 'useSmallerFont', 'menuOpen', 'flattenInheritance', 'flattenOninas']
+                ['useThreePaneView', 'useSmallerFont', 'menuOpen', 'flattenInheritance', 'flattenOninas', 'busy']
             )
         ]
     }, () => {

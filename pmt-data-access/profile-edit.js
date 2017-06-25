@@ -29,12 +29,40 @@ function getEditableUpdatesForPackage(id, modelId, editable, recursive) {
     if (recursive) {
         var updates2 = modelReader.getPackageGraph(id, modelId)
             .then(function(pkgs) {
-                return Promise.map(pkgs, function(pkg) {
+                var updatesPkg = Promise.mapSeries(pkgs, function(pkg) {
                     return profileWriter.putPackageUpdate(pkg._id, modelId, {
                         $set: {
                             editable: editable
                         }
                     })
+                })
+
+                var updatesClass = Promise.mapSeries(pkgs, function(pkg) {
+                    return modelReader.getClassesForPackage(pkg._id, modelId)
+                        .then(function(classes) {
+                            console.log('EDIT', pkg._id, classes.length, process.memoryUsage().heapUsed);
+                            return Promise.mapSeries(classes, function(cls) {
+                                return profileWriter.putClassUpdate(cls.localId, modelId, {
+                                    $set: {
+                                        editable: editable
+                                    }
+                                })
+                            })
+                        })
+                        .then(function(classes) {
+                            console.log('EDITED', pkg._id, classes.length, process.memoryUsage().heapUsed);
+                            return classes
+                        })
+                })
+
+                return Promise.join(updatesPkg, updatesClass, function(updates1, updates2) {
+                    console.log('MERGE', updates1.length, updates2.length);
+                    var updates3 = updates2.reduce(function(joined, item) {
+                        return joined.concat(item);
+                    }, [])
+
+                    console.log('MERGE', updates1.length, updates2.length, updates3.length);
+                    return updates1.concat(updates3);
                 })
             })
 
@@ -43,22 +71,24 @@ function getEditableUpdatesForPackage(id, modelId, editable, recursive) {
         })
     }
 
+    return updates
 
-    return modelReader.getClassesForPackage(id, modelId, recursive)
-        .then(function(classes) {
-            console.log('EDIT', classes);
-            var updatesClass = Promise.map(classes, function(cls) {
-                return profileWriter.putClassUpdate(cls.localId, modelId, {
-                    $set: {
-                        editable: editable
-                    }
-                })
-            })
 
-            return Promise.join(updates, updatesClass, function(updates1, updates2) {
-                return updates1.concat(updates2);
+/*return modelReader.getClassesForPackage(id, modelId, recursive)
+    .then(function(classes) {
+        console.log('EDIT', classes);
+        var updatesClass = Promise.map(classes, function(cls) {
+            return profileWriter.putClassUpdate(cls.localId, modelId, {
+                $set: {
+                    editable: editable
+                }
             })
         })
+
+        return Promise.join(updates, updatesClass, function(updates1, updates2) {
+            return updates1.concat(updates2);
+        })
+    })*/
 }
 
 function getProfileParameterUpdates(clsId, prpId, modelId, profile, parameter) {
@@ -207,9 +237,38 @@ function getProfileUpdatesForPackage(id, modelId, profile, include, onlyMandator
         }
     };
 
-    return modelReader.getClassesForPackage(id, modelId, recursive, !include, {
+    var filter = {
         editable: true
-    })
+    }
+    var pr;
+
+    if (recursive) {
+        pr = modelReader.getPackageGraph(id, modelId)
+            .then(function(pkgs) {
+                return Promise.mapSeries(pkgs, function(pkg) {
+                    return modelReader.getClassesForPackage(pkg._id, modelId, false, !include, filter)
+                })
+            })
+            .then(function(classes) {
+                return classes.reduce(function(joined, item) {
+                    return joined.concat(item);
+                }, [])
+            })
+            .then(function(clss) {
+                const ids = [];
+                return clss.filter(function(cls) {
+                    if (ids.indexOf(cls._id.toHexString()) === -1) {
+                        ids.push(cls._id.toHexString())
+                        return true
+                    }
+                    return false
+                });
+            })
+    } else {
+        pr = modelReader.getClassesForPackage(id, modelId, recursive, !include, filter)
+    }
+
+    return pr
         .then(function(classes) {
             var classIds = classes.map(function(cls) {
                 return cls.localId;
@@ -327,7 +386,7 @@ function buildClassUpdate(cls, modelId, profile, include, propertyHandler, prope
 }
 
 function buildClassesUpdate(classes, modelId, profile, include, propertyHandler, propertyFilter, visitedClassIds, projection) {
-    var updates = Promise.map(classes, function(cls) {
+    var updates = Promise.mapSeries(classes, function(cls) {
         /*var update = include ? {
             $addToSet: {
                 profiles: profile

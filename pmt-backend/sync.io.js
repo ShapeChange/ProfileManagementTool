@@ -91,6 +91,7 @@ function dispatch(io, socket, action) {
                         user.socket = io.to(user.name)
                         actions[action.type](socket, user, action.payload)
                             .catch(function(error) {
+                                console.log('ERROR', error);
                                 socket.emit('action', {
                                     type: 'server/error',
                                     payload: error
@@ -181,7 +182,7 @@ function updateEditable(socket, user, update) {
             .then(function(updatedClasses) {
                 socket.emit('action', {
                     type: 'editable/new',
-                    payload: updatedClasses
+                    payload: updatedClasses.filter(elem => elem.type === 'pkg' || elem.parent == update.id)
                 });
 
                 return db.getModel(update.modelId, user._id)

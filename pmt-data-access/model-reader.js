@@ -105,6 +105,12 @@ function getClassesForPackageGraph(id, modelId, projection, filter = {}) {
             },
             {
                 $project: {
+                    element: 0,
+                    'items.element': 0
+                }
+            },
+            {
+                $project: {
                     items: {
                         $filter: {
                             input: "$elems",
@@ -151,6 +157,12 @@ function getPackageGraph(id, modelId, projection) {
                         model: ObjectID(modelId),
                         type: 'pkg'
                     }
+                }
+            },
+            {
+                $project: {
+                    element: 0,
+                    'items.element': 0
                 }
             },
             {

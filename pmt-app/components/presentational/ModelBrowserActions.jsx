@@ -10,7 +10,7 @@ import TooltipIcon from '../common/TooltipIcon'
 class ModelBrowserActions extends Component {
 
     render() {
-        const {_id, name, type, optional, infos, pkg, cls, profiles, profileParameters, selectedProfile, updateProfile, updateProfileForChildren, updateEditable, updateEditableForChildren, updateProfileParameter, isFlattenInheritance, t} = this.props;
+        const {_id, name, type, optional, infos, pkg, cls, profiles, profileParameters, selectedProfile, updateProfile, updateProfileForChildren, updateEditable, updateEditableForChildren, updateProfileParameter, isFlattenInheritance, busy, t} = this.props;
 
         const isPackage = type === 'pkg'
         const isClass = type === 'cls'
@@ -23,7 +23,7 @@ class ModelBrowserActions extends Component {
                     { (isClass || isProperty) &&
                       <Toggle name="includeSelf"
                           checked={ profiles.indexOf(selectedProfile) > -1 }
-                          disabled={ !editable || (type === 'prp' && cls.profiles.indexOf(selectedProfile) === -1) || (type === 'prp' && !optional) }
+                          disabled={ !editable || busy || (type === 'prp' && cls.profiles.indexOf(selectedProfile) === -1) || (type === 'prp' && !optional) }
                           onToggle={ e => updateProfile(this.props) }
                           size="2x">
                           <span className={ `align-self-center ${profiles.indexOf(selectedProfile) > -1 && 'font-weight-bold'} ${!editable && 'text-muted'}` }><span className="font-italic">{ name }</span>
@@ -33,6 +33,7 @@ class ModelBrowserActions extends Component {
                     { isPackage &&
                       <Toggle name="editableSelf"
                           checked={ editable }
+                          disabled={ busy }
                           onToggle={ e => updateEditable(this.props) }
                           size="2x">
                           <span className="align-self-center"><span className="font-italic">{ name }</span>
@@ -51,7 +52,7 @@ class ModelBrowserActions extends Component {
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
-                              disabled={ !editable }
+                              disabled={ !editable || busy }
                               onClick={ e => updateProfileForChildren(this.props, true, true, false) }>
                               { t('apply') }
                           </Button>
@@ -61,7 +62,7 @@ class ModelBrowserActions extends Component {
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
-                              disabled={ !editable }
+                              disabled={ !editable || busy }
                               onClick={ e => updateProfileForChildren(this.props, true, false, false) }>
                               { t('apply') }
                           </Button>
@@ -71,7 +72,7 @@ class ModelBrowserActions extends Component {
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
-                              disabled={ !editable }
+                              disabled={ !editable || busy }
                               onClick={ e => updateProfileForChildren(this.props, true, true, true) }>
                               { t('apply') }
                           </Button>
@@ -81,7 +82,7 @@ class ModelBrowserActions extends Component {
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
-                              disabled={ !editable }
+                              disabled={ !editable || busy }
                               onClick={ e => updateProfileForChildren(this.props, true, false, true) }>
                               { t('apply') }
                           </Button>
@@ -102,7 +103,7 @@ class ModelBrowserActions extends Component {
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
-                              disabled={ !editable }
+                              disabled={ !editable || busy }
                               onClick={ e => updateProfileForChildren(this.props, true, false, isFlattenInheritance) }>
                               { t('apply') }
                           </Button>
@@ -119,7 +120,7 @@ class ModelBrowserActions extends Component {
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
-                              disabled={ !editable }
+                              disabled={ !editable || busy }
                               onClick={ e => updateProfileForChildren(this.props, false, false, false) }>
                               { t('apply') }
                           </Button>
@@ -129,7 +130,7 @@ class ModelBrowserActions extends Component {
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
-                              disabled={ !editable }
+                              disabled={ !editable || busy }
                               onClick={ e => updateProfileForChildren(this.props, false, false, true) }>
                               { t('apply') }
                           </Button>
@@ -150,7 +151,7 @@ class ModelBrowserActions extends Component {
                           <Button size="sm"
                               color="primary"
                               className="ml-auto mt-auto"
-                              disabled={ !editable }
+                              disabled={ !editable || busy }
                               onClick={ e => updateProfileForChildren(this.props, false, true, isFlattenInheritance) }>
                               { t('apply') }
                           </Button>
@@ -160,7 +161,7 @@ class ModelBrowserActions extends Component {
                   <ModelBrowserParameters {...this.props}
                       isClass={ isClass }
                       isProperty={ isProperty }
-                      disabled={ !editable || (type === 'prp' && cls.profiles.indexOf(selectedProfile) === -1) } /> }
+                      disabled={ !editable || busy || (type === 'prp' && cls.profiles.indexOf(selectedProfile) === -1) } /> }
             </div>
         );
     }

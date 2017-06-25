@@ -52,7 +52,8 @@ export const actions = {
     cancelDelete: createAction('delete/cancel'),
     requestProfileEdit: createAction('profile/edit/request'),
     confirmProfileEdit: createAction('profile/edit/confirm'),
-    cancelProfileEdit: createAction('profile/edit/cancel')
+    cancelProfileEdit: createAction('profile/edit/cancel'),
+    onServerError: createAction('server/error')
 };
 
 // state
@@ -115,6 +116,7 @@ export default handleActions({
     [actions.requestProfileEdit]: requestProfileEdit,
     [actions.confirmProfileEdit]: confirmProfileEdit,
     [actions.cancelProfileEdit]: cancelProfileEdit,
+    [actions.onServerError]: onServerError,
     [modelActions.fetchModel]: increaseFilterPending,
     [modelActions.fetchPackage]: increaseFilterPending,
     [modelActions.fetchClass]: increaseFilterPending,
@@ -453,6 +455,14 @@ function updatedProfile(state, action) {
 }
 
 function updatedEditable(state, action) {
+
+    return {
+        ...state,
+        busy: false
+    }
+}
+
+function onServerError(state, action) {
 
     return {
         ...state,

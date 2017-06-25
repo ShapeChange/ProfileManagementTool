@@ -4,7 +4,7 @@ import { bindActionCreators } from 'redux';
 import { Card, CardHeader } from 'reactstrap';
 import { translate } from 'react-i18next';
 
-import { useThreePaneView, useSmallerFont, getPendingFilter, getFilter, getBrowserDisabled, isFlattenInheritance, isFlattenOninas, getAllowedGeometries, Font, View, actions } from '../../reducers/app'
+import { useThreePaneView, useSmallerFont, getPendingFilter, getFilter, getBrowserDisabled, isFlattenInheritance, isFlattenOninas, getAllowedGeometries, isBusy, Font, View, actions } from '../../reducers/app'
 import { getSelectedModel, getSelectedProfile, getSelectedPackage, getSelectedClass, getSelectedProperty, getSelectedTab, getDetails, getPackages, getPackage, getClasses, getClass, getProperties, getExpandedItems, actions as modelActions } from '../../reducers/model'
 
 import ModelBrowserPanes from '../presentational/ModelBrowserPanes'
@@ -49,7 +49,8 @@ import ModelElement from '../presentational/ModelElement'
             disabled: getBrowserDisabled(state),
             isFlattenInheritance: isFlattenInheritance(state),
             isFlattenOninas: isFlattenOninas(state),
-            allowedGeometries: getAllowedGeometries(state)
+            allowedGeometries: getAllowedGeometries(state),
+            busy: isBusy(state)
         }
     },
     (dispatch) => {
