@@ -19,6 +19,10 @@ CMD [ "node", "server.js" ]
 
 # Build outside of container
 # Install app dependencies
+COPY pmt-backend /usr/src/pmt-backend/
+COPY pmt-data-access /usr/src/pmt-data-access/
+COPY pmt-io /usr/src/pmt-io/
+COPY pmt-validation /usr/src/pmt-validation/
 COPY dist /usr/src/app/
 RUN npm --production install && \
 	npm cache clear
