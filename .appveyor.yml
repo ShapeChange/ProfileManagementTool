@@ -8,6 +8,7 @@ install:
   - ps: Install-Product node $env:nodejs_version
   # install modules
   - npm run installBuild
+  - npm run installTest
   - cd pmt-win
   - npm install
   - cd ..

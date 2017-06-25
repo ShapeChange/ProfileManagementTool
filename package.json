@@ -5,13 +5,15 @@
     "private": true,
     "main": "server.js",
     "scripts": {
+        "installDev": "npm-workspace install",
         "start": "node server.js",
         "installBuild": "npm --only=dev install && cd pmt-app && npm --only=dev install",
         "build": "webpack -p --env production --config webpack.config.production.js",
         "installProd": "cd dist && npm --production install",
         "prod": "NODE_ENV=production node dist/server.js",
-        "win": "cd dist && npmAddScript -k preinstall -v \"stop-service && uninstall-service\" -f && npmAddScript -k postinstall -v \"install-service && start-service\" -f && npe dependencies.pmt-io \"\" && npe dependencies.pmt-validation \"\" && bundled-dependencies",
-        "test": "mocha --recursive ./pmt-io/test ./pmt-data-access/test ./pmt-validation/test"
+        "installTest": "cd pmt-data-access && npm install && cd .. && cd pmt-io && npm install && cd .. && cd pmt-validation && npm install",
+        "test": "mocha --recursive ./pmt-io/test ./pmt-data-access/test ./pmt-validation/test",
+        "win": "cd dist && npmAddScript -k preinstall -v \"stop-service && uninstall-service\" -f && npmAddScript -k postinstall -v \"install-service && start-service\" -f && npe dependencies.pmt-io \"\" && npe dependencies.pmt-validation \"\" && bundled-dependencies"
     },
     "author": "interactive instruments GmbH",
     "license": "GPL-3.0",
