@@ -111,7 +111,9 @@ class SideMenu extends Component {
                                     <span className="">{ user.name }</span>
                                 </div>
                                 <div className="ml-auto">
-                                    <Link href={ '/login' } title={ t('logout') } onClick={ e => logoutUser({}) }>
+                                    <Link href={ '/login' } title={ t('logout') } onClick={ e => logoutUser({
+                                                                                                dummy: null
+                                                                                            }) }>
                                     <FontAwesome name="sign-out" size='lg' fixedWidth={ true } />
                                     </Link>
                                 </div>

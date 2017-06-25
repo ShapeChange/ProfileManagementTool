@@ -94,7 +94,7 @@ class ModelBrowserParameters extends Component {
     }
 
     render() {
-        const {isClass, isProperty, disabled, infos, profileParameters, selectedProfile, updateProfileParameter, t} = this.props;
+        const {isClass, isProperty, disabled, infos, profileParameters, selectedProfile, allowedGeometries, updateProfileParameter, t} = this.props;
 
         const multiplicity = isProperty && this._parseMultiplicity();
 
@@ -119,8 +119,7 @@ class ModelBrowserParameters extends Component {
                                       disabled={ disabled }
                                       size="sm"
                                       style={ { width: '75px', height: '150px' } }
-                                      defaultValue={ ['P', 'C', 'S', 'So', 'MP', 'MC', 'MS', 'MSo'] }
-                                      value={ profileParameters[selectedProfile] && profileParameters[selectedProfile].geometry }
+                                      value={ (profileParameters[selectedProfile] && profileParameters[selectedProfile].geometry) || allowedGeometries }
                                       onChange={ e => updateProfileParameter(this.props, 'geometry', [...e.target.selectedOptions].map(o => o.value)) }>
                                   { geometries.map(g => <option key={ g }>
                                                             { g }

@@ -22,12 +22,12 @@ export default function(routes, data) {
     const socketIoMiddleware = createSyncIoMiddleware();
     //const reduxRouterMiddleware = routerMiddleware(history)
 
-    const initMiddleware = createActionBuffer(appActions.initApp);
+    const initMiddleware = createActionBuffer(appActions.initApp.toString());
 
     // Be sure to ONLY add this middleware in development!
     const middleware = process.env.NODE_ENV !== 'production' ?
-        [require('redux-immutable-state-invariant').default(), socketIoMiddleware, routerMiddleware] :
-        [socketIoMiddleware, routerMiddleware];
+        [require('redux-immutable-state-invariant').default(), socketIoMiddleware, routerMiddleware, initMiddleware] :
+        [socketIoMiddleware, routerMiddleware, initMiddleware];
 
     const store = createStore(
         reducer,
@@ -53,7 +53,11 @@ export default function(routes, data) {
         // ...after creating your store
         const initialLocation = store.getState().router;
         if (initialLocation) {
-            store.dispatch(initializeCurrentLocation(initialLocation));
+            //TODO
+            setTimeout(function() {
+                store.dispatch(initializeCurrentLocation(initialLocation));
+            }, 500)
+
         }
     });
 

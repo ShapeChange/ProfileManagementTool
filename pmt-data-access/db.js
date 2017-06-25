@@ -911,13 +911,14 @@ return updateModel(modelId, update)
     })
 }
 
-exports.addProfile = function(id, modelId) {
+exports.addProfile = function(id, description, modelId, errors) {
 var update = {
     $set: {
         ['profilesInfo.' + id]: {
             _id: id,
             name: id,
-            errors: []
+            description: description,
+            errors: errors || []
         }
     }
 }
@@ -929,10 +930,98 @@ return updateModel(modelId, update)
     })
 }
 
-exports.renameProfile = function(id, name, modelId) {
+
+
+exports.copyProfile = function(newProfile, description, modelId, copyFrom, errors) {
+
+return exports.addProfile(newProfile, description, modelId, errors)
+    .then(function(mdl) {
+        var cursor = model
+            .find({
+                model: ObjectID(modelId),
+                $or: [
+                    {
+                        profiles: copyFrom
+                    },
+                    {
+                        'properties.profiles': copyFrom
+                    }
+                ]
+            })
+            .project({
+                "profiles": 1,
+                "properties.profiles": 1,
+                ["profileParameters." + copyFrom]: 1,
+                ["properties.profileParameters." + copyFrom]: 1
+            })
+
+        var requests = [];
+
+        return new Promise(function(resolve, reject) {
+            cursor.forEach(function(doc) {
+                var update = {
+                    profiles: newProfile
+                }
+                var updateSet = {};
+                if (doc.profileParameters && doc.profileParameters[copyFrom])
+                    updateSet['profileParameters.' + newProfile] = doc.profileParameters[copyFrom];
+
+                doc.properties.reduce(function(upd, prp, i) {
+                    if (prp.profiles.indexOf(copyFrom) > -1) {
+                        upd['properties.' + i + '.profiles'] = newProfile
+                    }
+                    if (prp.profileParameters && prp.profileParameters[copyFrom])
+                        updateSet['properties.' + i + '.profileParameters.' + newProfile] = prp.profileParameters[copyFrom]
+                    return upd;
+                }, update)
+
+                requests.push({
+                    'updateOne': {
+                        'filter': {
+                            '_id': ObjectID(doc._id)
+                        },
+                        'update': {
+                            '$addToSet': update
+                        }
+                    }
+                });
+                if (Object.keys(updateSet).length) {
+                    requests.push({
+                        'updateOne': {
+                            'filter': {
+                                '_id': ObjectID(doc._id)
+                            },
+                            'update': {
+                                '$set': updateSet
+                            }
+                        }
+                    });
+                }
+
+                if (requests.length === 500) {
+                    //Execute per 500 operations and re-init
+                    model.bulkWrite(requests)
+                    requests = [];
+                }
+
+            }, function(err) {
+                if (requests.length > 0) {
+                    model.bulkWrite(requests)
+                }
+                if (err)
+                    reject(err);
+                else
+                    resolve(mdl);
+            });
+        })
+    })
+}
+
+exports.renameProfile = function(id, name, description, modelId) {
 var update = {
     $set: {
-        ['profilesInfo.' + id + '.name']: name
+        ['profilesInfo.' + id + '.name']: name,
+        ['profilesInfo.' + id + '.description']: description
     }
 }
 

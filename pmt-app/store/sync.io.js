@@ -47,10 +47,12 @@ function conditionalExecute(action, emitOrig, next, store, socket) {
         token = getToken(store.getState());
 
         if (!token && action.type !== authActions.logoutUser.toString()) {
-            if (action.type === LOCATION_CHANGED)
+            if (action.type === LOCATION_CHANGED) {
                 store.dispatch(authActions.setLastPath({
                     pathname: action.payload.pathname
                 }))
+                console.log(action)
+            }
 
             return next(push('/login'))
         }

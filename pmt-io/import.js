@@ -81,6 +81,7 @@ function parseOptions(options, modelName) {
 function createXmlTransformer(outStream, options) {
 
     var profiles = []
+    var profileInfos = {}
     var profile = []
 
     var tags = {
@@ -108,15 +109,28 @@ function createXmlTransformer(outStream, options) {
 
 
     xmlStream.on(tags.Profile, function(profile) {
-        //console.log(profile);
 
-        if (profiles.indexOf(profile.attributes.name) === -1) {
-            profiles.push(profile.attributes.name);
+        if (profile.attributes.name) {
+            if (profiles.indexOf(profile.attributes.name) === -1) {
+                profiles.push(profile.attributes.name);
+            }
+        } else if (profile.children.length === 2) {
+            console.log(profile);
+            var name = profile.children.find(function(child) {
+                return child.name === 'sc:name'
+            })
+            var description = profile.children.find(function(child) {
+                return child.name === 'sc:description'
+            })
+            if (name && description && name.children[0] && description.children[0]) {
+                console.log(name.children[0]);
+                profileInfos[name.children[0].value] = description.children[0].value;
+            }
         }
     });
 
     xmlStream.on(tags.Model, function(node) {
-        parseModel(outStream, node, options, profiles);
+        parseModel(outStream, node, options, profiles, profileInfos);
     });
 
     xmlStream.on(tags.Package, function(node) {
@@ -191,7 +205,7 @@ function createXmlTransformer(outStream, options) {
 
 
 
-function parseModel(outStream, node, options, profiles) {
+function parseModel(outStream, node, options, profiles, profileInfos) {
     var model = {
         _id: options.modelId,
         name: options.modelName,
@@ -202,6 +216,7 @@ function parseModel(outStream, node, options, profiles) {
             obj[prf] = {
                 _id: prf,
                 name: prf,
+                description: profileInfos[prf] || '',
                 errors: []
             }
             return obj

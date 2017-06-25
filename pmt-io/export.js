@@ -26,6 +26,7 @@ var toXml = through2({
     }
 
     if (obj && obj.type) {
+        profileInfosToElem(obj, opts.profiles);
         writer.print(obj).then(function() {
             opts.stats.duration = Date.now() - start;
             cb();
@@ -193,4 +194,60 @@ function parseOptions(options, modelId) {
         },
         stats: stats
     });
+}
+
+function profileInfosToElem(model, profilesInfo) {
+    var globalProfileInfos = {
+        name: 'sc:globalProfileInfos',
+        type: 'element',
+        value: '',
+        attributes: {},
+        children: Object.keys(profilesInfo).map(function(prf) {
+            return profileInfoToElem(profilesInfo[prf])
+        })
+    }
+
+    var i = model.children.findIndex(function(child) {
+        return child.name === 'sc:globalProfileInfos'
+    })
+
+    if (i > -1) {
+        model.children[i] = globalProfileInfos
+    } else {
+        model.children.unshift(globalProfileInfos)
+    }
+}
+
+function profileInfoToElem(profile) {
+    return {
+        name: 'sc:Profile',
+        type: 'element',
+        value: '',
+        attributes: {},
+        children: [{
+            name: 'sc:name',
+            type: 'element',
+            value: '',
+            attributes: {},
+            children: [{
+                name: '',
+                type: 'text',
+                value: profile.name,
+                attributes: {},
+                children: []
+            }]
+        }, {
+            name: 'sc:description',
+            type: 'element',
+            value: '',
+            attributes: {},
+            children: [{
+                name: '',
+                type: 'text',
+                value: profile.description,
+                attributes: {},
+                children: []
+            }]
+        }]
+    }
 }

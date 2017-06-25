@@ -97,7 +97,8 @@ function dispatch(io, socket, action) {
                                 });
                             });
                     })
-                    .catch(function() {
+                    .catch(function(err) {
+                        console.log('ERROR', err);
                         logout(socket);
                     })
             } else {
@@ -138,7 +139,10 @@ function logout(socket, user) {
         .then(function() {
             if (!user) {
                 socket.emit('action', {
-                    type: 'user/logout'
+                    type: 'user/logout',
+                    payload: {
+                        dummy: null
+                    }
                 });
             }
         })
@@ -306,26 +310,6 @@ function importFile(socket, user, file) {
                         });
                     }
                 });
-
-                /*written = 0;
-                var logger = through2.obj(function(obj, enc, cb) {
-                    written++;
-
-                    var newProgress = Math.round((written / stats.classes) * 50) + 50;
-
-                    if (newProgress > progress) {
-                        progress = newProgress;
-
-                        socket.emit('action', {
-                            type: 'file/import/stats',
-                            payload: {
-                                progress: progress
-                            }
-                        });
-                    }
-
-                    cb(null, obj);
-                });*/
 
                 db.getClasses(stats.model)
                     .then(function(cursor) {
@@ -554,9 +538,12 @@ function addOrRenameProfile(socket, user, payload) {
     var pr = Promise.resolve();
 
     if (!payload.oldName) {
-        pr = db.addProfile(payload.name, payload.model)
+        if (payload.copyFrom)
+            pr = db.copyProfile(payload.name, payload.description, payload.model, payload.copyFrom, payload.errors)
+        else
+            pr = db.addProfile(payload.name, payload.description, payload.model)
     } else {
-        pr = db.renameProfile(payload.oldName, payload.name, payload.model)
+        pr = db.renameProfile(payload.oldName, payload.name, payload.description, payload.model)
     }
 
     if (payload.fetch) {

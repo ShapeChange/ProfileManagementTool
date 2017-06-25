@@ -2,27 +2,31 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
 import { Button, Form, FormGroup, FormFeedback, Label, Input, Progress } from 'reactstrap';
+import FontAwesome from 'react-fontawesome';
+
 import TooltipIcon from '../common/TooltipIcon'
 
 
 class ModelProfileEdit extends Component {
 
-    _changeName = (e, profile, model) => {
-        const {requestProfileEdit, fetch, oldName, user} = this.props;
+    _changeName = (e, profile, model, other, isDescription) => {
+        const {profileEdit, requestProfileEdit, fetch, oldName, user} = this.props;
 
         if (e && e.target) {
-            const name = e.target.value;
+            const name = isDescription ? other : e.target.value;
+            const description = isDescription ? e.target.value : other;
             const profiles = Object.keys(model.profilesInfo).concat(Object.values(model.profilesInfo).map(p => p.name))
 
-            requestProfileEdit({
+            requestProfileEdit(Object.assign({}, profileEdit[profile], {
                 _id: profile,
                 name: name,
-                model: model._id,
-                valid: this._isNameValid(name, profiles, oldName),
+                description: description,
                 oldName: oldName,
+                valid: this._isNameValid(name, profiles, oldName),
+                model: model._id,
                 owner: user._id,
                 fetch: fetch
-            });
+            }));
         }
     }
 
@@ -55,7 +59,9 @@ class ModelProfileEdit extends Component {
     _confirmProfileEdit = (e, profileEdit) => {
         const {confirmProfileEdit} = this.props;
 
-        confirmProfileEdit(profileEdit);
+        confirmProfileEdit({
+            ...profileEdit
+        });
     }
 
     _cancelProfileEdit = (e, profile) => {
@@ -67,16 +73,16 @@ class ModelProfileEdit extends Component {
     }
 
     render() {
-        const {profileEdit, profile, model, title, children, oldName, description, t} = this.props;
+        const {profileEdit, profile, model, title, children, oldName, description, t, indent} = this.props;
         if (!profileEdit[profile])
             return <div className="truncate">
-                       { children[0] }
+                       { indent }
                        { !oldName
                          ? <a href="" onClick={ (e) => this._requestProfileEdit(e, profile) }>
-                               { children[1] }
+                               { children }
                                { title }
                            </a>
-                         : <span className="truncate">{ children[1] } <span className="truncate">{ title }</span>
+                         : <span className="truncate">{ children } <span className="truncate">{ title }</span>
                            { description && <TooltipIcon id={ `${profile}-type-info` }
                                                 className="ml-2"
                                                 placement="bottom"
@@ -90,6 +96,7 @@ class ModelProfileEdit extends Component {
             <div>
                 <FormGroup color={ profileEdit[profile].valid ? 'success' : 'danger' } className="m-0">
                     <div className="d-flex flex-row align-items-center">
+                        { indent }
                         { children }
                         <Input type="text"
                             name="newModel"
@@ -97,7 +104,7 @@ class ModelProfileEdit extends Component {
                             state={ profileEdit[profile].valid ? 'success' : 'danger' }
                             className="sidemenu-active p-1 rounded-0"
                             autoFocus
-                            onChange={ (e) => this._changeName(e, profile, model) } />
+                            onChange={ (e) => this._changeName(e, profile, model, profileEdit[profile].description) } />
                     </div>
                     <FormFeedback className="mt-0 mb-1 text-right">
                         { profileEdit[profile].valid
@@ -105,6 +112,16 @@ class ModelProfileEdit extends Component {
                           : t('nameNotValid') }
                     </FormFeedback>
                 </FormGroup>
+                <div className="d-flex flex-row align-items-center">
+                    { indent }
+                    <FontAwesome name="info-circle" fixedWidth={ true } className="mr-1" />
+                    <Input type="textarea"
+                        name="description"
+                        value={ profileEdit[profile].description }
+                        placeholder="description"
+                        className="sidemenu-active p-1 rounded-0"
+                        onChange={ (e) => this._changeName(e, profile, model, profileEdit[profile].name, true) } />
+                </div>
                 <div className="d-flex flex-row justify-content-end my-1">
                     <Button size="sm"
                         color="info"

@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Navbar as BSNavbar, NavbarBrand, Container, Button, Badge, Popover, PopoverTitle, PopoverContent, ListGroup, ListGroupItem } from 'reactstrap';
 import { Link } from 'redux-little-router';
 import FontAwesome from 'react-fontawesome';
+import TooltipIcon from '../common/TooltipIcon'
 
 
 class Navbar extends Component {
@@ -41,6 +42,12 @@ class Navbar extends Component {
                 { model && profile && <div className="navbar-text px-3">
                                           <FontAwesome name="id-card" className="pr-2" />
                                           <span>{ model.profilesInfo[profile].name }</span>
+                                          { model.profilesInfo[profile].description && <TooltipIcon id={ `${profile}-description` }
+                                                                                           className="ml-2"
+                                                                                           placement="bottom"
+                                                                                           icon="info-circle">
+                                                                                           { model.profilesInfo[profile].description }
+                                                                                       </TooltipIcon> }
                                       </div> }
                 { model && profile && <div className="navbar-text ml-auto">
                                           { busy ? <FontAwesome name="spinner" pulse />

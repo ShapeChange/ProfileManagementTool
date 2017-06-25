@@ -75,7 +75,7 @@ class ModelFileBrowser extends Component {
         cancelDelete(id);
     }
 
-    _requestProfileEdit = (e, profile, name) => {
+    _requestProfileEdit = (e, profile, name, prfId, description, copyFrom, model, fetch) => {
         const {requestProfileEdit} = this.props;
 
         if (e) {
@@ -86,8 +86,13 @@ class ModelFileBrowser extends Component {
         requestProfileEdit({
             _id: profile,
             name: name,
-            oldName: name,
-            valid: true
+            description: description,
+            oldName: copyFrom ? null : prfId,
+            valid: copyFrom ? false : true,
+            copyFrom: copyFrom ? prfId : null,
+            model: copyFrom ? model._id : null,
+            errors: copyFrom ? model.profilesInfo[prfId].errors : null,
+            fetch: fetch
         });
     }
 
@@ -123,7 +128,7 @@ class ModelFileBrowser extends Component {
         classNames += ' px-0 py-2'
 
         let expansionIconType = 'blank'
-        let leafIconType = leaf.type === 'prf' ? 'id-card' : leaf.type === 'add' ? 'plus' : null
+        let leafIconType = leaf.type === 'prf' || leaf.type === 'copy' ? 'id-card' : leaf.type === 'add' ? 'plus' : null
 
         let leafIcon = leafIconType ? <FontAwesome name={ leafIconType } fixedWidth={ true } className="mr-1" /> : null
         //if (hasChildren)
@@ -157,8 +162,27 @@ class ModelFileBrowser extends Component {
                                        confirmProfileEdit={ confirmProfileEdit }
                                        cancelProfileEdit={ cancelProfileEdit }
                                        user={ user }
-                                       t={ t }>
-                                       { depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }
+                                       t={ t }
+                                       indent={ depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }>
+                                       { leafIcon }
+                                   </ModelProfileEdit>
+                               </div>
+                           </div>
+                       </ListGroupItem>
+        } else if (leaf.type === 'copy') {
+            rendered = <ListGroupItem key={ leaf._id } className={ classNames }>
+                           <div className="w-100 d-flex flex-row">
+                               <div className="truncate">
+                                   <ModelProfileEdit profileEdit={ profileEdit }
+                                       profile={ leaf._id }
+                                       model={ models.find(mdl => mdl._id === leaf.parent) }
+                                       fetch={ selectedModel === leaf.parent }
+                                       requestProfileEdit={ requestProfileEdit }
+                                       confirmProfileEdit={ confirmProfileEdit }
+                                       cancelProfileEdit={ cancelProfileEdit }
+                                       user={ user }
+                                       t={ t }
+                                       indent={ depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }>
                                        { leafIcon }
                                    </ModelProfileEdit>
                                </div>
@@ -207,14 +231,14 @@ class ModelFileBrowser extends Component {
                                        model={ models.find(mdl => mdl._id === leaf.parent) }
                                        fetch={ selectedModel === leaf.parent }
                                        title={ leaf.name }
-                                       description={ 'bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla ' }
-                                       oldName={ leaf.name }
+                                       description={ leaf.description }
+                                       oldName={ leaf.prfId }
                                        requestProfileEdit={ requestProfileEdit }
                                        confirmProfileEdit={ confirmProfileEdit }
                                        cancelProfileEdit={ cancelProfileEdit }
                                        user={ user }
-                                       t={ t }>
-                                       { depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }
+                                       t={ t }
+                                       indent={ depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }>
                                        { leafIcon }
                                    </ModelProfileEdit>
                                </div>
@@ -224,7 +248,7 @@ class ModelFileBrowser extends Component {
                                                                    title="Copy Profile"
                                                                    disabled={ hasExport || hasImport }
                                                                    className="rounded-0 py-0"
-                                                                   onClick={ (e) => this._requestProfileEdit(e, leaf._id, leaf.name) }>
+                                                                   onClick={ (e) => this._requestProfileEdit(e, leaf._id + 'copy', leaf.name, leaf.prfId, leaf.description, true, models.find(mdl => mdl._id === leaf.parent), selectedModel === leaf.parent) }>
                                                                    { t('copy') }
                                                                </Button>
                                                                <Button size="sm"
@@ -232,7 +256,7 @@ class ModelFileBrowser extends Component {
                                                                    title="Edit Profile"
                                                                    disabled={ hasExport || hasImport }
                                                                    className="rounded-0 ml-1 py-0"
-                                                                   onClick={ (e) => this._requestProfileEdit(e, leaf._id, leaf.name) }>
+                                                                   onClick={ (e) => this._requestProfileEdit(e, leaf._id, leaf.name, leaf.prfId, leaf.description) }>
                                                                    { t('edit') }
                                                                </Button>
                                                                <Button size="sm"
@@ -314,7 +338,7 @@ class ModelFileBrowser extends Component {
     }
 
     render() {
-        const {models, hasExport, exportStats, deleteRequested, t} = this.props;
+        const {models, hasExport, exportStats, deleteRequested, profileEdit, t} = this.props;
 
         let tree = models.map(mdl => {
             return {
@@ -347,6 +371,7 @@ class ModelFileBrowser extends Component {
                     _id: mdl._id + prf._id,
                     prfId: prf._id,
                     name: prf.name,
+                    description: prf.description,
                     type: 'prf',
                     parent: mdl._id
                 })
@@ -357,6 +382,16 @@ class ModelFileBrowser extends Component {
                         dropType: 'prf',
                         name: prf.name,
                         type: 'drop',
+                        parent: mdl._id
+                    })
+                }
+                if (profileEdit[mdl._id + prf._id + 'copy']) {
+                    arr.push({
+                        _id: mdl._id + prf._id + 'copy',
+                        prfId: prf._id,
+                        name: prf.name,
+                        description: prf.description,
+                        type: 'copy',
                         parent: mdl._id
                     })
                 }
