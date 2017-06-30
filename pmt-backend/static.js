@@ -29,7 +29,7 @@ app.use(trailingSlash({
 
 // if we get to this, it is a javascript history api url, so rewrite to index.html
 app.use(historyApiFallback({
-    index: appPath + 'index.html'
+    index: appPath + '/index.html'
 }));
 
 // serve index.html once more
