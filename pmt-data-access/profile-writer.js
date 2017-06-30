@@ -117,7 +117,7 @@ function clearErrors(clsId, modelId, profile) {
     )
 }
 
-var minProjection = ['localId', 'parent', 'name', 'type', 'profiles', 'profileParameters', 'properties.profiles', 'properties.profileParameters', 'properties._id', 'properties.name', 'properties.typeId', 'properties.isAttribute', 'properties.isNavigable', 'properties.optional', 'properties.reversePropertyId', 'taggedValues', 'model', 'editable'];
+var minProjection = ['localId', 'parent', 'name', 'type', 'profiles', 'profileParameters', 'properties.profiles', 'properties.profileParameters', 'properties._id', 'properties.name', 'properties.typeId', 'properties.isAttribute', 'properties.isNavigable', 'properties.optional', 'properties.reversePropertyId', 'properties.cardinality', 'taggedValues', 'model', 'editable'];
 
 function getProjection() {
     return minProjection.concat([].slice.call(arguments)).reduce(function(prj, key) {

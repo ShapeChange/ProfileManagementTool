@@ -89,7 +89,6 @@ class ModelBrowserParameters extends Component {
 
     _updateCardinality = (multiplicity) => {
         const {updateProfileParameter} = this.props;
-
         updateProfileParameter(this.props, 'multiplicity', multiplicity)
     }
 
@@ -151,7 +150,7 @@ class ModelBrowserParameters extends Component {
                                               size='sm'
                                               name="minOccurs"
                                               style={ { width: '75px' } }
-                                              disabled={ disabled }
+                                              readOnly={ disabled }
                                               value={ multiplicity.minValue }
                                               min={ multiplicity.min }
                                               max={ multiplicity.maxValue }
@@ -165,7 +164,7 @@ class ModelBrowserParameters extends Component {
                                               value={ multiplicity.maxValue }
                                               min={ multiplicity.minValue || 1 }
                                               max={ multiplicity.max }
-                                              disabled={ disabled || multiplicity.maxValueUnbounded }
+                                              readOnly={ disabled || multiplicity.maxValueUnbounded }
                                               onChange={ this._updateMaxCardinality }
                                               onKeyDown={ e => e.preventDefault() } />
                                           { ' ' }
