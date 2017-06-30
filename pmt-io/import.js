@@ -325,6 +325,7 @@ function parseAssociation(outStream, node, options) {
 }
 
 // TODO: omit non-relevant for type
+// TODO: use xml-query
 function reduceNode(node, id, type) {
 
     var profilesIndex = node.children.findIndex(function(child) {

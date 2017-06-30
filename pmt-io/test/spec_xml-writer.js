@@ -10,9 +10,9 @@ var expect = chai.expect;
 
 var xml = '<?xml version="1.0" encoding="UTF-8"?><sc:Model encoding="UTF-8" xmlns:sc="http://shapechange.net/model"><sc:packages><sc:Package><sc:name>Model</sc:name><sc:id>1</sc:id><sc:descriptors></sc:descriptors><sc:packages></sc:packages></sc:Package></sc:packages></sc:Model>\n';
 
-var xml2 = '<?xml version="1.0" encoding="UTF-8"?><sc:Model encoding="UTF-8" xmlns:sc="http://shapechange.net/model"><sc:packages><sc:Package><sc:name>Model</sc:name><sc:id>1</sc:id><sc:descriptors><sc:alias><sc:descriptorValues><sc:DescriptorValue>leaf</sc:DescriptorValue></sc:descriptorValues></sc:alias></sc:descriptors><sc:packages></sc:packages></sc:Package></sc:packages></sc:Model>\n';
+var xml2 = '<?xml version="1.0" encoding="UTF-8"?><sc:Model encoding="UTF-8" xmlns:sc="http://shapechange.net/model"><sc:packages><sc:Package><sc:name>Model</sc:name><sc:id>1</sc:id><sc:descriptors><sc:alias><sc:descriptorValues><sc:DescriptorValue>leaf&gt;</sc:DescriptorValue></sc:descriptorValues></sc:alias></sc:descriptors><sc:packages></sc:packages></sc:Package></sc:packages></sc:Model>\n';
 
-var xml3 = '<sc:alias><sc:descriptorValues><sc:DescriptorValue>leaf</sc:DescriptorValue></sc:descriptorValues></sc:alias>';
+var xml3 = '<sc:alias><sc:descriptorValues><sc:DescriptorValue>leaf&gt;</sc:DescriptorValue></sc:descriptorValues></sc:alias>';
 
 describe('XML Writer', function() {
 

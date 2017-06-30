@@ -131,7 +131,7 @@ var print = function print(stream, opts, ast, depth) {
 function create(stream, options) {
     var opts = Object.assign({
         escapeAttributes: true,
-        escapeText: true,
+        escapeText: false,
         selfClose: false,
         quote: '"',
         tab: '\t',
