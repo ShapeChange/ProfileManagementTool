@@ -46,37 +46,37 @@ it('should work', function(done) {
 
         errors.should.have.length(9)
 
-        errors[0].should.have.property('_id', params.clsId)
+        errors[0].should.have.property('itemId', params.clsId)
         errors[0].should.have.property('prpId', params.mandatoryPrpId)
         errors[0].should.have.property('profile', 'B')
 
-        errors[1].should.have.property('_id', params.clsId)
+        errors[1].should.have.property('itemId', params.clsId)
 
-        errors[2].should.have.property('_id', params.clsId)
+        errors[2].should.have.property('itemId', params.clsId)
 
-        errors[3].should.have.property('_id', params.clsId)
+        errors[3].should.have.property('itemId', params.clsId)
 
-        errors[4].should.have.property('_id', params.clsId)
+        errors[4].should.have.property('itemId', params.clsId)
 
-        errors[5].should.have.property('_id', params.clsId)
+        errors[5].should.have.property('itemId', params.clsId)
         errors[5].should.have.property('prpId', params.optionalPrpId)
         errors[5].should.have.property('profile', 'C')
 
-        errors[6].should.have.property('_id', params.clsId)
+        errors[6].should.have.property('itemId', params.clsId)
         errors[6].should.have.property('prpId', params.mandatoryPrpId)
         errors[6].should.have.property('profile', 'A')
 
-        errors[7].should.have.property('_id', params.clsId)
+        errors[7].should.have.property('itemId', params.clsId)
         errors[7].should.have.property('prpId', params.mandatoryPrpId)
         errors[7].should.have.property('profile', 'A')
 
-        errors[8].should.have.property('_id', params.clsId)
+        errors[8].should.have.property('itemId', params.clsId)
         errors[8].should.have.property('prpId', params.mandatoryPrpId)
         errors[8].should.have.property('profile', 'A')
 
 
         done();
-    });
+    }, null, true);
 
     intoStream.obj(params.testClass).pipe(tests);
 });
