@@ -310,7 +310,7 @@ function importFile(socket, user, file) {
                             }
                         });
                     }
-                });
+                }, true);
 
                 db.getClasses(stats.model)
                     .then(function(cursor) {

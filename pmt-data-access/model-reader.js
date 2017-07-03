@@ -29,7 +29,7 @@ function getProjection() {
     }, {})
 }
 
-function getClassGraph(id, modelId, subNotSuper, prjctn = {}, filter = {}, match = false) {
+function getClassGraph(id, modelId, subNotSuper, prjctn = {}, filter = {}, match = false, maxDepth = false) {
     var projection = Object.assign({
         localId: 1,
         editable: 1,
@@ -43,22 +43,28 @@ function getClassGraph(id, modelId, subNotSuper, prjctn = {}, filter = {}, match
         model: ObjectID(modelId)
     }
 
+    var graphLookup = {
+        from: MODELS,
+        startWith: subNotSuper ? '$localId' : '$supertypes',
+        connectFromField: subNotSuper ? 'localId' : 'supertypes',
+        connectToField: subNotSuper ? 'supertypes' : 'localId',
+        as: "inheritanceTree",
+        restrictSearchWithMatch: Object.assign({
+            model: ObjectID(modelId)
+        }, filter)
+    }
+    if (maxDepth || maxDepth === 0) {
+        graphLookup.maxDepth = maxDepth
+        console.log('MAXDEPTH', maxDepth)
+    }
+
     return model
         .aggregate([
             {
                 $match: match
             },
             {
-                $graphLookup: {
-                    from: MODELS,
-                    startWith: subNotSuper ? '$localId' : '$supertypes',
-                    connectFromField: subNotSuper ? 'localId' : 'supertypes',
-                    connectToField: subNotSuper ? 'supertypes' : 'localId',
-                    as: "inheritanceTree",
-                    restrictSearchWithMatch: Object.assign({
-                        model: ObjectID(modelId)
-                    }, filter)
-                }
+                $graphLookup: graphLookup
             },
             {
                 $project: {

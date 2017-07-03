@@ -4,7 +4,9 @@ var path = require('path');
 
 exports.createStream = function(config, modelReader, errorWriter, profile) {
 
-return through2.obj(function(obj, enc, cb) {
+return through2.obj({
+    highWaterMark: 1
+}, function(obj, enc, cb) {
 
     console.log(path.basename(__filename, '.js'));
 
@@ -24,7 +26,7 @@ return through2.obj(function(obj, enc, cb) {
 
                     if (!containsCardinality(parseCardinality(prp.cardinality), parseCardinality(prp.profileParameters[prf].multiplicity))) {
                         return errorWriter.appendError(obj.model, prf, {
-                            _id: obj.localId,
+                            itemId: obj.localId,
                             prpId: prp._id,
                             prpName: prp.name,
                             prpCardinality: prp.cardinality,

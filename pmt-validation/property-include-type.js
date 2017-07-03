@@ -2,11 +2,29 @@ var through2 = require('through2');
 var Promise = require("bluebird");
 var path = require('path');
 
-exports.createStream = function(config, modelReader, errorWriter, profile) {
+exports.createStream = function(config, modelReader, errorWriter, profile, fullCheck = false) {
 
-return through2.obj(function(obj, enc, cb) {
+return through2.obj({
+    highWaterMark: 1
+}, function(obj, enc, cb) {
 
     console.log(path.basename(__filename, '.js'));
+
+    if (!fullCheck) {
+        // if class is in profile
+        if ((profile && obj.profiles && obj.profiles.indexOf(profile) > -1)
+                || (obj.profiles && obj.profiles.length > 0)) {
+
+            var prfs = profile ? [profile] : obj.profiles
+
+            Promise.map(prfs, prf => {
+                return errorWriter.clearErrors(null, obj.model, prf, {
+                    typeId: obj.localId,
+                    msg: 'typeNotIncluded'
+                });
+            })
+        }
+    }
 
     if (exports.shouldSkip(obj, profile)) {
         console.log('SKIP')
@@ -38,9 +56,10 @@ return through2.obj(function(obj, enc, cb) {
                             return Promise.map(prfs, prf => {
                                 if (prp.profiles.indexOf(prf) > -1 && type.profiles.indexOf(prf) === -1) {
                                     return errorWriter.appendError(obj.model, prf, {
-                                        _id: obj.localId,
+                                        itemId: obj.localId,
                                         prpId: prp._id,
                                         prpName: prp.name,
+                                        typeId: prp.typeId,
                                         typeName: type.name,
                                         name: obj.name,
                                         msg: 'typeNotIncluded'

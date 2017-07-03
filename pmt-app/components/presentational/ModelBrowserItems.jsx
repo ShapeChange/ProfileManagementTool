@@ -24,7 +24,7 @@ class ModelBrowserItems extends Component {
                         { items && items.map((item, i) => {
                               const active = item.profiles.indexOf(selectedProfile) > -1
                               const parentActive = type === 'cls' && profiles.indexOf(selectedProfile) > -1
-                              const disabled = !item.editable || busy || (type === 'cls' && !parentActive) || (type === 'cls' && parentActive && !item.optional)
+                              const disabled = !item.editable || busy || (type === 'cls' && !parentActive) || (type === 'cls' && parentActive && !item.optional && active)
                               const showWarning = isFlattenInheritance && item.type === 'prp' && (_id !== item.parent || infos.subtypes) && !disabled
                               const showWarning2 = isFlattenInheritance && item.type === 'prp' && _id !== item.parent && !item.editable && item.optional
                           

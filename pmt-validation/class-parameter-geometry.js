@@ -4,7 +4,9 @@ var path = require('path');
 
 exports.createStream = function(config, modelReader, errorWriter, profile) {
 
-return through2.obj(function(obj, enc, cb) {
+return through2.obj({
+    highWaterMark: 1
+}, function(obj, enc, cb) {
 
     console.log(path.basename(__filename, '.js'));
 
@@ -26,7 +28,7 @@ return through2.obj(function(obj, enc, cb) {
             pr = pr.then(() => {
                 return Promise.map(prfs, prf => {
                     return errorWriter.appendError(obj.model, prf, {
-                        _id: obj.localId,
+                        itemId: obj.localId,
                         name: obj.name,
                         taggedValueGeometry: obj.taggedValues.geometry,
                         defaultGeometries: defaultGeometries.join(','),
@@ -49,7 +51,7 @@ return through2.obj(function(obj, enc, cb) {
 
                 if (!containsGeometries(geometries, obj.profileParameters[prf].geometry.split(','))) {
                     return errorWriter.appendError(obj.model, prf, {
-                        _id: obj.localId,
+                        itemId: obj.localId,
                         name: obj.name,
                         parameterGeometry: obj.profileParameters[prf].geometry,
                         taggedValueGeometry: obj.taggedValues.geometry,

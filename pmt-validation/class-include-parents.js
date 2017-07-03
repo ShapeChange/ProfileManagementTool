@@ -2,9 +2,11 @@ var through2 = require('through2');
 var Promise = require("bluebird");
 var path = require('path');
 
-exports.createStream = function(config, modelReader, errorWriter, profile) {
+exports.createStream = function(config, modelReader, errorWriter, profile, fullCheck = false) {
 
-return through2.obj(function(obj, enc, cb) {
+return through2.obj({
+    highWaterMark: 1
+}, function(obj, enc, cb) {
 
     console.log(path.basename(__filename, '.js'));
 
@@ -12,6 +14,17 @@ return through2.obj(function(obj, enc, cb) {
         console.log('SKIP')
         cb(null, obj);
         return;
+    }
+
+    var prfs = profile ? [profile] : obj.profiles
+
+    if (!fullCheck) {
+        Promise.map(prfs, prf => {
+            return errorWriter.clearErrors(null, obj.model, prf, {
+                superId: obj.localId,
+                msg: 'superClassNotIncluded'
+            });
+        })
     }
 
     var filter = {
@@ -23,22 +36,23 @@ return through2.obj(function(obj, enc, cb) {
         editable: true
     }
 
-    modelReader.getClassGraph(obj.localId, obj.model, false, {
+    var projection = {
         name: 1,
         profiles: 1,
-    }, filter)
-        .then(function(classes) {
+    }
 
-            var prfs = profile ? [profile] : obj.profiles
+    modelReader.getClassGraph(obj.localId, obj.model, false, projection, filter, false, fullCheck && 0)
+        .then(function(classes) {
 
             return Promise.map(prfs, prf => {
                 return Promise.map(classes, cls => {
                     if (cls.localId !== obj.localId) {
                         if (!cls.profiles || cls.profiles.indexOf(prf) === -1) {
                             return errorWriter.appendError(obj.model, prf, {
-                                _id: obj.localId,
+                                itemId: obj.localId,
                                 name: obj.name,
-                                clsName: cls.name,
+                                superId: cls.localId,
+                                superName: cls.name,
                                 msg: 'superClassNotIncluded'
                             })
                         }

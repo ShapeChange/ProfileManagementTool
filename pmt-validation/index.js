@@ -16,7 +16,13 @@ var multipipe = require('multipipe');
 var requireAll = require('require-all');
 var writer = require('flush-write-stream')
 
-exports.createStream = function(config, modelReader, errorWriter, profile, onFinish, onCount) {
+exports.createStream = function(config, modelReader, errorWriter, profile, onFinish, onCount, fullCheck = false) {
+
+errorWriter = {
+    appendError: /*fullCheck ? errorWriter.appendErrorBulk :*/ errorWriter.appendError,
+    clearErrors: /*fullCheck ? errorWriter.clearErrorsBulk :*/ errorWriter.clearErrors,
+    finish: /*fullCheck ? errorWriter.finishBulk :*/ Promise.resolve
+}
 
 var tests = requireAll({
     dirname: __dirname,
@@ -24,14 +30,16 @@ var tests = requireAll({
         return fileName !== 'index.js' && fileName.substr(fileName.length - 3) === '.js' && fileName;
     },
     resolve: function(test) {
-        return test.createStream(config, modelReader, errorWriter, profile);
+        return test.createStream(config, modelReader, errorWriter, profile, fullCheck);
     },
     recursive: false
 });
 
 var testArray = Object.keys(tests).map(key => tests[key])
 
-var init = through2.obj(function(obj, enc, cb) {
+var init = through2.obj({
+    highWaterMark: 1
+}, function(obj, enc, cb) {
 
     console.log('INIT')
 
@@ -59,6 +67,8 @@ var deadend = writer.obj(function(obj, enc, cb) {
     console.log(count)
     cb();
 }, function(cb) {
+    errorWriter.finish();
+
     if (onFinish)
         onFinish();
 

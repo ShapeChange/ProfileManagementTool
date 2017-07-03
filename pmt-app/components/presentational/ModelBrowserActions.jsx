@@ -23,7 +23,7 @@ class ModelBrowserActions extends Component {
                     { (isClass || isProperty) &&
                       <Toggle name="includeSelf"
                           checked={ profiles.indexOf(selectedProfile) > -1 }
-                          disabled={ !editable || busy || (type === 'prp' && cls.profiles.indexOf(selectedProfile) === -1) || (type === 'prp' && !optional) }
+                          disabled={ !editable || busy || (type === 'prp' && cls.profiles.indexOf(selectedProfile) === -1) || (type === 'prp' && !optional && profiles.indexOf(selectedProfile) > -1) }
                           onToggle={ e => updateProfile(this.props) }
                           size="2x">
                           <span className={ `align-self-center ${profiles.indexOf(selectedProfile) > -1 && 'font-weight-bold'} ${!editable && 'text-muted'}` }><span className="font-italic">{ name }</span>

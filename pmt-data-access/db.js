@@ -9,6 +9,7 @@ var urw = require('./user-rw');
 
 var MODELS = 'models';
 var USERS = 'users';
+var ERRORS = 'errors';
 var db;
 var model;
 var users;
@@ -21,9 +22,10 @@ function setConnection(connection) {
     db = connection;
     model = db.collection(MODELS);
     users = db.collection(USERS);
+    errors = db.collection(ERRORS);
 
     modelReader = mr.create(model, MODELS)
-    profileWriter = pw.create(model)
+    profileWriter = pw.create(model, errors)
     userReaderWriter = urw.create(users)
 
     dbEdit = profileEdit(modelReader, profileWriter);
@@ -102,9 +104,45 @@ function setConnection(connection) {
                 },
                 unique: true
             }])
-                .then(function(indexName) {
-                    console.log('Created indexes ', indexName)
-                })
+        })
+        .then(function(indexName) {
+            console.log('Created indexes ', indexName)
+
+            return errors.createIndexes([
+                {
+                    key: {
+                        'model': 1
+                    }
+                },
+                {
+                    key: {
+                        'profile': 1
+                    }
+                },
+                {
+                    key: {
+                        'itemId': 1
+                    }
+                },
+                {
+                    key: {
+                        'superId': 1
+                    }
+                },
+                {
+                    key: {
+                        'typeId': 1
+                    }
+                },
+                {
+                    key: {
+                        'msg': 1
+                    }
+                }
+            ])
+        })
+        .then(function(indexName) {
+            console.log('Created indexes ', indexName)
         })
         .catch(function(error) {
             console.log('Error on creating indexes: ', error)
@@ -823,6 +861,19 @@ return model
     }, {
         element: 0
     })
+    .then(function(mdl) {
+        return errors
+            .find({
+                model: ObjectID(id)
+            })
+            .toArray()
+            .then(function(err) {
+                Object.keys(mdl.profilesInfo).forEach(function(prf) {
+                    mdl.profilesInfo[prf].errors = err.filter(e => e.profile === prf);
+                })
+                return mdl;
+            })
+    })
 }
 
 exports.getFullModel = function(id) {
@@ -894,6 +945,14 @@ return model
             .then(function(ret2) {
                 console.log('DELETE2', ret2.result)
             })
+
+        errors
+            .deleteMany({
+                model: ObjectID(id)
+            })
+            .then(function(ret3) {
+                console.log('DELETE3', ret3.result)
+            })
     })
 }
 
@@ -907,6 +966,16 @@ var update = {
 return updateModel(modelId, update)
     .then(function(ret) {
         console.log('DELETE', ret)
+
+        errors
+            .deleteMany({
+                model: ObjectID(modelId),
+                profile: id
+            })
+            .then(function(ret2) {
+                console.log('DELETE2', ret2.result)
+            })
+
         return ret.value;
     })
 }

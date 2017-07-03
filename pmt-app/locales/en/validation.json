@@ -1,7 +1,7 @@
 {
     "consistencyError": "Consistency error in class {{name}}:",
     "mandatoryPropertyNotIncluded": "Mandatory Property {{prpName}} is not included in profile",
-    "superClassNotIncluded": "Super class {{clsName}} is not included in profile",
+    "superClassNotIncluded": "Super class {{superName}} is not included in profile",
     "taggedValueGeometryInvalid": "Tagged value geometry ({{taggedValueGeometry}}) does not match configured geometries ({{defaultGeometries}})",
     "parameterGeometryInvalid": "The value for parameter geometry ({{parameterGeometry}}) does not match the configured geometries ({{defaultGeometries}}) or the tagged value geometry ({{taggedValueGeometry}})",
     "classNotIncluded": "Property {{prpName}} is included in profile, but its class {{name}} is not",
