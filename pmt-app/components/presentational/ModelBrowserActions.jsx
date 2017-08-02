@@ -16,14 +16,19 @@ class ModelBrowserActions extends Component {
         const isClass = type === 'cls'
         const isProperty = type === 'prp'
         const editable = pkg && pkg.editable
+        const active = profiles.indexOf(selectedProfile) > -1
+        const parentActive = cls.profiles.indexOf(selectedProfile) > -1
+        const isCodelistOrEnum = cls.stereotypes && cls.stereotypes.length && (cls.stereotypes[0] === 'enumeration' || cls.stereotypes[0] === 'codelist')
+        const disabled = !editable || busy || (type === 'prp' && !parentActive) || (type === 'prp' && !optional && active && !isCodelistOrEnum)
+
 
         return (
             <div>
                 <FormGroup tag="fieldset">
                     { (isClass || isProperty) &&
                       <Toggle name="includeSelf"
-                          checked={ profiles.indexOf(selectedProfile) > -1 }
-                          disabled={ !editable || busy || (type === 'prp' && cls.profiles.indexOf(selectedProfile) === -1) || (type === 'prp' && !optional && profiles.indexOf(selectedProfile) > -1) }
+                          checked={ active }
+                          disabled={ disabled }
                           onToggle={ e => updateProfile(this.props) }
                           size="2x">
                           <span className={ `align-self-center ${profiles.indexOf(selectedProfile) > -1 && 'font-weight-bold'} ${!editable && 'text-muted'}` }><span className="font-italic">{ name }</span>
