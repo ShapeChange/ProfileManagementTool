@@ -381,7 +381,12 @@ function buildPropertiesUpdate(properties, clsId, modelId, profile, include, pro
         // exclude types if not used elsewhere
         // see getProfileUpdatesForType for usage check
 
+        var reversePropertyFilter = function(prp) {
+            return prp.profiles && prp.profiles.indexOf(profile) > -1 && !propertyFilter(prp);
+        };
+
         var filteredProperties = propertyFilter ? properties.filter(propertyFilter) : properties;
+        var remainingProperties = propertyFilter ? properties.filter(reversePropertyFilter) : [];
 
         var typeIds = filteredProperties.reduce(function(tids, prp) {
             if (tids.indexOf(prp.typeId) === -1) {
@@ -390,8 +395,15 @@ function buildPropertiesUpdate(properties, clsId, modelId, profile, include, pro
             return tids;
         }, []);
 
+        var usedTypeIds = remainingProperties.reduce(function(tids, prp) {
+            if (tids.indexOf(prp.typeId) === -1) {
+                tids.push(prp.typeId);
+            }
+            return tids;
+        }, []);
+
         typeIds = typeIds.filter(function(clsid) {
-            return visitedClassIds.indexOf(clsid) === -1
+            return visitedClassIds.indexOf(clsid) === -1 && usedTypeIds.indexOf(clsid) === -1
         });
         visitedClassIds.push(...typeIds)
 

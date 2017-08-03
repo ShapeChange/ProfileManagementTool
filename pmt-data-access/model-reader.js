@@ -20,7 +20,7 @@ return {
 }
 }
 
-var minProjection = ['localId', 'name', 'model', 'type', 'profiles', 'properties.profiles', 'editable'];
+var minProjection = ['localId', 'name', 'model', 'type', 'profiles', 'properties._id', 'properties.typeId', 'properties.optional', 'properties.name', 'properties.profiles', 'editable'];
 
 function getProjection() {
     return minProjection.concat([].slice.call(arguments)).reduce(function(prj, key) {
@@ -29,14 +29,12 @@ function getProjection() {
     }, {})
 }
 
+function getProjection2(projection) {
+    return Object.assign(getProjection(), projection)
+}
+
 function getClassGraph(id, modelId, subNotSuper, prjctn = {}, filter = {}, match = false, maxDepth = false) {
-    var projection = Object.assign({
-        localId: 1,
-        editable: 1,
-        'properties._id': 1,
-        'properties.typeId': 1,
-        'properties.optional': 1
-    }, prjctn);
+    var projection = getProjection2(prjctn);
 
     match = match || {
         localId: id,
@@ -234,12 +232,7 @@ function getFlattenedClass(id, modelId) {
                 }
             },
             {
-                $project: {
-                    localId: 1,
-                    'properties._id': 1,
-                    "properties.typeId": 1,
-                    'properties.optional': 1
-                }
+                $project: getProjection()
             }
         ])
         .toArray()
@@ -255,12 +248,7 @@ function getClassesForPackage(id, modelId, recursive, subNotSuper, filter = {}, 
         model: ObjectID(modelId)
     }, filter);
 
-    var projection = Object.assign({
-        localId: 1,
-        'properties._id': 1,
-        "properties.typeId": 1,
-        'properties.optional': 1
-    }, prjctn);
+    var projection = getProjection2(prjctn);
 
     if (recursive) {
         return getClassesForPackageGraph(id, modelId, projection, filter);
@@ -297,16 +285,11 @@ function getAllOfType(typeId, modelId, projection = {}, filter = {}) {
                 }, filter)
             }
         })
-        .project(Object.assign({
-            localId: 1,
-            editable: 1,
-            "properties.typeId": 1,
-            "properties.optional": 1
-        }, projection))
+        .project(getProjection2(projection))
         .toArray();
 }
 
-function getClasses(ids, modelId, projection = null, filter = {}) {
+function getClasses(ids, modelId, projection = {}, filter = {}) {
     return model
         .find(Object.assign({
             type: 'cls',
@@ -315,7 +298,7 @@ function getClasses(ids, modelId, projection = null, filter = {}) {
                 $in: ids
             }
         }, filter))
-        .project(projection || getProjection())
+        .project(getProjection2(projection))
         .toArray()
 }
 
@@ -324,23 +307,12 @@ function getClass(id, modelId, projection = {}, filter = {}) {
         .findOne(Object.assign({
             model: ObjectID(modelId),
             localId: id
-        }, filter), Object.assign({
-            localId: 1,
-            'properties._id': 1,
-            "properties.typeId": 1,
-            'properties.optional': 1
-        }, projection))
+        }, filter), getProjection2(projection))
 }
 
 function getClassByProperty(id, modelId, projection = {}, filter = {}) {
     return model
         .findOne(Object.assign({
             model: ObjectID(modelId)
-        }, filter), Object.assign({
-            localId: 1,
-            'properties._id': 1,
-            'properties.name': 1,
-            "properties.typeId": 1,
-            'properties.optional': 1
-        }, projection))
+        }, filter), getProjection2(projection))
 }
