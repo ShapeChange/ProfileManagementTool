@@ -7,6 +7,6 @@ if (service && service.exists) {
         console.log('PMT service removed');
     });
 
-    service.uninstall();
+    service.uninstall(10);
 }
 
