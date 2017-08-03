@@ -16,9 +16,9 @@ class ModelBrowserActions extends Component {
         const isClass = type === 'cls'
         const isProperty = type === 'prp'
         const editable = pkg && pkg.editable
-        const active = profiles.indexOf(selectedProfile) > -1
-        const parentActive = cls.profiles.indexOf(selectedProfile) > -1
-        const isCodelistOrEnum = cls.stereotypes && cls.stereotypes.length && (cls.stereotypes[0] === 'enumeration' || cls.stereotypes[0] === 'codelist')
+        const active = profiles && profiles.indexOf(selectedProfile) > -1
+        const parentActive = cls && cls.profiles && cls.profiles.indexOf(selectedProfile) > -1
+        const isCodelistOrEnum = cls && cls.stereotypes && cls.stereotypes.length && (cls.stereotypes[0] === 'enumeration' || cls.stereotypes[0] === 'codelist')
         const disabled = !editable || busy || (type === 'prp' && !parentActive) || (type === 'prp' && !optional && active && !isCodelistOrEnum)
 
 
