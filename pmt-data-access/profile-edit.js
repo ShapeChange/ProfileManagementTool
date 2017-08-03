@@ -133,9 +133,12 @@ function getProfileUpdatesForProperty(clsId, prpId, modelId, profile, include) {
         }
     }.bind(this, update);
 
-    return modelReader.getClass(clsId, modelId)
+    return modelReader.getClass(clsId, modelId, {
+        isMeta: 1,
+        isReason: 1
+    })
         .then(function(cls) {
-            var updatesType = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler, propertyFilter);
+            var updatesType = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler, propertyFilter, false, [], cls.isMeta || cls.isReason);
 
 
             var updates = Promise.all([profileWriter.putClassUpdateProfile(clsId, modelId, update)]);
@@ -154,7 +157,10 @@ function getProfileUpdatesForClass(id, modelId, profile, include, onlyMandatory 
 
     if (onlyChildren) {
 
-        var cls = ascendInheritanceTree ? modelReader.getClassGraph(id, modelId, false, {}, {
+        var cls = ascendInheritanceTree ? modelReader.getClassGraph(id, modelId, false, {
+            isMeta: 1,
+            isReason: 1
+        }, {
             editable: true
         }) : modelReader.getClass(id, modelId)
 
@@ -179,7 +185,7 @@ function getProfileUpdatesForClass(id, modelId, profile, include, onlyMandatory 
                         }
                     }.bind(this, update);
 
-                    var updatesType = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler, propertyFilter);
+                    var updatesType = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler, propertyFilter, false, [], cls.isMeta || cls.isReason);
 
                     var updates = Promise.all([]);
                     if (update && Object.keys(update).length)
@@ -205,7 +211,10 @@ function getProfileUpdatesForClass(id, modelId, profile, include, onlyMandatory 
     };
 
     // for include get super classes, for exclude get sub classes
-    return modelReader.getClassGraph(id, modelId, !include)
+    return modelReader.getClassGraph(id, modelId, !include, {
+        isMeta: 1,
+        isReason: 1
+    })
         .then(function(classes) {
             return classes.filter(function(cls) {
                 return cls.editable
@@ -246,7 +255,10 @@ function getProfileUpdatesForPackage(id, modelId, profile, include, onlyMandator
         pr = modelReader.getPackageGraph(id, modelId)
             .then(function(pkgs) {
                 return Promise.mapSeries(pkgs, function(pkg) {
-                    return modelReader.getClassesForPackage(pkg._id, modelId, false, !include, filter)
+                    return modelReader.getClassesForPackage(pkg._id, modelId, false, !include, filter, {
+                        isMeta: 1,
+                        isReason: 1
+                    })
                 })
             })
             .then(function(classes) {
@@ -265,7 +277,10 @@ function getProfileUpdatesForPackage(id, modelId, profile, include, onlyMandator
                 });
             })
     } else {
-        pr = modelReader.getClassesForPackage(id, modelId, recursive, !include, filter)
+        pr = modelReader.getClassesForPackage(id, modelId, recursive, !include, filter, {
+            isMeta: 1,
+            isReason: 1
+        })
     }
 
     return pr
@@ -281,7 +296,9 @@ function getProfileUpdatesForPackage(id, modelId, profile, include, onlyMandator
 function getProfileUpdatesForType(id, modelId, profile, include) {
 
     if (!include) {
-        return modelReader.getAllOfType(id, modelId)
+        return modelReader.getAllOfType(id, modelId, {}, {
+            optional: true
+        })
             .then(function(classesOfType) {
                 return classesOfType.filter(function(cls) {
                     return cls.editable
@@ -311,7 +328,7 @@ function getProfileUpdatesForType(id, modelId, profile, include) {
     return Promise.resolve([]);
 }
 
-function buildPropertiesUpdate(properties, clsId, modelId, profile, include, propertyHandler, propertyFilter, ascendInheritanceTree = false, visitedClassIds = []) {
+function buildPropertiesUpdate(properties, clsId, modelId, profile, include, propertyHandler, propertyFilter, ascendInheritanceTree = false, visitedClassIds = [], clsIsMetaOrReason = false) {
     /*var update = include ? {
         $addToSet: {}
     } : {
@@ -351,6 +368,98 @@ function buildPropertiesUpdate(properties, clsId, modelId, profile, include, pro
         return Promise.join(updates, updatesType, function(updates1, updates2) {
             return updates1.concat(updates2);
         })
+    } else {
+        // starting point is always a property with meta or reason type
+        // that is why this method should be the only place to change
+        // 
+        // change all callers: , cls.isMeta || cls.isReason
+        // 
+        // get type classes that are meta or reason and not used (getAllOfType) by filter 
+        // 
+        // if cls from getProfileUpdatesForProperty isMeta or isReason
+        // or if type isMeta or isReason
+        // exclude types if not used elsewhere
+        // see getProfileUpdatesForType for usage check
+
+        var filteredProperties = propertyFilter ? properties.filter(propertyFilter) : properties;
+
+        var typeIds = filteredProperties.reduce(function(tids, prp) {
+            if (tids.indexOf(prp.typeId) === -1) {
+                tids.push(prp.typeId);
+            }
+            return tids;
+        }, []);
+
+        typeIds = typeIds.filter(function(clsid) {
+            return visitedClassIds.indexOf(clsid) === -1
+        });
+        visitedClassIds.push(...typeIds)
+
+        var updatesType = Promise.filter(typeIds, function(typeId) {
+            return modelReader.getClass(typeId, modelId, {
+                isMeta: 1,
+                isReason: 1
+            })
+                .then(function(cls) {
+                    return cls && (cls.isMeta || cls.isReason);
+                })
+        })
+            .filter(function(typeId) {
+                console.log('ISMETAORREASON: ', typeId)
+
+                return modelReader.getAllOfType(typeId, modelId, {}, {
+                    profiles: profile
+                })
+                    .then(function(classesOfType) {
+                        return classesOfType.length === 0 || (classesOfType.length === 1 && classesOfType[0].localId === clsId);
+                    })
+            })
+            .then(function(unusedMetaOrReasonTypeIds) {
+
+                return Promise.map(unusedMetaOrReasonTypeIds, function(typeId) {
+                    console.log('ISMETAORREASONANDUNUSED: ', typeId);
+
+                    //return getProfileUpdatesForClass(typeId, modelId, profile, include, true, false, false, visitedClassIds)
+                    var propertyFilter = function(prp) {
+                        return !true || !prp.optional;
+                    };
+
+                    var propertyHandler = function(update, prp, index) {
+                        if ((include && !prp.optional) || !include) {
+                            //update['$addToSet']['properties.' + i + '.profiles'] = profile;
+                            buildPropertyUpdate(update, profile, include, index)
+                        }
+                    };
+
+                    return modelReader.getClass(typeId, modelId, {
+                        isMeta: 1,
+                        isReason: 1,
+                        editable: 1
+                    })
+                        .then(function(cls) {
+                            console.log('ISMETAORREASONANDUNUSED: ', typeId, cls);
+                            return cls && cls.editable ? [cls] : []
+                        })
+                        .then(function(classes) {
+                            var classIds = classes.map(function(cls) {
+                                return cls.localId;
+                            })
+                            visitedClassIds.push(...classIds);
+
+                            return buildClassesUpdate(classes, modelId, profile, include, propertyHandler, propertyFilter, visitedClassIds);
+                        })
+
+
+                })
+                    .then(function(classesOfType) {
+                        console.log('ISMETAORREASONANDUNUSED: ', unusedMetaOrReasonTypeIds, classesOfType.length);
+                        return [].concat.apply([], classesOfType);
+                    })
+            })
+
+        return Promise.join(updates, updatesType, function(updates1, updates2) {
+            return updates1.concat(updates2);
+        })
     }
 
     return updates;
@@ -364,7 +473,7 @@ function buildClassUpdate(cls, modelId, profile, include, propertyHandler, prope
         }
     };
 
-    var updates = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler.bind(this, update), propertyFilter, false, visitedClassIds)
+    var updates = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler.bind(this, update), propertyFilter, false, visitedClassIds, cls.isMeta || cls.isReason)
         .then(function(updatesTypes) {
 
             var updatesClass = Promise.all([profileWriter.putClassUpdateProfile(cls.localId, modelId, update, projection)]);
