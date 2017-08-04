@@ -138,7 +138,7 @@ function getProfileUpdatesForProperty(clsId, prpId, modelId, profile, include) {
         isReason: 1
     })
         .then(function(cls) {
-            var updatesType = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler, propertyFilter, false, [], cls.isMeta || cls.isReason);
+            var updatesType = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler, propertyFilter, false, [], cls.isReason);
 
 
             var updates = Promise.all([profileWriter.putClassUpdateProfile(clsId, modelId, update)]);
@@ -185,7 +185,7 @@ function getProfileUpdatesForClass(id, modelId, profile, include, onlyMandatory 
                         }
                     }.bind(this, update);
 
-                    var updatesType = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler, propertyFilter, false, [], cls.isMeta || cls.isReason);
+                    var updatesType = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler, propertyFilter, false, [], cls.isReason);
 
                     var updates = Promise.all([]);
                     if (update && Object.keys(update).length)
@@ -328,7 +328,7 @@ function getProfileUpdatesForType(id, modelId, profile, include) {
     return Promise.resolve([]);
 }
 
-function buildPropertiesUpdate(properties, clsId, modelId, profile, include, propertyHandler, propertyFilter, ascendInheritanceTree = false, visitedClassIds = [], clsIsMetaOrReason = false) {
+function buildPropertiesUpdate(properties, clsId, modelId, profile, include, propertyHandler, propertyFilter, ascendInheritanceTree = false, visitedClassIds = [], clsIsReason = false) {
     /*var update = include ? {
         $addToSet: {}
     } : {
@@ -396,7 +396,7 @@ function buildPropertiesUpdate(properties, clsId, modelId, profile, include, pro
         }, []);
 
         var usedTypeIds = remainingProperties.reduce(function(tids, prp) {
-            if (tids.indexOf(prp.typeId) === -1) {
+            if (!clsIsReason && tids.indexOf(prp.typeId) === -1) {
                 tids.push(prp.typeId);
             }
             return tids;
@@ -408,12 +408,12 @@ function buildPropertiesUpdate(properties, clsId, modelId, profile, include, pro
         visitedClassIds.push(...typeIds)
 
         var updatesType = Promise.filter(typeIds, function(typeId) {
-            return modelReader.getClass(typeId, modelId, {
+            return modelReader.getClass(typeId, modelId, clsIsReason ? {} : {
                 isMeta: 1,
                 isReason: 1
             })
                 .then(function(cls) {
-                    return cls && (cls.isMeta || cls.isReason);
+                    return cls && (clsIsReason || (cls.isMeta || cls.isReason));
                 })
         })
             .filter(function(typeId) {
@@ -485,7 +485,7 @@ function buildClassUpdate(cls, modelId, profile, include, propertyHandler, prope
         }
     };
 
-    var updates = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler.bind(this, update), propertyFilter, false, visitedClassIds, cls.isMeta || cls.isReason)
+    var updates = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler.bind(this, update), propertyFilter, false, visitedClassIds, cls.isReason)
         .then(function(updatesTypes) {
 
             var updatesClass = Promise.all([profileWriter.putClassUpdateProfile(cls.localId, modelId, update, projection)]);
