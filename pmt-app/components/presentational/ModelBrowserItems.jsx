@@ -63,22 +63,26 @@ class ModelBrowserItems extends Component {
                                              { item.type === 'prp' && item.cardinality }
                                          </td>
                                          <td className={ `py-0 pr-0 ${i === 0 && 'border-0'}` }>
-                                             { item.type === 'prp' && item.typeId && <div className="truncate">
-                                                                                         { isFlattenInheritance && item.typeId.isAbstract
-                                                                                           ? <div>
-                                                                                                 { item.typeId.name }
-                                                                                                 <TooltipIcon id={ `${item._id}-type-warning` }
-                                                                                                     className="ml-1"
-                                                                                                     placement="left"
-                                                                                                     icon="warning"
-                                                                                                     color="warning">
-                                                                                                     { t('hiddenView') }
-                                                                                                 </TooltipIcon>
-                                                                                             </div>
-                                                                                           : <Link href={ `${baseUrls['cls']}/${item.typeId.localId}/${urlSuffix ? urlSuffix : ''}` } title={ item.typeId.name }>
-                                                                                             { item.typeId.name }
-                                                                                             </Link> }
-                                                                                     </div> }
+                                             { item.type === 'prp' && <div className="truncate">
+                                                                          { isFlattenInheritance && item.typeId && item.typeId.isAbstract
+                                                                            ? <div>
+                                                                                  { item.typeId.name }
+                                                                                  <TooltipIcon id={ `${item._id}-type-warning` }
+                                                                                      className="ml-1"
+                                                                                      placement="left"
+                                                                                      icon="warning"
+                                                                                      color="warning">
+                                                                                      { t('hiddenView') }
+                                                                                  </TooltipIcon>
+                                                                              </div>
+                                                                            : (item.typeId
+                                                                                ? <Link href={ `${baseUrls['cls']}/${item.typeId.localId}/${urlSuffix ? urlSuffix : ''}` } title={ item.typeId.name }>
+                                                                                  { item.typeId.name }
+                                                                                  </Link>
+                                                                                : <div>
+                                                                                      { item.typeName }
+                                                                                  </div>) }
+                                                                      </div> }
                                          </td>
                                      </tr>
                           }) }

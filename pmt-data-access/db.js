@@ -726,6 +726,7 @@ function resolveIds(details, flattenOninas) {
 
                                 if (value) {
                                     prp.typeId = value.typeId
+                                    prp.typeName = value.typeName
                                     prp.cardinality = _mergeCardinalities(prp.cardinality, value.cardinality)
                                 }
                             }
