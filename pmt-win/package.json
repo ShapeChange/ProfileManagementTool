@@ -1,10 +1,10 @@
 {
     "name": "pmt-win",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "",
     "private": true,
     "scripts": {
-        "build": "pack-zip ../pmt-win pmt-win-1.0.1.zip"
+        "build": "pack-zip ../pmt-win pmt-win-1.0.2.zip"
     },
     "author": "interactive instruments GmbH",
     "license": "GPL-3.0",
