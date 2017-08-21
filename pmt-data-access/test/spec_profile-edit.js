@@ -99,7 +99,7 @@ describe('exclude class', function() {
         include: false
     });
 
-    const {clsId, profile, include, mandatoryPrpId, optionalPrpId, mandatoryPrpIdIndex, optionalPrpIdIndex, editor, getTypeIdForProperty} = params;
+    const {clsId, profile, include, mandatoryPrpId, optionalPrpId, mandatoryPrpIdIndex, optionalPrpIdIndex, otherOptionalPrpIdIndex, editor, getTypeIdForProperty} = params;
 
     before(function() {
 
@@ -130,6 +130,7 @@ describe('exclude class', function() {
             .then(params.joinUpdates.bind(params))
             .then(function() {
                 params.updatedClasses.should.have.deep.property(`${clsId}.properties\\.${optionalPrpIdIndex}\\.profiles.${profile}`, include);
+                params.updatedClasses.should.not.have.deep.property(`${clsId}.properties\\.${otherOptionalPrpIdIndex}\\.profiles.${profile}`);
 
             })
     });

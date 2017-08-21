@@ -314,7 +314,7 @@ function getProfileUpdatesForType(id, modelId, profile, include) {
                     var update = {};
 
                     cls.properties.forEach(function(prp, index) {
-                        if (!include && prp.optional) {
+                        if (!include && prp.optional && prp.typeId === id) {
                             //update['$pull']['properties.' + i + '.profiles'] = profile;
                             buildPropertyUpdate(update, profile, include, index)
                         }

@@ -16,6 +16,11 @@ var classes = {
                 optional: true,
                 typeId: '5',
                 _id: '1_2'
+            },
+            {
+                optional: true,
+                typeId: '2',
+                _id: '1_3'
             }
         ]
     },
@@ -170,8 +175,10 @@ module.exports = {
     subClsId: '4',
     mandatoryPrpId: '1_1',
     optionalPrpId: '1_2',
+    otherOptionalPrpId: '1_3',
     mandatoryPrpIdIndex: 0,
     optionalPrpIdIndex: 1,
+    otherOptionalPrpIdIndex: 2,
     profile: 'A',
     editor: editor,
     classes: classes,
