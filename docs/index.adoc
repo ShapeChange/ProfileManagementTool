@@ -1,0 +1,23 @@
+:doctype: book
+
+:stylesdir: stylesheets/
+:stylesheet: github.css
+:linkcss:
+
+:toc: macro
+:toc-title: Table of contents
+:toclevels: 3
+:toc-position: left
+:appendix-caption: Annex
+
+:icons: font
+
+:source-highlighter: pygments
+:pygments-style: autumn
+:pygments-linenums-mode: inline
+
+
+= Profile Management Tool (PMT)
+
+* link:user-manual/user_guide{outfilesuffix}[User Guide]
+* link:admin-manual/admin_manual{outfilesuffix}[Admin Manual]

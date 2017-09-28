@@ -1,0 +1,392 @@
+:doctype: book
+
+:stylesdir: ../stylesheets/
+:stylesheet: github.css
+:linkcss:
+
+:imagesdir: ./img
+
+:toc: macro
+:toc-title: Table of contents
+:toclevels: 3
+:toc-position: left
+:appendix-caption: Annex
+
+:icons: font
+
+:source-highlighter: pygments
+:pygments-style: autumn
+:pygments-linenums-mode: inline
+
+
+[[UG]]
+= Profile Management Tool (PMT) - User Guide
+
+<<<
+
+toc::[]
+
+<<<
+
+[[UG_Introduction]]
+== Introduction
+
+The Profile Management Tool (PMT) is a web application to edit application schema profiles. 
+
+Application schemas define conceptual models relevant for one or more applications. Typically, UML is chosen as the conceptual schema language, so the conceptual model contains packages, classes, relationships between classes (via associations and inheritance relationships) as well as attributes. Profiles of an application schema can be created to tailor the schema to the needs of a particular application.  
+
+http://shapechange.net/[ShapeChange] loads application schemas defined according to ISO 19109, and derives a number of implementation schemas, for example XML Schemas, DDL schemas, ArcGIS workspaces and documentation. While processing an application schema, ShapeChange can also create a profile of this schema.
+
+However, defining a consistent profile can be a complex task. That is where the Profile Management Tool comes into play. The PMT can load application schemas that have been exported by ShapeChange (via the http://shapechange.net/targets/model-export/[Model Export target]). The user can then use the PMT to edit profiles. The PMT provides a number of features to support the user in this task. For example, when setting the profile of a class, the PMT automatically sets profiles of related model elements (more information can be found in the user guide). The PMT also continuously checks the consistency of the profile that is being edited. When a profile has been defined, it can be exported by the PMT and loaded by ShapeChange.
+
+
+[[UG_AccountManagement]]
+== Account management
+
+The user management of the _PMT_ is very basic at the moment. A user signs up and logs in by simply providing his user id. This basic kind of user account management supports assigning any imported model file to a specific user.
+
+NOTE: To protect a user account, the user id should be kept secret.
+
+
+[[UG_SignUp]]
+=== Signing up
+
+When the _PMT_ is opened in the browser, a combined _Login_ and _Sign up_ form is displayed. 
+
+image::login01.png[Sign up]
+
+To sign up, simply provide your desired user id on the right, then press _Enter_ or click on _Register_. If the id is already taken, an according message will be displayed. When the registration succeeded, you can proceed to <<UG_Login,log in>>.
+
+
+[[UG_Login]]
+=== Logging in
+
+To log in, provide your user id on the left of the combined _Login_ and _Sign up_ form. Then press _Enter_ or click on _Login_. If the login succeeds, you will be redirected to the _Menu_ if this was your first login, otherwise the _Model Browser_.
+
+image::login02.png[Login]
+
+
+[[UG_Logout]]
+=== Logging out
+
+The <<UG_Menu,menu>> displays your user id and a logout link. The logout link will take you back to the _Login_. 
+
+NOTE: Logging out is not required. You can simply close your browser. The _PMT_ will return to where you left when you re-open it in the same browser.
+
+
+[[UG_MultiLogin]]
+=== Multi-Login
+
+The _PMT_ can be accessed via multiple browser windows at the same time, with the same user account. If you open multiple tabs in the same browser, you will only need to log in once. 
+
+
+[[UG_Menu]]
+== Accessing the menu
+
+The menu of the PMT can be opened by clicking on the icon in the top left corner. To close the menu, simply click on the icon again or click somewhere in the space to the right of the menu.
+
+image::menu01.png[Menu]
+
+
+[[UG_ModelViews]]
+== Model Views
+
+The _PMT_ supports special model views. They are listed in the <<UG_Menu,menu>>, with buttons to enable or disable them. 
+
+NOTE: Multiple model views can be enabled at the same time.
+
+
+[[UG_ModelViews_FlattenInheritance]]
+=== Flatten inheritance
+
+This view flattens some aspects of class inheritance. Abstract classes and information about superclasses and subclasses are hidden. The <<UG_ProfilePane_ClassesAndProperties,Properties pane>> of a class will show inherited properties, in addition to the properties that are owned by the class itself. Batch editing actions of a class will include inherited properties as well. 
+
+NOTE: If a profile editing action behaves different when this view is enabled, a yellow warning icon will be displayed to indicate it.
+
+
+[[UG_ModelViews_FlattenONINAs]]
+=== Flatten ONINAs
+
+This view will hide the special _Meta_ and _Reason_ classes. Whenever the type of a property _P_ is a _Meta_ or _Reason_ class, the type of the _value_ (or _values_) property of the _Reason_ class will be used as the value type of property _P_.
+
+
+[[UG_ModelFiles]]
+== Model files and profiles
+
+The _Model Files_ pane within the <<UG_Menu,menu>> lists all model files that have been imported by the user. 
+
+NOTE: The model files are sorted by time of addition. The model file that was imported last will therefore appear on top.
+
+The pane provides controls to manage model files and profiles. Clicking on the name of a model file will open the list of its profiles. 
+
+
+[[UG_ImportModel]]
+=== Importing a model
+
+To import a model file, open the <<UG_Menu,menu>>, click on _Add file_, and then choose a model file (created by _ShapeChange_ using the http://shapechange.net/targets/model-export/[_ModelExport_ target]).
+
+NOTE: The import supports both an uncompressed _XML_ file and a _Zip_ archive.
+
+After a file has been selected, a text field with the file name will appear. You can change the name that will be used inside the _PMT_. If a model file with the same name already exists in the _PMT_, you need to change the name in the text field. When a suitable name has been chosen, click on _Import_.
+
+image::menu02.png[Import]
+
+A progress bar will be displayed, showing you the percentage of completion. 
+
+NOTE: The import of a model file may take several minutes. 
+
+When the import is finished, the model file will appear in the list and you can dismiss the import dialog by clicking _Ok_.
+
+image::menu03.png[Imported]
+
+
+[[UG_ExportModel]]
+=== Exporting a model
+
+To export a model file, open the <<UG_Menu,menu>> and click on _Export_ next to the list entry of the model file. The export will start immediately. 
+
+A progress bar will be displayed, showing you the percentage of completion. 
+
+NOTE: The exort of a model file may take several minutes.
+
+When the export is complete, a _Download_ button will appear below the progress bar. Click it to save the file locally.
+
+image::menu04.png[Export]
+
+
+[[UG_DeleteModel]]
+=== Deleting a model
+
+To delete a model file, open the <<UG_Menu,menu>> and click on _Drop_ next to the list entry of the model file. A dialog will appear to request your confirmation of the deletion.
+
+image::menu05.png[Delete]
+
+
+[[UG_SelectProfile]]
+=== Selecting a profile
+
+To open a profile from a specific model file in the <<UG_Browser,model browser>>, open the <<UG_Menu,menu>> and go to the model file. Click on the model file name if the profile list has not been opened yet. Then click on the profile you want to open. This will close the menu and show the model browser with the profile you selected. When opening the menu again, the selected model file and profile are highlighted.
+
+
+[[UG_AddProfile]]
+=== Adding a profile
+
+To add a profile to a model file, open the <<UG_Menu,menu>> and click on _Add Profile_ at the bottom of the profile list. A text field will appear to enter the name of the new profile. 
+
+[NOTE]
+======
+The name should only contain word characters and hyphens. The regular expression to check the profile name is `[\w|-]+`, which is equivalent to `[a-zA-Z0-9_-]+`.
+
+Examples:
+
+* Profile1
+* Proj_X-2-1
+
+======
+
+Adding the profile will only be possible if you enter a profile name that is unique for the model file.
+
+image::menu06.png[Add]
+
+
+[[UG_CopyProfile]]
+=== Copying a profile
+
+You can create a new profile by copying an existing one. To do so, open the <<UG_Menu,menu>>, navigate to the profile you want to copy, and click on _Copy_. A text field will appear where you should enter the name of the new profile. 
+
+NOTE: The rules for naming a profile as described for <<UG_AddProfile>> apply here as well.
+
+
+[[UG_RenameProfile]]
+=== Renaming a profile
+
+To rename a profile, open the <<UG_Menu,menu>>, navigate to the profile, and click on _Edit_. A text field will appear where you should enter the new name of the profile. 
+
+NOTE: The rules for naming a profile as described for <<UG_AddProfile>> apply here as well.
+
+image::menu07.png[Rename]
+
+
+[[UG_DeleteProfile]]
+=== Deleting a profile
+
+To delete a profile, open the <<UG_Menu,menu>>, navigate to the profile, and click on _Drop_. A confirmation dialog will appear. A dialog will appear to request your confirmation of the deletion.
+
+image::menu08.png[Delete]
+
+
+[[UG_Browser]]
+== Browsing a model profile
+
+When a model <<UG_SelectProfile,profile has been selected>>, the PMT displays GUI elements with which you can browse the model. A core element is the <<UG_ModelTree>>. You can use it to select model elements for making profile assignments. You can also select model elements based on a <<UG_Search,textual search>>.
+
+
+[[UG_ModelTree]]
+=== Model tree
+
+The model tree shows the packages, classes and properties of the selected model profile in a tree structure. Different <<UG_ModelTree_Layout,layout options>> exist. Clicking on an item in the tree will show or hide its children and open the item in the <<UG_DetailsPane>>.
+
+image::model01.png[Model]
+
+The type of each item is indicated by an <<UG_ModelTree_Icons,icon>>, the coloring of an item indicates its <<UG_ModelTree_States,state>>.   
+
+[[UG_ModelTree_Icons]]
+==== Icons
+
+* image:icon-p.png[package] - Package 
+* Class
+  ** image:icon-ft.png[featuretype] - Feature type
+  ** image:icon-t.png[type] - Type
+  ** image:icon-dt.png[datatype] - Data type
+  ** image:icon-cl.png[codelist] - Code list
+  ** image:icon-e.png[enumeration] - Enumeration
+  ** image:icon-u.png[union] - Union
+  ** image:icon-c.png[class] - No stereo type
+* Property
+  ** image:icon-a.png[attribute] - Attribute
+  ** image:icon-ar.png[association role] - Association role
+
+[[UG_ModelTree_States]]
+==== States
+
+* image:state-i.png[included] - Included in profile
+* image:state-ni.png[not included] - Not included in profile
+* image:state-ne.png[non-editable] - Not editable
+* image:state-s.png[selected] - Selected
+
+
+[[UG_ModelTree_Layout]]
+==== Layout
+
+Above the model tree are two toggles to adjust the layout of the model tree. 
+
+The first toggle lets you switch from the default tree view to a three pane view. In this view, packages, classes and properties are not contained in a single tree but are presented in three separate panes.
+
+NOTE: This is only a different presentation, the behavior of browsing and selecting model elements remains the same.
+
+image::view01.png[Three Pane View]
+
+The second toggle lets you switch to a smaller font size for the model tree. That allows seeing more model elements on screen without scrolling.
+
+image::view02.png[Smaller Font]
+
+
+[[UG_Search]]
+=== Search
+
+Above the model tree you will find the search box. It allows you to filter the model elements displayed in the model tree by matching the search value against model element names, aliases, descriptions, and definitions. 
+
+The search will start automatically once you entered at least three characters and then paused typing for a second. To reset the search value, you can click on the icon at the right of the search box. The search is case insensitive and uses partial matching. 
+
+.Performing a model search
+======
+If you type `int`, that will match `Integer` as well as `Point`. 
+======
+
+image::search01.png[Search]
+
+Items that are neither matched by the search value nor satisfy any of the following conditions are hidden:
+
+* If a package matches, its contained classes match as well. 
+* If a class is matched, its contained properties match as well. 
+* The parent elements on the path to the top of the tree of a matching element match as well.
+
+If the name of an item is matched, the matching part will be highlighted in yellow in the model tree. If the alias, description or definition of an item is matched, the item will be highlighted in a light yellow in the model tree. In the info pane, the matching part of the alias, description or definition will be highlighted in yellow.
+
+
+[[UG_DetailsPane]]
+== Details pane
+
+The _Details pane_ is situated at the right side of the <<UG_ModelTree>>. It shows the details for the model element that is selected in the _model tree_. The name of the element is shown at the top of the _Details pane_, including its type. 
+
+
+[[UG_ProfilePane]]
+=== Profile pane
+
+The _Profile pane_ allows you to edit the profile information for the selected model element. Different actions are available for different element types.
+
+
+[[UG_ProfilePane_Packages]]
+==== Packages
+
+For packages, at the top you find a toggle to specify if the package is editable. If you switch the toggle, that will also switch it recursively for all sub-packages. If a package is not editable, then the profile information for classes and properties contained in the package cannot be edited.
+
+You can also perform batch editing actions. These allow you to add to or remove from the profile either only the direct child classes of the package or all classes in all sub-packages.
+
+image::model01.png[Packages]
+
+
+[[UG_ProfilePane_Classes]]
+==== Classes
+
+For classes, at the top you find a toggle to specify if the class is included in the profile. If you add the class to the profile, that will automatically add its superclasses and its mandatory properties. If you remove the class from the profile, that will automatically remove its subclasses and all of its properties. If the class to remove is a _Meta_ or _Reason_ class, then the value types of its properties will also be removed – unless these types are used by other properties or belong to a non-editable package.
+
+You can also perform batch editing actions. These allow you to add the optional properties of the class to the profile, or remove them.
+
+For classes with stereotype _featuretype_, you can also specify the profile parameter _geometry_. It allows you to limit the geometry types that are allowed for the _featuretype_.
+
+image::model02.png[Classes]
+
+
+[[UG_ProfilePane_Properties]]
+==== Properties
+
+For properties, at the top you find a toggle to specify if the property is included in the profile. The toggle is only enabled if the class that owns the property is already included in the profile and if the property is optional. This does not apply for mandatory properties that either do not belong to the profile - which can happen in case that a model with inconsistent profiles has been imported - or that belong to an enumeration or code list.
+
+If you add the property to the profile, that will automatically add its type class. On the other hand, if you remove a property from the profile, its type class will not automatically be removed from the profile (since other properties that belong to the profile may have the same type). An exception is made for properties whose type class is a _Meta_ or _Reason_ class, or which belong to such a class: in such a case, the type class is also removed if it belongs to an editable package and is not used as type of other properties.
+
+You can also set the profile parameter _cardinality_. This allows you to limit the cardinality of a property in the profile.
+
+For association roles, you will also be able to set the profile parameter _isNavigable_. This allows you to render a bidirectional association unidirectional.
+
+image::model03.png[Properties]
+
+
+[[UG_ProfilePane_ClassesAndProperties]]
+=== Classes/Properties pane
+
+This pane shows the list of classes contained in the selected package, or the list of properties contained in the selected class. On the left of each list entry is a toggle to specify if the item is included in the profile. The toggle behaves in the same way as the ones in the <<UG_ProfilePane>>. If you click on the model element name, that element will be selected in the model tree and shown in the <<UG_DetailsPane>>.
+
+image::model04.png[Classes]
+
+If the list shows properties of a class, the cardinality and type of each property will be shown on the right. Clicking on the type name will select the type in the model tree and display it in the details pane.
+
+image::model05.png[Properties]
+
+
+[[UG_InfoPane]]
+=== Info pane
+
+This pane shows various information from the model for the selected model element, like description, definition, alias, stereotypes, and tagged values. For classes, it will also show links to superclasses and subclasses. For properties, it shows links to the type. For association roles, it will show links to the association.
+
+image::model07.png[Info]
+
+If you click on a link to an association, the info pane will show the information for the association. However, the association is not shown in the model tree. The information for the association includes links to its two association roles.
+
+
+[[UG_Navigation]]
+== Navigation
+
+When you select model elements in the <<UG_ModelTree>> or follow links in the <<UG_DetailsPane>>, the URL in the browser address bar changes accordingly. That means you can use the browsers back and forward buttons to navigate through the history of selected items. It also means you can copy the URL and open it in a different browser to open the _PMT_ with the same model element selected.
+
+
+[[UG_ConsistencyChecks]]
+== Consistency checks
+
+The _PMT_ continuously checks the consistency of the profile that is being edited. When you import a model file, the consistency for every profile in the model file will be checked during the import. When you change the profile information for a class or property or the editability of a package, the consistency of the selected profile will be checked.
+
+If the selected profile has consistency errors, a red circle with the numbers of errors will be displayed at the top right of the PMT window. When you click on the circle, the list of errors will pop up. When you click on an error, the model browser will jump to the erroneous model element. 
+
+image::checks02.png[Consistency]
+
+If the selected profile has no errors, you will see a green check mark instead of the red circle. During write transactions, you will see a spinner icon in the same place.
+
+The following checks are available:
+
+* If a class is included in the profile, its superclasses have to be included as well, except when they are contained in a non-editable package.
+* If a class is included in the profile, its mandatory properties have to be included as well, unless the class is an enumeration or code list.
+* If a property is included in the profile, its containing class has to be included as well.
+* If a property is included in the profile, its type class has to be included as well, except when it is contained in a non-editable package.
+* If a class with stereotype _featuretype_ has tagged value _geometry_ with a list of geometry type identifiers, that list has to be a subset of the __PMT__s list (which is a global configuration option, see the <<../admin-manual/admin_manual#AM_Configuration_AppSettings_geometry,PMT administrator manual>> for further details). The list of geometry types defined via the profile parameter _geometry_ has to be a subset of the intersection of the geometry types defined by the tagged value geometry and the __PMT__s list.
+* The profile parameter _isNavigable_ may only be specified for association roles. It may not render an association unnavigable.
+* The profile parameter _cardinality_ may only restrict the cardinality of a property. It may not extend the cardinality range.

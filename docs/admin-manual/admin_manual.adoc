@@ -1,0 +1,144 @@
+:doctype: book
+
+:stylesdir: ../stylesheets/
+:stylesheet: github.css
+:linkcss:
+
+:toc: macro
+:toc-title: Table of contents
+:toclevels: 3
+:toc-position: left
+:appendix-caption: Annex
+
+:icons: font
+
+:source-highlighter: pygments
+:pygments-style: autumn
+:pygments-linenums-mode: inline
+
+
+= Profile Management Tool (PMT) - Administrator Manual
+
+<<<
+
+toc::[]
+
+<<<
+
+
+[[AM_Installation]]
+== Installation
+
+The initial version of the _PMT_ has been developed for installation on Windows Server 2008/2012 R2. The installation of the _PMT_ in that environment is documented in the following sections.
+
+NOTE: Support for other server environments can be added in the future. Contributions and support are welcome!
+
+
+[[AM_Installation_MongoDB]]
+=== MongoDB
+
+NOTE: The following instructions assume that _MongoDB_ is installed on the same server as the _PMT_. You can also install _MongoDB_ on a separate Linux server and adjust the _MongoDB_ Connection URI in the configuration.
+
+1.	Download the latest stable release of MongoDB Community Server for Windows Server 2008 R2 64-bit and later with SSL from: https://www.mongodb.com/download-center?jmp=nav#community
+  ** The _PMT_ requires at least version 3.4.x of MongoDB.
+2.	Follow these instructions to install MongoDB for Windows: https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/#install-mongodb-community-edition
+3.	After the installation, follow these instructions to create a Windows Service for MongoDB: https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/#configure-a-windows-service-for-mongodb-community-edition
+4.	Optionally, to enable authentication, follow these instructions: https://docs.mongodb.com/manual/tutorial/enable-authentication/ If you do that, make sure to create a database and an according user with write access for the _PMT_. After installing the latter, you have to change the MongoDB Connection URI accordingly, see https://github.com/ShapeChange/ProfileManagementTool/wiki/Configuration 
+
+
+[[AM_Installation_NodeJS]]
+=== Node.js
+
+1.	Download the latest LTS version of the 64-bit Windows Installer for Node.js from: https://nodejs.org/en/download/
+  ** The _PMT_ requires at least version 6.x of Node.js.
+2.	Execute the installer with the default settings and follow the instructions.
+3.	To verify the installation, open a command prompt and run "node -v". That should print the installed Node.js version.
+
+
+[[AM_Installation_PMT]]
+=== PMT
+
+Two options are available for installing the _PMT_:
+
+* If you are installing the _PMT_ for the first time, perform the <<AM_Installation_PMT_full,full installation>>.
+* If a prior version of the _PMT_ has already been installed and you want to install a newer version, perform an <<AM_Installation_PMT_upgrade,upgrade>>.
+
+
+[[AM_Installation_PMT_full]]
+==== Full Installation
+
+NOTE: Before installing the _PMT_, make sure that its prerequisites, <<AM_Installation_MongoDB,MongoDB>> and <<AM_Installation_NodeJS,Node.js>>, are installed.
+
+1.	Download the latest release (pmt-win-1.0.0.zip and pmt-{release}.tgz) from here: https://github.com/ShapeChange/ProfileManagementTool/releases/latest
+2.	Unzip pmt-win-1.0.0.zip to a directory of your choice, e.g. C:\Program Files\pmt. This file contains a wrapper for the application to run it as a windows service.
+3.	Copy pmt-{release}.tgz to the installation directory.
+4.	Open a command prompt with administrative rights and go to the installation directory, e.g. C:\Program Files\pmt.
+5.	Run the command ``npm install pmt-{release}.tgz`` to install the application itself. It will automatically be registered as a windows service.
+6.	Open http://localhost in a web browser if the browser is running on the same machine, otherwise use the respective hostname.
+
+
+[[AM_Installation_PMT_upgrade]]
+==== Upgrade
+
+1.	Download the latest release (pmt-{release}.tgz) from https://github.com/ShapeChange/ProfileManagementTool/releases/latest and copy it to the installation directory of the _PMT_.
+2.	Run the command ``npm install pmt-{release}.tgz`` to upgrade the application. The windows service will automatically be stopped before upgrading and started again when the upgrade is complete.
+
+
+[[AM_Configuration]]
+== Configuration
+
+To change the _PMT_ configuration, edit the file config.js in the installation folder of the _PMT_. You need to restart the _PMT_ windows service to apply the new settings.
+
+The default configuration looks like this:
+
+------
+{
+    "server": {
+        "port": 80
+    },
+    "db": {
+        "url": "mongodb://localhost/pmt01"
+    },
+    "app": {
+      "geometry": ["P", "C", "S", "So", "MP", "MC", "MS", "MSo"]
+    }
+}
+------
+
+
+[[AM_Configuration_WebServerPort]]
+=== Web Server Port
+
+By default, the _PMT_ server listens on port 80. You can use a different port by setting the server.port in the configuration file.
+
+
+[[AM_Configuration_MongoDBURI]]
+=== MongoDB URI
+
+If the _MongoDB_ instance that the _PMT_ should use is running on a different machine, on a non-default port, or uses authentication, you can change the setting of db.url in the configuration file.
+
+NOTE: The value needs to be a valid _MongoDB_ Connection String URI, see https://docs.mongodb.com/manual/reference/connection-string/. 
+
+
+[[AM_Configuration_AppSettings]]
+=== Application Settings
+
+[[AM_Configuration_AppSettings_geometry]]
+[underline]#geometry#
+
+To change the allowed geometries for featuretypes, update the setting of app.geometry in the configuration file.
+
+
+[[AM_Internationalization]]
+== Internationalization
+
+The _PMT_ is prepared for user interface internationalization, so it is possible to add new languages. For this purpose, https://www.i18next.com/[i18next] is used.
+
+However, you cannot just add new languages to your installation, because the JavaScript files in the _PMT_ release are optimized and compressed for performance reasons.
+
+The easiest way to add a new language to the _PMT_ is a pull request to the Github repository at https://github.com/ShapeChange/ProfileManagementTool. 
+
+You would have to copy the file at https://github.com/ShapeChange/ProfileManagementTool/tree/master/pmt-app/locales/en/app.json to a new folder according to its locale. For example, a German translation would be found at https://github.com/ShapeChange/ProfileManagementTool/tree/master/pmt-app/locales/de/app.json.
+
+After the pull request has been accepted, a new version of the PMT would be released that includes the new language.
+
