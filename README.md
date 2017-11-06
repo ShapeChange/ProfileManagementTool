@@ -1,5 +1,6 @@
 # ProfileManagementTool
 
-## Installation
+The ShapeChange Profile Management Tool is a web application to edit application schema profiles for use with ShapeChange.
 
-To install the ProfileManagementTool on Windows Server 2008/2012 R2, follow the instructions in the [wiki](https://github.com/ShapeChange/ProfileManagementTool/wiki/Windows-Installation).
+You can find the [Admin Manual](https://shapechange.github.io/ProfileManagementTool/#AM) and [User Guide](https://shapechange.github.io/ProfileManagementTool/#UG) on GitHub Pages.
+
