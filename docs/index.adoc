@@ -8,9 +8,7 @@
 
 :icons: font
 
-:source-highlighter: pygments
-:pygments-style: autumn
-:pygments-linenums-mode: inline
+:source-highlighter: highlight.js
 
 
 = Profile Management Tool (PMT)

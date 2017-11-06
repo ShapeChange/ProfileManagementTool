@@ -1,30 +1,9 @@
 :doctype: book
 
-:stylesdir: ../stylesheets/
-:stylesheet: github.css
-:linkcss:
+:imagesdir: ./img
 
-:toc: macro
-:toc-title: Table of contents
-:toclevels: 3
-:toc-position: left
-:appendix-caption: Annex
-
-:icons: font
-
-:source-highlighter: pygments
-:pygments-style: autumn
-:pygments-linenums-mode: inline
-
-
-= Profile Management Tool (PMT) - Administrator Manual
-
-<<<
-
-toc::[]
-
-<<<
-
+[[AM]]
+= Administrator Manual
 
 [[AM_Installation]]
 == Installation
@@ -91,6 +70,7 @@ To change the _PMT_ configuration, edit the file config.js in the installation f
 
 The default configuration looks like this:
 
+[source, json]
 ------
 {
     "server": {
@@ -124,7 +104,7 @@ NOTE: The value needs to be a valid _MongoDB_ Connection String URI, see https:/
 === Application Settings
 
 [[AM_Configuration_AppSettings_geometry]]
-[underline]#geometry#
+==== geometry
 
 To change the allowed geometries for featuretypes, update the setting of app.geometry in the configuration file.
 

@@ -1,32 +1,9 @@
 :doctype: book
 
-:stylesdir: ../stylesheets/
-:stylesheet: github.css
-:linkcss:
-
 :imagesdir: ./img
 
-:toc: macro
-:toc-title: Table of contents
-:toclevels: 3
-:toc-position: left
-:appendix-caption: Annex
-
-:icons: font
-
-:source-highlighter: pygments
-:pygments-style: autumn
-:pygments-linenums-mode: inline
-
-
 [[UG]]
-= Profile Management Tool (PMT) - User Guide
-
-<<<
-
-toc::[]
-
-<<<
+= User Guide
 
 [[UG_Introduction]]
 == Introduction

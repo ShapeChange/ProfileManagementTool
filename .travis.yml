@@ -10,6 +10,8 @@ cache:
   - node_modules
 before_install:
 - mkdir -p docs/output
+- mkdir -p docs/stylesheets
+- wget https://raw.githubusercontent.com/interactive-instruments/asciidoctor-theme-ii/master/stylesheets/ii.css -O docs/stylesheets/ii.css
 - docker pull asciidoctor/docker-asciidoctor
 install:
 - npm run installBuild && npm run installTest
@@ -23,7 +25,7 @@ after_success:
 - docker tag $REPO:$COMMIT $REPO:$TAG
 - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
 - docker push $REPO
-- docker run -v $TRAVIS_BUILD_DIR/docs:/documents/ --name asciidoc-to-html asciidoctor/docker-asciidoctor asciidoctor -D /documents/output -a stylesheet=foundation.css -a stylesdir=./stylesheets index.adoc
+- docker run -v $TRAVIS_BUILD_DIR/docs:/documents/ --name asciidoc-to-html asciidoctor/docker-asciidoctor asciidoctor -D /documents/output -a stylesheet=ii.css -a stylesdir=/documents/stylesheets index.adoc
 - cd docs/output &&  cp -R ../**/img ./
 - git init && git config user.name "${GH_USER_NAME}" && git config user.email "{GH_USER_EMAIL}"
 - git add . ; git commit -m "Deploy to GitHub Pages"
