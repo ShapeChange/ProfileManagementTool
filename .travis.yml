@@ -23,8 +23,8 @@ after_success:
 - docker tag $REPO:$COMMIT $REPO:$TAG
 - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
 - docker push $REPO
-- docker run -v $TRAVIS_BUILD_DIR/docs:/documents/ --name asciidoc-to-html asciidoctor/docker-asciidoctor asciidoctor -D /documents/output index.adoc
-- cd docs/output && cp -R ../images ./ &&  cp -R ../**/img ./
+- docker run -v $TRAVIS_BUILD_DIR/docs:/documents/ --name asciidoc-to-html asciidoctor/docker-asciidoctor asciidoctor -D /documents/output -a stylesheet=foundation.css -a stylesdir=./stylesheets index.adoc
+- cd docs/output &&  cp -R ../**/img ./
 - git init && git config user.name "${GH_USER_NAME}" && git config user.email "{GH_USER_EMAIL}"
 - git add . ; git commit -m "Deploy to GitHub Pages"
 - git push --force --quiet "https://${GH_TOKEN}@${GH_REF}" master:gh-pages > /dev/null 2>&1
