@@ -35,3 +35,15 @@ artifacts:
 
   - path: .\*.tgz
     name: pmt
+
+deploy:
+  release: PMT $(APPVEYOR_REPO_TAG_NAME)
+  description: ''
+  provider: GitHub
+  auth_token:
+    secure: sNwZ6HVVCnYIswT35gP5uPl7CP15B56JvRMniWicIHf/poXfygDQycc/hw+FaBz9
+  artifact: /.*/            # upload all packages to release assets
+  draft: true
+  on:
+    branch: master                 # release from master branch only
+    appveyor_repo_tag: true        # deploy on tag push only
