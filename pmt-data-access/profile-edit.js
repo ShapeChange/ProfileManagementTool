@@ -297,8 +297,7 @@ function getProfileUpdatesForType(id, modelId, profile, include) {
 
     if (!include) {
         return modelReader.getAllOfType(id, modelId, {}, {
-            // return mandatory as well for consistency checks
-            //optional: true
+            optional: true
         })
             .then(function(classesOfType) {
                 return classesOfType.filter(function(cls) {
@@ -320,17 +319,6 @@ function getProfileUpdatesForType(id, modelId, profile, include) {
                             buildPropertyUpdate(update, profile, include, index)
                         }
                     })
-
-                    // if type was removed, return classes with mandatory properties of type
-                    // so that consistency can be validated
-                    if (Object.keys(update).length === 0) {
-                        cls.properties.forEach(function(prp, index) {
-                            if (!include && !prp.optional && prp.typeId === id) {
-                                //update['$pull']['properties.' + i + '.profiles'] = profile;
-                                buildPropertyUpdate(update, profile, !include, index)
-                            }
-                        })
-                    }
 
                     return profileWriter.putClassUpdateProfile(cls.localId, modelId, update)
                 })
