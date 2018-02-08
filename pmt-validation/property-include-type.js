@@ -19,6 +19,8 @@ return through2.obj({
 
             Promise.map(prfs, prf => {
                 return errorWriter.clearErrors(null, obj.model, prf, {
+                    // TODO: shouldn't the ones with itemId be removed?
+                    // itemId: obj.localId,
                     typeId: obj.localId,
                     msg: 'typeNotIncluded'
                 });
