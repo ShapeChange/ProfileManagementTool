@@ -1,0 +1,6 @@
+groupBy:
+  Bugfixes:
+    - bug   
+
+template:
+  issue: "- {{name}} [{{text}}]({{url}})"
