@@ -21,19 +21,14 @@ return through2.obj({
     var prfs = profile ? [profile] : obj.profiles
 
     if (obj.properties) {
-        pr = Promise.map(obj.properties, prp => {
-            if (!prp.optional) {
-                return Promise.map(prfs, prf => {
-                    if (!prp.profiles || prp.profiles.indexOf(prf) === -1) {
-                        return errorWriter.appendError(obj.model, prf, {
-                            itemId: obj.localId,
-                            prpId: prp._id,
-                            prpName: prp.name,
-                            name: obj.name,
-                            msg: 'mandatoryPropertyNotIncluded'
-                        })
-                    }
-                });
+        pr = Promise.map(prfs, prf => {
+            if (obj.properties.some(prp => !prp.optional)
+                    && !obj.properties.some(prp => !prp.optional && prp.profiles && prp.profiles.indexOf(prf) !== -1)) {
+                return errorWriter.appendError(obj.model, prf, {
+                    itemId: obj.localId,
+                    name: obj.name,
+                    msg: 'enumOrUnionNoMandatoryPropertyIncluded'
+                })
             }
         })
     }
@@ -50,5 +45,5 @@ return through2.obj({
 exports.shouldSkip = function(cls, profile) {
 return (profile && (!cls.profiles || cls.profiles.indexOf(profile) === -1))
     || (!cls.profiles || cls.profiles.length === 0)
-    || (cls.stereotypes && (cls.stereotypes[0] === 'enumeration' || cls.stereotypes[0] === 'codelist' || cls.stereotypes[0] === 'union'))
+    || (cls.stereotypes && cls.stereotypes[0] !== 'enumeration' && cls.stereotypes[0] !== 'union')
 }

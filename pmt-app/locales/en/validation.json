@@ -8,5 +8,6 @@
     "typeNotIncluded": "Property {{prpName}} is included in profile, but its type {{typeName}} is not",
     "notAnAssociationRole": "Property {{prpName}} is not an association role, it should not have profile parameter isNavigable",
     "rendersAssociationUnnavigable": "Profile parameter isNavigable for property {{prpName}} should not have value \"false\", that renders the association unnavigable",
-    "parameterMultiplicityOutOfBounds": "The value for parameter multiplicity ({{parameterMultiplicity}}) of property {{prpName}} is not contained in properties cardinality ({{prpCardinality}})"
+    "parameterMultiplicityOutOfBounds": "The value for parameter multiplicity ({{parameterMultiplicity}}) of property {{prpName}} is not contained in properties cardinality ({{prpCardinality}})",
+    "enumOrUnionNoMandatoryPropertyIncluded": "Enumeration or Union {{name}} is included in profile, but none of its mandatory properties is"
 }
