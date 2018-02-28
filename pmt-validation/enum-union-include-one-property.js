@@ -45,5 +45,5 @@ return through2.obj({
 exports.shouldSkip = function(cls, profile) {
 return (profile && (!cls.profiles || cls.profiles.indexOf(profile) === -1))
     || (!cls.profiles || cls.profiles.length === 0)
-    || (cls.stereotypes && cls.stereotypes[0] !== 'enumeration' && cls.stereotypes[0] !== 'union')
+    || (!cls.stereotypes || (cls.stereotypes && cls.stereotypes[0] !== 'enumeration' && cls.stereotypes[0] !== 'union'))
 }
