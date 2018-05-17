@@ -28,8 +28,8 @@ NOTE: The following instructions assume that _MongoDB_ is installed on the same 
 [[AM_Installation_NodeJS]]
 === Node.js
 
-1.	Download the latest LTS version of the 64-bit Windows Installer for Node.js from: https://nodejs.org/en/download/
-  ** The _PMT_ requires at least version 6.x of Node.js.
+1.	Download the latest LTS version of the 64-bit Windows Installer for Node.js version 6.x from: https://nodejs.org/dist/latest-v6.x/
+  ** The _PMT_ requires version 6.x of Node.js.
 2.	Execute the installer with the default settings and follow the instructions.
 3.	To verify the installation, open a command prompt and run "node -v". That should print the installed Node.js version.
 
