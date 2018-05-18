@@ -1,6 +1,8 @@
 groupBy:
   Bugfixes:
     - bug   
+  Features:
+    - enhancement   
 
 template:
   issue: "- {{name}} [{{text}}]({{url}})"
