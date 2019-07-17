@@ -378,13 +378,13 @@ const _getExpandedItems = (state) => {
 
 const _extractProperties = (cls) => {
     return [].concat(cls.properties)
-        .sort(function(a, b) {
+        .sort(function (a, b) {
             return a.name > b.name ? 1 : -1
         }).map(prp => ({
-        ...prp,
-        editable: prp.parent === cls._id ? cls.editable : cls.superEditable && cls.superEditable.find(s => prp.parent === s._id).editable
-    }))
-//return details && details.element.children ? details.element.children.find(child => child && child.name === 'sc:properties') : null
+            ...prp,
+            editable: prp.parent === cls._id ? cls.editable : cls.superEditable && cls.superEditable.find(s => prp.parent === s._id).editable
+        }))
+    //return details && details.element.children ? details.element.children.find(child => child && child.name === 'sc:properties') : null
 }
 
 const _extractProperty = (properties, selectedProperty) => {
@@ -411,13 +411,59 @@ const _extractDetails = (details) => {
         }
         if (details.isAttribute) {
             d.isAttribute = details.isAttribute
+        } else {
+            d.isOwned = details.isOwned === true
         }
         if (details.isNavigable) {
             d.isNavigable = details.isNavigable
         }
+        d.isOrdered = details.isOrdered === true
+        d.isUnique = details.isUnique !== false
+    }
+    if (details && details.type === 'cls') {
+        d.isAbstract = details.isAbstract === true
     }
     if (details && details.associationId) {
         d.association = details.associationId
+        if (details && details.type === 'prp' && details.associationId.assocClassId) {
+            d.associationClass = details.associationId.assocClassId
+        }
+        if (details && details.type === 'cls' && details.associationId.end1) {
+            d.end1 = details.associationId.end1
+        }
+        if (details && details.type === 'cls' && details.associationId.end2) {
+            d.end2 = details.associationId.end2
+        }
+        if (details && details.type === 'prp' && details.reversePropertyId) {
+            if (details.associationId.end1 && details.associationId.end1.parent) {
+                d.reversePropertyId = {
+                    localId: details.associationId.end1.parent,
+                    properties: [
+                        {
+                            localId: details.associationId.end1.localId,
+                            name: details.associationId.end1.name
+                        }
+                    ]
+                }
+            }
+            else if (details.associationId.end1 && details.associationId.end1.properties && details.associationId.end1.properties[0].localId === details.reversePropertyId) {
+                d.reversePropertyId = details.associationId.end1;
+            }
+            if (details.associationId.end2 && details.associationId.end2.parent) {
+                d.reversePropertyId = {
+                    localId: details.associationId.end2.parent,
+                    properties: [
+                        {
+                            localId: details.associationId.end2.localId,
+                            name: details.associationId.end2.name
+                        }
+                    ]
+                }
+            }
+            else if (details.associationId.end2 && details.associationId.end2.properties && details.associationId.end2.properties[0].localId === details.reversePropertyId) {
+                d.reversePropertyId = details.associationId.end2;
+            }
+        }
     }
     if (details && details.end1) {
         d.end1 = details.end1

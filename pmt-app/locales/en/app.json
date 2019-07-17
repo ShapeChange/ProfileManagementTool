@@ -54,6 +54,7 @@
     "actionAffectOther": "Applying this action will affect other classes",
     "changingAffectOther": "Changing this property will affect other classes",
     "propNotEditable": "The property cannot be edited because the package to which its class belongs is not editable",
+    "paramMaxCardinalityOne": "Maximum cardinality is restricted to 1, therefore 1) the controls for this profile parameter have been disabled and 2) the value has automatically been set to the only applicable one.",
     "parameter": "Parameter",
     "geometry": "geometry",
     "isNavigable": "isNavigable",

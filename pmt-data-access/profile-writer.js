@@ -4,20 +4,20 @@ var ObjectID = require('mongodb').ObjectID;
 var model;
 var errors;
 
-exports.create = function(mdl, err) {
-model = mdl;
-errors = err;
+exports.create = function (mdl, err) {
+    model = mdl;
+    errors = err;
 
-return {
-    putClassUpdate: putClassUpdate,
-    putClassUpdateProfile: putClassUpdateProfile,
-    putPackageUpdate: putPackageUpdate,
-    appendError: appendError,
-    clearErrors: clearErrors,
-    appendErrorBulk: appendErrorBulk,
-    clearErrorsBulk: clearErrorsBulk,
-    finishBulk: finishBulk
-}
+    return {
+        putClassUpdate: putClassUpdate,
+        putClassUpdateProfile: putClassUpdateProfile,
+        putPackageUpdate: putPackageUpdate,
+        appendError: appendError,
+        clearErrors: clearErrors,
+        appendErrorBulk: appendErrorBulk,
+        clearErrorsBulk: clearErrorsBulk,
+        finishBulk: finishBulk
+    }
 }
 
 function putClassUpdate(id, modelId, update, projection) {
@@ -35,15 +35,15 @@ function putClassUpdate(id, modelId, update, projection) {
                 new: true,
                 fields: projection || getProjection()
             }
-    )
+        )
 }
 
 function putClassUpdateProfile(id, modelId, update, projection) {
     if (id === undefined)
         throw new Error()
 
-    const dbUpdate = Object.keys(update).reduce(function(upd, key) {
-        return Object.keys(update[key]).reduce(function(upd2, profile) {
+    const dbUpdate = Object.keys(update).reduce(function (upd, key) {
+        return Object.keys(update[key]).reduce(function (upd2, profile) {
             const cmd = update[key][profile] === true ? '$addToSet' : '$pull'
             if (!upd2[cmd])
                 upd2[cmd] = {}
@@ -72,7 +72,7 @@ function putPackageUpdate(id, modelId, update, projection) {
                 new: true,
                 fields: projection || getProjection()
             }
-    )
+        )
 }
 
 function appendError(modelId, profile, error) {
@@ -81,25 +81,25 @@ function appendError(modelId, profile, error) {
         profile: profile
     }))
 
-/*if (!error._id)
-    return //throw new Error()
-
-var update = {
-    $addToSet: {
-        ['profilesInfo.' + profile + '.errors']: error
-    }
-}
-console.log('APPEND', update)
-return model
-    .findAndModify({
-        _id: ObjectID(modelId)
-    },
-        [],
-        update,
-        {
-            new: true
+    /*if (!error._id)
+        return //throw new Error()
+    
+    var update = {
+        $addToSet: {
+            ['profilesInfo.' + profile + '.errors']: error
         }
-)*/
+    }
+    console.log('APPEND', update)
+    return model
+        .findAndModify({
+            _id: ObjectID(modelId)
+        },
+            [],
+            update,
+            {
+                new: true
+            }
+    )*/
 }
 
 function clearErrors(clsId, modelId, profile, filter) {
@@ -107,31 +107,31 @@ function clearErrors(clsId, modelId, profile, filter) {
         model: modelId,
         profile: profile
     }, filter || {
-            itemId: clsId
-        }))
+        itemId: clsId
+    }))
 
-/*if (!clsId)
-    return //throw new Error()
-
-var update = {
-    $pull: {
-        ['profilesInfo.' + profile + '.errors']: {
-            _id: clsId
+    /*if (!clsId)
+        return //throw new Error()
+    
+    var update = {
+        $pull: {
+            ['profilesInfo.' + profile + '.errors']: {
+                _id: clsId
+            }
         }
     }
-}
-console.log('CLEAR', update)
-
-return model
-    .findAndModify({
-        _id: ObjectID(modelId)
-    },
-        [],
-        update,
-        {
-            new: true
-        }
-)*/
+    console.log('CLEAR', update)
+    
+    return model
+        .findAndModify({
+            _id: ObjectID(modelId)
+        },
+            [],
+            update,
+            {
+                new: true
+            }
+    )*/
 }
 
 var bulk = [];
@@ -204,10 +204,10 @@ function finishBulk() {
 }
 
 
-var minProjection = ['localId', 'parent', 'name', 'type', 'profiles', 'profileParameters', 'properties.profiles', 'properties.profileParameters', 'properties._id', 'properties.name', 'properties.typeId', 'properties.isAttribute', 'properties.isNavigable', 'properties.optional', 'properties.reversePropertyId', 'properties.cardinality', 'taggedValues', 'stereotypes', 'model', 'editable'];
+var minProjection = ['localId', 'parent', 'name', 'type', 'profiles', 'profileParameters', 'properties.profiles', 'properties.profileParameters', 'properties._id', 'properties.name', 'properties.typeId', 'properties.isAttribute', 'properties.isNavigable', 'properties.optional', 'properties.reversePropertyId', 'properties.cardinality', 'taggedValues', 'stereotypes', 'model', 'editable', 'associationId'];
 
 function getProjection() {
-    return minProjection.concat([].slice.call(arguments)).reduce(function(prj, key) {
+    return minProjection.concat([].slice.call(arguments)).reduce(function (prj, key) {
         prj[key] = 1;
         return prj;
     }, {})

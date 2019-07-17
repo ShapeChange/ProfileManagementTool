@@ -28,19 +28,19 @@ class ModelElement extends Component {
             const start = element.name.toLowerCase().indexOf(filter)
             if (start > -1) {
                 const end = start + filter.length
-                return <span className={ classNames }>{ element.name.substring(0, start) }<span className="bg-highlight">{ element.name.substring(start, end) }</span>
-                       { element.name.substring(end) }
-                       </span>
+                return <span className={classNames}>{element.name.substring(0, start)}<span className="bg-highlight">{element.name.substring(start, end)}</span>
+                    {element.name.substring(end)}
+                </span>
             } else if (element.filterMatch) {
                 classNames += ' underscore-highlight'
             }
         }
 
-        return <span className={ classNames }>{ element.name }</span>
+        return <span className={classNames}>{element.name}</span>
     }
 
     render() {
-        const {tag: Tag, className, element, depth, color, showExpansionIcons, isExpanded, filter, ...attributes} = this.props;
+        const { tag: Tag, className, element, depth, color, showExpansionIcons, isExpanded, filter, ...attributes } = this.props;
 
         let elementIcon;
 
@@ -49,9 +49,9 @@ class ModelElement extends Component {
             if (iconType) {
                 let iconClassNames = 'badge-fw mr-1 px-0'
 
-                elementIcon = <Badge color={ color || 'primary' } className={ iconClassNames }>
-                                  { iconType }
-                              </Badge>;
+                elementIcon = <Badge color={color || 'primary'} className={iconClassNames}>
+                    {iconType}
+                </Badge>;
             }
         }
 
@@ -59,23 +59,26 @@ class ModelElement extends Component {
             let iconName = Icons[element.type] + (isExpanded && element.type === ItemType.PKG ? '-open' : '')
             if (element.type === ItemType.PRP && !element.isAttribute)
                 iconName = Icons[StereoType.AR]
-            elementIcon = <FontAwesome name={ iconName } fixedWidth={ true } className="mr-1" />
+            elementIcon = <FontAwesome name={iconName} fixedWidth={true} className="mr-1" />
         }
 
-        let elementName = this._highlight(element, filter, 'model-element-name')
+        let elementName = this._highlight(element, filter, 'model-element-name' + (element.isAbstract ? ' font-italic' : ''))
 
         let expansionIconType = 'blank'
         //if (hasChildren)
         if (element.type !== 'prp')
             expansionIconType = isExpanded ? 'angle-down' : 'angle-right'
-        const expansionIcon = showExpansionIcons ? <FontAwesome name={ expansionIconType } fixedWidth={ true } className="" /> : null
+        const expansionIcon = showExpansionIcons ? <FontAwesome name={expansionIconType} fixedWidth={true} className="" /> : null
 
-        return <Tag {...attributes} className={ `model-element d-flex flex-row align-items-center text-nowrap ${color && 'text-'+color} ${className}` }>
-                   { expansionIcon }
-                   { depth > 0 && Array(depth).fill(0).map((v, i) => <span key={ i } className="pl-4" />) }
-                   { elementIcon }
-                   { elementName }
-               </Tag>
+        return <Tag {...attributes} className={`model-element d-flex flex-row align-items-center text-nowrap ${color && 'text-' + color} ${className}`}>
+            {expansionIcon}
+            {depth > 0 && Array(depth).fill(0).map((v, i) => <span key={i} className="pl-4" />)}
+            {elementIcon}
+            {elementName}
+            {element.type === 'cls' && element.associationId && <Badge color={color || 'primary'} className={'badge-fw ml-1 px-0'}>
+                {'AC'}
+            </Badge>}
+        </Tag>
     }
 }
 

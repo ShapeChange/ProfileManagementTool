@@ -4,41 +4,41 @@ var xmlDecoder = require('read-xml');
 var xmlLexer = require('xml-lexer');
 var xmlParser = require('xml-reader');
 
-exports.createStream = function(modelName, options) {
-var xmlTransformer;
-var opts = parseOptions(options, modelName);
+exports.createStream = function (modelName, options) {
+    var xmlTransformer;
+    var opts = parseOptions(options, modelName);
 
-var attrName;
-var lexer = xmlLexer.create();
-lexer.on('data', function(data) {
-    if (!opts.nsPrefix) {
-        if (data.type === 'attribute-name') {
-            attrName = data.value;
-        } else if (data.type === 'attribute-value' && data.value === 'http://shapechange.net/model') {
-            opts.nsPrefix = attrName.substr(6) + ':';
+    var attrName;
+    var lexer = xmlLexer.create();
+    lexer.on('data', function (data) {
+        if (!opts.nsPrefix) {
+            if (data.type === 'attribute-name') {
+                attrName = data.value;
+            } else if (data.type === 'attribute-value' && data.value === 'http://shapechange.net/model') {
+                opts.nsPrefix = attrName.substr(6) + ':';
+            }
         }
-    }
-});
+    });
 
-var toObjects = through2({
-    readableObjectMode: true,
-    highWaterMark: 1 //opts.batchSize
-}, function(chunkBuf, enc, cb) {
-    var chunk = chunkBuf.toString();
-    if (!opts.nsPrefix)
-        lexer.write(chunk);
+    var toObjects = through2({
+        readableObjectMode: true,
+        highWaterMark: 1 //opts.batchSize
+    }, function (chunkBuf, enc, cb) {
+        var chunk = chunkBuf.toString();
+        if (!opts.nsPrefix)
+            lexer.write(chunk);
 
-    if (!xmlTransformer)
-        xmlTransformer = createXmlTransformer(this, opts);
+        if (!xmlTransformer)
+            xmlTransformer = createXmlTransformer(this, opts);
 
-    xmlTransformer.parse(chunk);
+        xmlTransformer.parse(chunk);
 
-    cb();
-})
+        cb();
+    })
 
-var toUtf = xmlDecoder.createStream();
+    var toUtf = xmlDecoder.createStream();
 
-return multipipe(toUtf, toObjects)
+    return multipipe(toUtf, toObjects)
 };
 
 function parseOptions(options, modelName) {
@@ -58,10 +58,10 @@ function parseOptions(options, modelName) {
 
     var opts = Object.assign({
         batchSize: 5,
-        generateId: function() {
+        generateId: function () {
             return i++;
         },
-        resolveId: function(id) {
+        resolveId: function (id) {
             return id;
         },
         modelName: modelName,
@@ -108,7 +108,7 @@ function createXmlTransformer(outStream, options) {
 
 
 
-    xmlStream.on(tags.Profile, function(profile) {
+    xmlStream.on(tags.Profile, function (profile) {
 
         if (profile.attributes.name) {
             if (profiles.indexOf(profile.attributes.name) === -1) {
@@ -116,10 +116,10 @@ function createXmlTransformer(outStream, options) {
             }
         } else if (profile.children.length === 2) {
             console.log(profile);
-            var name = profile.children.find(function(child) {
+            var name = profile.children.find(function (child) {
                 return child.name === 'sc:name'
             })
-            var description = profile.children.find(function(child) {
+            var description = profile.children.find(function (child) {
                 return child.name === 'sc:description'
             })
             if (name && description && name.children[0] && description.children[0]) {
@@ -129,17 +129,17 @@ function createXmlTransformer(outStream, options) {
         }
     });
 
-    xmlStream.on(tags.Model, function(node) {
+    xmlStream.on(tags.Model, function (node) {
         parseModel(outStream, node, options, profiles, profileInfos);
     });
 
-    xmlStream.on(tags.Package, function(node) {
+    xmlStream.on(tags.Package, function (node) {
         parsePackage(outStream, node, options);
 
         options.stats.packages++;
     });
 
-    xmlStream.on(tags.Class, function(node) {
+    xmlStream.on(tags.Class, function (node) {
         parseClass(outStream, node, options);
 
         options.stats.classes++;
@@ -151,11 +151,11 @@ function createXmlTransformer(outStream, options) {
         }
     });
 
-    xmlStream.on(tags.Property, function(node) {
+    xmlStream.on(tags.Property, function (node) {
         options.stats.properties++;
     });
 
-    xmlStream.on(tags.Association, function(node) {
+    xmlStream.on(tags.Association, function (node) {
         parseAssociation(outStream, node, options);
 
         options.stats.associations++;
@@ -168,22 +168,22 @@ function createXmlTransformer(outStream, options) {
     });
 
     // split here, free memory
-    xmlStream.on(tags.packages, function(node) {
+    xmlStream.on(tags.packages, function (node) {
         node.children = [];
     });
 
     // split here, free memory
-    xmlStream.on(tags.classes, function(node) {
+    xmlStream.on(tags.classes, function (node) {
         node.children = [];
     });
 
     // split here, free memory
-    xmlStream.on(tags.associations, function(node) {
+    xmlStream.on(tags.associations, function (node) {
         node.children = [];
     });
 
     // cleanup parent references, is called after specific tag events
-    xmlStream.on('tag', function(name, node) {
+    xmlStream.on('tag', function (name, node) {
         delete node.parent;
         for (var i = 0; i < node.children.length; i++) {
             if (node.children[i])
@@ -194,7 +194,7 @@ function createXmlTransformer(outStream, options) {
 
     var start = Date.now();
 
-    xmlStream.on("done", function(data) {
+    xmlStream.on("done", function (data) {
         outStream.end();
 
         options.stats.duration = Date.now() - start;
@@ -212,7 +212,7 @@ function parseModel(outStream, node, options, profiles, profileInfos) {
         type: 'mdl',
         owner: options.owner,
         created: Date.now(),
-        profilesInfo: profiles.reduce(function(obj, prf) {
+        profilesInfo: profiles.reduce(function (obj, prf) {
             obj[prf] = {
                 _id: prf,
                 name: prf,
@@ -328,10 +328,10 @@ function parseAssociation(outStream, node, options) {
 // TODO: use xml-query
 function reduceNode(node, id, type) {
 
-    var profilesIndex = node.children.findIndex(function(child) {
+    var profilesIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:profiles'
     })
-    var propertiesIndex = node.children.findIndex(function(child) {
+    var propertiesIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:properties'
     })
 
@@ -351,98 +351,113 @@ function reduceNode(node, id, type) {
         }
     }
 
-    var nameIndex = node.children.findIndex(function(child) {
+    var nameIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:name'
     })
-    var localIdIndex = node.children.findIndex(function(child) {
+    var localIdIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:id'
     })
-    var stereotypeIndex = node.children.findIndex(function(child) {
+    var stereotypeIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:stereotypes'
     })
-    var descriptorsIndex = node.children.findIndex(function(child) {
+    var descriptorsIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:descriptors'
     })
-    var taggedValuesIndex = node.children.findIndex(function(child) {
+    var taggedValuesIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:taggedValues'
     })
-    var baseClassIndex = node.children.findIndex(function(child) {
+    var baseClassIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:baseClassId'
     })
-    var supertypesIndex = node.children.findIndex(function(child) {
+    var supertypesIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:supertypes'
     })
-    var subtypesIndex = node.children.findIndex(function(child) {
+    var subtypesIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:subtypes'
     })
-    var cardinalityIndex = node.children.findIndex(function(child) {
+    var cardinalityIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:cardinality'
     })
-    var isAttributeIndex = node.children.findIndex(function(child) {
+    var isAttributeIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:isAttribute'
     })
-    var isNavigableIndex = node.children.findIndex(function(child) {
+    var isNavigableIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:isNavigable'
     })
-    var reversePropertyIdIndex = node.children.findIndex(function(child) {
+    var isOrderedIndex = node.children.findIndex(function (child) {
+        return child.name === 'sc:isOrdered'
+    })
+    var isUniqueIndex = node.children.findIndex(function (child) {
+        return child.name === 'sc:isUnique'
+    })
+    var isOwnedIndex = node.children.findIndex(function (child) {
+        return child.name === 'sc:isOwned'
+    })
+    var reversePropertyIdIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:reversePropertyId'
     })
-    var end1Index = node.children.findIndex(function(child) {
+    var end1Index = node.children.findIndex(function (child) {
         return child.name === 'sc:end1'
     })
-    var end2Index = node.children.findIndex(function(child) {
+    var end2Index = node.children.findIndex(function (child) {
         return child.name === 'sc:end2'
     })
-    var isAbstractIndex = node.children.findIndex(function(child) {
+    var isAbstractIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:isAbstract'
     })
-    var typeIndex = node.children.findIndex(function(child) {
+    var typeIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:typeId'
     })
-    var typeNameIndex = node.children.findIndex(function(child) {
+    var typeNameIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:typeName'
     })
-    var associationIdIndex = node.children.findIndex(function(child) {
+    var associationIdIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:associationId'
+    })
+    var assocClassIdIndex = node.children.findIndex(function (child) {
+        return child.name === 'sc:assocClassId'
     })
 
     var reduced = {
         name: nameIndex > -1 && node.children[nameIndex].children[0].value,
         localId: localIdIndex > -1 && node.children[localIdIndex].children[0].value,
         descriptors: descriptorsIndex > -1 && node.children[descriptorsIndex].children.reduce((attrs, attr) => {
-                let key = attr.name.substr(3);
-                let value = attr.children && attr.children[0] && attr.children[0].children[0] && attr.children[0].children[0].children[0] ? attr.children[0].children[0].children[0].value : ''
+            let key = attr.name.substr(3);
+            let value = attr.children && attr.children[0] && attr.children[0].children[0] && attr.children[0].children[0].children[0] ? attr.children[0].children[0].children[0].value : ''
 
-                if (key && value && value !== '')
-                    attrs[key] = value
+            if (key && value && value !== '')
+                attrs[key] = value
 
-                return attrs
-            }, {}),
+            return attrs
+        }, {}),
         taggedValues: taggedValuesIndex > -1 && node.children[taggedValuesIndex].children.reduce((attrs, attr) => {
-                let key = attr.children && attr.children[0] && attr.children[0].children[0] ? attr.children[0].children[0].value : null
-                let value = key && attr.children[1] && attr.children[1].children[0] && attr.children[1].children[0].children[0] ? attr.children[1].children[0].children[0].value : ''
-                if (key && key !== 'profiles' && key !== 'sequenceNumber' && value && value !== '')
-                    attrs[key] = value
+            let key = attr.children && attr.children[0] && attr.children[0].children[0] ? attr.children[0].children[0].value : null
+            let value = key && attr.children[1] && attr.children[1].children[0] && attr.children[1].children[0].children[0] ? attr.children[1].children[0].children[0].value : ''
+            if (key && key !== 'profiles' && key !== 'sequenceNumber' && value && value !== '')
+                attrs[key] = value
 
-                return attrs
-            }, {}),
-        stereotypes: stereotypeIndex > -1 && node.children[stereotypeIndex].children.map(function(st) {
-                return st.children[0].value
-            }),
+            return attrs
+        }, {}),
+        stereotypes: stereotypeIndex > -1 && node.children[stereotypeIndex].children.map(function (st) {
+            return st.children[0].value
+        }),
         baseclass: baseClassIndex > -1 && node.children[baseClassIndex].children[0].value,
-        supertypes: supertypesIndex > -1 ? node.children[supertypesIndex].children.map(function(st) {
+        supertypes: supertypesIndex > -1 ? node.children[supertypesIndex].children.map(function (st) {
             return st.children[0].value
         }) : [],
-        subtypes: subtypesIndex > -1 ? node.children[subtypesIndex].children.map(function(st) {
+        subtypes: subtypesIndex > -1 ? node.children[subtypesIndex].children.map(function (st) {
             return st.children[0].value
         }) : [],
-        profiles: profilesIndex > -1 ? node.children[profilesIndex].children.map(function(pr) {
+        profiles: profilesIndex > -1 ? node.children[profilesIndex].children.map(function (pr) {
             return pr.attributes.name;
         }) : [],
         profileParameters: profilesIndex > -1 ? _reduceProfiles(node.children[profilesIndex]) : {},
         cardinality: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value,
         isAttribute: isAttributeIndex === -1 || node.children[isAttributeIndex].children[0].value !== 'false',
         isNavigable: isNavigableIndex === -1 || node.children[isNavigableIndex].children[0].value !== 'false',
+        isOrdered: isOrderedIndex > -1 && node.children[isOrderedIndex].children[0].value === 'true',
+        isUnique: isUniqueIndex === -1 || node.children[isUniqueIndex].children[0].value !== 'false',
+        isOwned: isOwnedIndex > -1 && node.children[isOwnedIndex].children[0].value === 'true',
         isAbstract: isAbstractIndex > -1 && node.children[isAbstractIndex].children[0].value === 'true',
         optional: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value && node.children[cardinalityIndex].children[0].value.indexOf('0') === 0,
         reversePropertyId: reversePropertyIdIndex > -1 && node.children[reversePropertyIdIndex].children[0].value,
@@ -451,6 +466,7 @@ function reduceNode(node, id, type) {
         typeId: typeIndex > -1 && node.children[typeIndex].children[0].value,
         typeName: typeNameIndex > -1 && node.children[typeNameIndex].children[0].value,
         associationId: associationIdIndex > -1 && node.children[associationIdIndex].children[0].value,
+        assocClassId: assocClassIdIndex > -1 && node.children[assocClassIdIndex].children[0].value,
         properties: propertiesIndex > -1 ? _reduceProperties(node.children[propertiesIndex], node.children[localIdIndex].children[0].value) : []
     }
 
@@ -461,9 +477,9 @@ function reduceNode(node, id, type) {
 
 
 function _reduceProperties(properties, id) {
-    return properties.children.map(function(prop) {
+    return properties.children.map(function (prop) {
         return _reduceProperty(prop, id);
-    }).sort(function(a, b) {
+    }).sort(function (a, b) {
         return a.name > b.name ? 1 : -1
     });
 }
@@ -481,10 +497,10 @@ function _reduceProperty(prop, id) {
 }
 
 function _reduceProfiles(profiles) {
-    return profiles.children.reduce(function(reduced, profile) {
+    return profiles.children.reduce(function (reduced, profile) {
         var parameter = {};
         if (profile.children.length) {
-            profile.children[0].children.reduce(function(params, param) {
+            profile.children[0].children.reduce(function (params, param) {
                 params[param.attributes.name] = param.attributes.value;
                 return params;
             }, parameter)
@@ -522,7 +538,7 @@ function _reduceMetaAndReason(reducedNode, type) {
 
         var hasNilReason = false;
 
-        reducedNode.properties.forEach(function(prp) {
+        reducedNode.properties.forEach(function (prp) {
             var isNilReason = (prp.taggedValues && (prp.taggedValues.gmlImplementedByNilReason === 'true' || prp.taggedValues.implementedByNilReason === 'true'))
                 || (_hasReasonName(reducedNode.name) && prp.name === 'reason')
 

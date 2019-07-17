@@ -10,7 +10,7 @@ import ModelBrowserInfos from './ModelBrowserInfos'
 class ModelBrowserDetails extends Component {
 
     _updateProfileForElement = (item) => {
-        const {selectedProfile} = this.props;
+        const { selectedProfile } = this.props;
 
         this._updateProfile(item, {
             include: item.profiles.indexOf(selectedProfile) === -1
@@ -18,7 +18,7 @@ class ModelBrowserDetails extends Component {
     }
 
     _updateEditableForElement = (item) => {
-        const {editable} = this.props;
+        const { editable } = this.props;
 
         this._updateEditable(item, {
             editable: !item.editable,
@@ -45,22 +45,33 @@ class ModelBrowserDetails extends Component {
     }
 
     _updateProfileParameter = (item, key, value) => {
-        const {updateProfile, selectedModel, selectedProfile} = this.props;
+        const { updateProfile, selectedModel, selectedProfile } = this.props;
 
-        updateProfile({
-            id: item._id,
-            modelId: selectedModel,
-            type: item.type,
-            parent: item.parent,
-            profile: selectedProfile,
-            profileParameters: {
-                [key]: value
-            }
-        });
+        if (typeof key === 'object') {
+            updateProfile({
+                id: item._id,
+                modelId: selectedModel,
+                type: item.type,
+                parent: item.parent,
+                profile: selectedProfile,
+                profileParameters: key
+            });
+        } else {
+            updateProfile({
+                id: item._id,
+                modelId: selectedModel,
+                type: item.type,
+                parent: item.parent,
+                profile: selectedProfile,
+                profileParameters: {
+                    [key]: value
+                }
+            });
+        }
     }
 
     _updateProfile = (item, update) => {
-        const {updateProfile, selectedModel, selectedProfile} = this.props;
+        const { updateProfile, selectedModel, selectedProfile } = this.props;
 
         updateProfile({
             id: item._id,
@@ -73,7 +84,7 @@ class ModelBrowserDetails extends Component {
     }
 
     _updateEditable = (item, update) => {
-        const {updateEditable, selectedModel} = this.props;
+        const { updateEditable, selectedModel } = this.props;
 
         updateEditable({
             id: item._id,
@@ -83,7 +94,7 @@ class ModelBrowserDetails extends Component {
     }
 
     render() {
-        const {_id, name, type, items, infos, taggedValues, parameters, selectedTab, baseUrls, urlSuffix, filter, isFlattenInheritance, isFlattenOninas, busy, t} = this.props;
+        const { _id, name, type, items, infos, taggedValues, parameters, selectedTab, baseUrls, urlSuffix, filter, isFlattenInheritance, isFlattenOninas, busy, t } = this.props;
 
         const baseUrl = `${baseUrls[type]}/${_id}`;
         const isInfo = infos && selectedTab === 'info'
@@ -92,51 +103,51 @@ class ModelBrowserDetails extends Component {
         const isProfile = !selectedTab || (!isInfo && !isItems && !isParameters) || selectedTab === 'profile'
 
         return (_id &&
-            <div className="p-3" style={ { overflowY: 'auto', overflowX: 'hidden' } }>
+            <div className="p-3" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
                 <Nav pills className="mb-3">
-                    { type !== 'asc' &&
-                      <NavItem>
-                          <NavLink tag={ Link } href={ `${baseUrl}/profile${urlSuffix}` } active={ isProfile }>
-                              { t('profile') }
-                          </NavLink>
-                      </NavItem> }
-                    { items &&
-                      <NavItem>
-                          <NavLink tag={ Link } href={ `${baseUrl}/items${urlSuffix}` } active={ selectedTab === 'items' }>
-                              { type === 'pkg' ? t('classes') : t('properties') }
-                          </NavLink>
-                      </NavItem> }
-                    { infos &&
-                      <NavItem>
-                          <NavLink tag={ Link }
-                              href={ selectedTab !== 'info' ? `${baseUrl}/info${urlSuffix}` : '' }
-                              active={ selectedTab === 'info' }
-                              disabled={ !infos || selectedTab === 'info' }>
-                              { t('info') }
-                          </NavLink>
-                      </NavItem> }
+                    {type !== 'asc' &&
+                        <NavItem>
+                            <NavLink tag={Link} href={`${baseUrl}/profile${urlSuffix}`} active={isProfile}>
+                                {t('profile')}
+                            </NavLink>
+                        </NavItem>}
+                    {items &&
+                        <NavItem>
+                            <NavLink tag={Link} href={`${baseUrl}/items${urlSuffix}`} active={selectedTab === 'items'}>
+                                {type === 'pkg' ? t('classes') : t('properties')}
+                            </NavLink>
+                        </NavItem>}
+                    {infos &&
+                        <NavItem>
+                            <NavLink tag={Link}
+                                href={selectedTab !== 'info' ? `${baseUrl}/info${urlSuffix}` : ''}
+                                active={selectedTab === 'info'}
+                                disabled={!infos || selectedTab === 'info'}>
+                                {t('info')}
+                            </NavLink>
+                        </NavItem>}
                 </Nav>
-                { isProfile &&
-                  <ModelBrowserActions {...this.props}
-                      updateProfile={ this._updateProfileForElement }
-                      updateProfileForChildren={ this._updateProfileForChildren }
-                      updateEditable={ this._updateEditableForElement }
-                      updateEditableForChildren={ this._updateEditableForChildren }
-                      updateProfileParameter={ this._updateProfileParameter } /> }
-                { isInfo &&
-                  <ModelBrowserInfos infos={ infos }
-                      taggedValues={ taggedValues }
-                      baseUrl={ baseUrls['cls'] }
-                      baseUrlPrp={ baseUrls['prp2'] }
-                      urlSuffix={ selectedTab }
-                      filter={ filter }
-                      isFlattenInheritance={ isFlattenInheritance }
-                      isFlattenOninas={ isFlattenOninas }
-                      t={ t } /> }
-                { isItems &&
-                  <ModelBrowserItems {...this.props} urlSuffix={ selectedTab } updateProfile={ this._updateProfileForElement } /> }
-                { isParameters &&
-                  <ModelBrowserParameters disabled={ busy } parameters={ parameters } t={ t } /> }
+                {isProfile &&
+                    <ModelBrowserActions {...this.props}
+                        updateProfile={this._updateProfileForElement}
+                        updateProfileForChildren={this._updateProfileForChildren}
+                        updateEditable={this._updateEditableForElement}
+                        updateEditableForChildren={this._updateEditableForChildren}
+                        updateProfileParameter={this._updateProfileParameter} />}
+                {isInfo &&
+                    <ModelBrowserInfos infos={infos}
+                        taggedValues={taggedValues}
+                        baseUrl={baseUrls['cls']}
+                        baseUrlPrp={baseUrls['prp2']}
+                        urlSuffix={selectedTab}
+                        filter={filter}
+                        isFlattenInheritance={isFlattenInheritance}
+                        isFlattenOninas={isFlattenOninas}
+                        t={t} />}
+                {isItems &&
+                    <ModelBrowserItems {...this.props} urlSuffix={selectedTab} updateProfile={this._updateProfileForElement} />}
+                {isParameters &&
+                    <ModelBrowserParameters disabled={busy} parameters={parameters} t={t} />}
             </div>
         );
     }

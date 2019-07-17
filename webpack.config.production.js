@@ -27,8 +27,8 @@ return webpackMerge(appConfig(env), {
                 to: '../../'
             },
             {
-                from: '../package.json',
-                to: '../../'
+                from: '../package2.json',
+                to: '../../package.json'
             },
             {
                 from: '../npm-shrinkwrap.json',

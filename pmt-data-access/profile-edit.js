@@ -1,4 +1,5 @@
 var Promise = require("bluebird");
+const util = require('util')
 
 var modelReader;
 var profileWriter;
@@ -28,8 +29,8 @@ function getEditableUpdatesForPackage(id, modelId, editable, recursive) {
 
     if (recursive) {
         var updates2 = modelReader.getPackageGraph(id, modelId)
-            .then(function(pkgs) {
-                var updatesPkg = Promise.mapSeries(pkgs, function(pkg) {
+            .then(function (pkgs) {
+                var updatesPkg = Promise.mapSeries(pkgs, function (pkg) {
                     return profileWriter.putPackageUpdate(pkg._id, modelId, {
                         $set: {
                             editable: editable
@@ -37,11 +38,11 @@ function getEditableUpdatesForPackage(id, modelId, editable, recursive) {
                     })
                 })
 
-                var updatesClass = Promise.mapSeries(pkgs, function(pkg) {
+                var updatesClass = Promise.mapSeries(pkgs, function (pkg) {
                     return modelReader.getClassesForPackage(pkg._id, modelId)
-                        .then(function(classes) {
+                        .then(function (classes) {
                             console.log('EDIT', pkg._id, classes.length, process.memoryUsage().heapUsed);
-                            return Promise.mapSeries(classes, function(cls) {
+                            return Promise.mapSeries(classes, function (cls) {
                                 return profileWriter.putClassUpdate(cls.localId, modelId, {
                                     $set: {
                                         editable: editable
@@ -49,15 +50,15 @@ function getEditableUpdatesForPackage(id, modelId, editable, recursive) {
                                 })
                             })
                         })
-                        .then(function(classes) {
+                        .then(function (classes) {
                             console.log('EDITED', pkg._id, classes.length, process.memoryUsage().heapUsed);
                             return classes
                         })
                 })
 
-                return Promise.join(updatesPkg, updatesClass, function(updates1, updates2) {
+                return Promise.join(updatesPkg, updatesClass, function (updates1, updates2) {
                     console.log('MERGE', updates1.length, updates2.length);
-                    var updates3 = updates2.reduce(function(joined, item) {
+                    var updates3 = updates2.reduce(function (joined, item) {
                         return joined.concat(item);
                     }, [])
 
@@ -66,7 +67,7 @@ function getEditableUpdatesForPackage(id, modelId, editable, recursive) {
                 })
             })
 
-        updates = Promise.join(updates, updates2, function(updates1, updates2) {
+        updates = Promise.join(updates, updates2, function (updates1, updates2) {
             return updates1.concat(updates2);
         })
     }
@@ -74,21 +75,21 @@ function getEditableUpdatesForPackage(id, modelId, editable, recursive) {
     return updates
 
 
-/*return modelReader.getClassesForPackage(id, modelId, recursive)
-    .then(function(classes) {
-        console.log('EDIT', classes);
-        var updatesClass = Promise.map(classes, function(cls) {
-            return profileWriter.putClassUpdate(cls.localId, modelId, {
-                $set: {
-                    editable: editable
-                }
+    /*return modelReader.getClassesForPackage(id, modelId, recursive)
+        .then(function(classes) {
+            console.log('EDIT', classes);
+            var updatesClass = Promise.map(classes, function(cls) {
+                return profileWriter.putClassUpdate(cls.localId, modelId, {
+                    $set: {
+                        editable: editable
+                    }
+                })
             })
-        })
-
-        return Promise.join(updates, updatesClass, function(updates1, updates2) {
-            return updates1.concat(updates2);
-        })
-    })*/
+    
+            return Promise.join(updates, updatesClass, function(updates1, updates2) {
+                return updates1.concat(updates2);
+            })
+        })*/
 }
 
 function getProfileParameterUpdates(clsId, prpId, modelId, profile, parameter) {
@@ -96,10 +97,10 @@ function getProfileParameterUpdates(clsId, prpId, modelId, profile, parameter) {
     var update
 
     return modelReader.getClass(clsId, modelId)
-        .then(function(cls) {
+        .then(function (cls) {
 
             if (prpId) {
-                cls.properties.forEach(function(prp, index) {
+                cls.properties.forEach(function (prp, index) {
                     if (prpId === prp._id) {
                         update = buildPropertyParameterUpdate(parameter, profile, index)
                     }
@@ -117,12 +118,13 @@ function getProfileParameterUpdates(clsId, prpId, modelId, profile, parameter) {
 function getProfileUpdatesForProperty(clsId, prpId, modelId, profile, include) {
 
     var update = {}
+    var visitedClassIds = []
 
-    var propertyFilter = function(prp) {
+    var propertyFilter = function (prp) {
         return prpId === prp._id;
     };
 
-    var propertyHandler = function(update, prp, index) {
+    var propertyHandler = function (update, prp, index) {
         if (propertyFilter(prp)) {
             /*if (include) {
                 update['$addToSet']['properties.' + i + '.profiles'] = profile;
@@ -135,23 +137,30 @@ function getProfileUpdatesForProperty(clsId, prpId, modelId, profile, include) {
 
     return modelReader.getClass(clsId, modelId, {
         isMeta: 1,
-        isReason: 1
+        isReason: 1,
+        'properties.associationId': 1
     })
-        .then(function(cls) {
-            var updatesType = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler, propertyFilter, false, [], cls.isReason);
+        .then(function (cls) {
+            var updatesType = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler, propertyFilter, false, visitedClassIds, cls.isReason);
 
+            var updatesAssociation = []
+            const prp = cls.properties && cls.properties.find(propertyFilter);
+            if (prp && prp.associationId) {
+                updatesAssociation = getProfileUpdatesForAssociation(prp.associationId, modelId, profile, include, visitedClassIds, propertyFilter, true);
+                console.log('PASS', cls, updatesAssociation)
+            }
 
             var updates = Promise.all([profileWriter.putClassUpdateProfile(clsId, modelId, update)]);
 
-            return Promise.join(updates, updatesType, function(updates1, updates2) {
-                return updates1.concat(updates2);
+            return Promise.join(updates, updatesType, updatesAssociation, function (updates1, updates2, updates3) {
+                return updates1.concat(updates2, updates3);
             })
         })
 }
 
 function getProfileUpdatesForClass(id, modelId, profile, include, onlyMandatory = true, onlyChildren = false, ascendInheritanceTree = false, visitedClassIds = []) {
 
-    var propertyFilter = function(prp) {
+    var propertyFilter = function (prp) {
         return !onlyMandatory || !prp.optional;
     };
 
@@ -161,19 +170,19 @@ function getProfileUpdatesForClass(id, modelId, profile, include, onlyMandatory 
             isMeta: 1,
             isReason: 1
         }, {
-            editable: true
-        }) : modelReader.getClass(id, modelId)
+                editable: true
+            }) : modelReader.getClass(id, modelId)
 
         return cls
-            .then(function(cls) {
+            .then(function (cls) {
                 return ascendInheritanceTree ? cls : [cls]
             })
-            .then(function(clss) {
+            .then(function (clss) {
 
-                return Promise.map(clss, function(cls) {
+                return Promise.map(clss, function (cls) {
                     var update = {}
 
-                    var propertyHandler = function(update, prp, index) {
+                    var propertyHandler = function (update, prp, index) {
                         if (include && onlyMandatory && !prp.optional) {
                             buildPropertyUpdate(update, profile, include, index)
                         } else if (include && !onlyMandatory) {
@@ -191,19 +200,19 @@ function getProfileUpdatesForClass(id, modelId, profile, include, onlyMandatory 
                     if (update && Object.keys(update).length)
                         updates = Promise.all([profileWriter.putClassUpdateProfile(cls.localId, modelId, update)]);
 
-                    return Promise.join(updates, updatesType, function(updates1, updates2) {
+                    return Promise.join(updates, updatesType, function (updates1, updates2) {
                         return updates1.concat(updates2);
                     })
 
                 })
-                    .then(function(classes) {
+                    .then(function (classes) {
                         return [].concat.apply([], classes);
                     })
 
             })
     }
 
-    var propertyHandler = function(update, prp, index) {
+    var propertyHandler = function (update, prp, index) {
         if ((include && !prp.optional) || !include) {
             //update['$addToSet']['properties.' + i + '.profiles'] = profile;
             buildPropertyUpdate(update, profile, include, index)
@@ -215,28 +224,172 @@ function getProfileUpdatesForClass(id, modelId, profile, include, onlyMandatory 
         isMeta: 1,
         isReason: 1
     })
-        .then(function(classes) {
-            return classes.filter(function(cls) {
+        .then(function (classes) {
+            return classes.filter(function (cls) {
                 return cls.editable
             })
         })
-        .then(function(classes) {
-            var classIds = classes.map(function(cls) {
+        .then(function (classes) {
+            var classIds = classes.map(function (cls) {
                 return cls.localId;
             })
             visitedClassIds.push(...classIds);
 
             return buildClassesUpdate(classes, modelId, profile, include, propertyHandler, propertyFilter, visitedClassIds);
         })
+        .then(function (updates) {
+            const associations = updates
+                .filter(update => {
+                    return update.value && update.value.type === 'cls' && update.value.associationId
+                })
+                .map(update => {
+                    console.log('ASSOC', update.value)
+                    return getProfileUpdatesForAssociation(update.value.associationId, modelId, profile, include, visitedClassIds, propertyFilter);
+                })
+                .reduce(function (joined, item) {
+                    return joined.concat(item);
+                }, [])
+
+            if (associations.length) {
+                console.log('ASS5', associations)
+
+                return Promise.all(associations)
+                    .then(updates2 => {
+                        const up = updates2.reduce(function (joined, item) {
+                            return joined.concat(item);
+                        }, [])
+
+                        return updates.concat(up);
+                    })
+
+                    //return Promise.all(updates.concat(associations || []));
+                    /*return Promise.join(updates, associations, function (updates1, updates2) {
+                        return updates1.concat(updates2);
+                    })*/
+                    .then(function (classes) {
+                        console.log('ASS6', classes)
+                        return classes
+                    });
+            }
+
+            return updates;
+        })
+}
+
+function getProfileUpdatesForAssociation(id, modelId, profile, include, visitedClassIds, propertyFilter = () => false, onlyAssociationClass = false) {
+    var propertyHandler = function (update, prp, index) {
+        if ((include && !prp.optional) || !include) {
+            //update['$addToSet']['properties.' + i + '.profiles'] = profile;
+            buildPropertyUpdate(update, profile, include, index)
+        }
+    };
+
+    var propertyHandler2 = function (update, prp, index) {
+        //if ((include && !prp.optional) || !include) {
+        //update['$addToSet']['properties.' + i + '.profiles'] = profile;
+        buildPropertyUpdate(update, profile, include, index)
+        //}
+    };
+
+    return modelReader.getClass(id, modelId, { end1: 1, end2: 1, assocClassId: 1 })
+        .then(function (ass) {
+            console.log('ASS', ass)
+            const ends = [];
+            if (onlyAssociationClass && ass.assocClassId) {
+                ends.push(modelReader.getClass(ass.assocClassId, modelId));
+            }
+            if (!onlyAssociationClass || !include) {
+
+                if (ass.end1 && ass.end1.ref) {
+                    ends.push(getClassByProperty(ass.end1.ref, modelId));
+                }
+                if (ass.end2 && ass.end2.ref) {
+                    ends.push(getClassByProperty(ass.end2.ref, modelId));
+                }
+            }
+            return Promise.all(ends)
+        })
+        .then(function (classes) {
+            console.log('ASS2', classes)
+            return classes.filter(function (cls) {
+                return cls.editable
+            })
+        })
+        .then(function (classes) {
+            console.log('ASS3', util.inspect(classes, false, null))
+            var classIds = classes.map(function (cls) {
+                return cls.localId;
+            })
+            visitedClassIds.push(...classIds);
+
+            if (onlyAssociationClass) {
+                if (include) {
+                    var propertyFilter2 = function (prp) {
+                        return !prp.optional;
+                    };
+
+                    return buildClassesUpdate(classes, modelId, profile, include, propertyHandler, propertyFilter2, visitedClassIds);
+                } else {
+                    if (classes.length > 1) {
+                        let disableAssocClass = false;
+                        for (var i = 1; i < classes.length; i++) {
+                            const reverseProp = classes[i].properties.find(prp => !propertyFilter(prp) && prp.associationId === id);
+                            console.log('REVERSE', reverseProp);
+                            if (reverseProp && !reverseProp.profiles.some(pr => pr === profile)) {
+                                disableAssocClass = true;
+                            }
+                        }
+                        if (disableAssocClass) {
+                            return buildClassesUpdate([classes[0]], modelId, profile, include, propertyHandler2, propertyFilter, visitedClassIds);
+                        }
+                    }
+                    return []
+                }
+            } else {
+                if (include) {
+                    const propertyFilter2 = prp => propertyFilter(prp) || prp.associationId == id
+
+                    return buildClassesUpdate(classes, modelId, profile, include, propertyHandler2, propertyFilter2, visitedClassIds);
+                } else {
+                    const propertyFilter2 = prp => prp.associationId == id
+
+                    return Promise.all(classes.map(cls => {
+                        const prp = cls.properties.find(propertyFilter2);
+                        console.log('PASS2', cls.localId, prp && prp._id)
+                        if (!prp) return [];
+                        return getProfileUpdatesForProperty(cls.localId, prp._id, modelId, profile, include, propertyHandler, propertyFilter2, false, visitedClassIds);
+                    }))
+                        .then(updates2 => {
+                            console.log('PASS3', updates2)
+                            return updates2.reduce(function (joined, item) {
+                                return joined.concat(item);
+                            }, [])
+                        })
+
+                }
+            }
+        })
+        .then(function (classes) {
+            console.log('ASS4', classes)
+            return classes
+        });
+}
+
+function getClassByProperty(id, modelId) {
+    return modelReader.getClassByProperty(id, modelId, {
+        'properties.associationId': 1
+    }, {
+            'properties.localId': id
+        })
 }
 
 function getProfileUpdatesForPackage(id, modelId, profile, include, onlyMandatory, recursive) {
 
-    var propertyFilter = function(prp) {
+    var propertyFilter = function (prp) {
         return !onlyMandatory || !prp.optional;
     };
 
-    var propertyHandler = function(update, prp, index) {
+    var propertyHandler = function (update, prp, index) {
         if (include && onlyMandatory && !prp.optional) {
             buildPropertyUpdate(update, profile, include, index)
         } else if (include && !onlyMandatory) {
@@ -253,22 +406,22 @@ function getProfileUpdatesForPackage(id, modelId, profile, include, onlyMandator
 
     if (recursive) {
         pr = modelReader.getPackageGraph(id, modelId)
-            .then(function(pkgs) {
-                return Promise.mapSeries(pkgs, function(pkg) {
+            .then(function (pkgs) {
+                return Promise.mapSeries(pkgs, function (pkg) {
                     return modelReader.getClassesForPackage(pkg._id, modelId, false, !include, filter, {
                         isMeta: 1,
                         isReason: 1
                     })
                 })
             })
-            .then(function(classes) {
-                return classes.reduce(function(joined, item) {
+            .then(function (classes) {
+                return classes.reduce(function (joined, item) {
                     return joined.concat(item);
                 }, [])
             })
-            .then(function(clss) {
+            .then(function (clss) {
                 const ids = [];
-                return clss.filter(function(cls) {
+                return clss.filter(function (cls) {
                     if (ids.indexOf(cls._id.toHexString()) === -1) {
                         ids.push(cls._id.toHexString())
                         return true
@@ -284,8 +437,8 @@ function getProfileUpdatesForPackage(id, modelId, profile, include, onlyMandator
     }
 
     return pr
-        .then(function(classes) {
-            var classIds = classes.map(function(cls) {
+        .then(function (classes) {
+            var classIds = classes.map(function (cls) {
                 return cls.localId;
             })
 
@@ -299,21 +452,21 @@ function getProfileUpdatesForType(id, modelId, profile, include) {
         return modelReader.getAllOfType(id, modelId, {}, {
             optional: true
         })
-            .then(function(classesOfType) {
-                return classesOfType.filter(function(cls) {
+            .then(function (classesOfType) {
+                return classesOfType.filter(function (cls) {
                     return cls.editable
                 })
             })
-            .then(function(classesOfType) {
+            .then(function (classesOfType) {
 
-                return Promise.map(classesOfType, function(cls) {
+                return Promise.map(classesOfType, function (cls) {
                     /*var update = {
                         $pull: {
                         }
                     };*/
                     var update = {};
 
-                    cls.properties.forEach(function(prp, index) {
+                    cls.properties.forEach(function (prp, index) {
                         if (!include && prp.optional && prp.typeId === id) {
                             //update['$pull']['properties.' + i + '.profiles'] = profile;
                             buildPropertyUpdate(update, profile, include, index)
@@ -346,26 +499,26 @@ function buildPropertiesUpdate(properties, clsId, modelId, profile, include, pro
     if (include) {
         var filteredProperties = propertyFilter ? properties.filter(propertyFilter) : properties;
 
-        var typeIds = filteredProperties.reduce(function(tids, prp) {
+        var typeIds = filteredProperties.reduce(function (tids, prp) {
             if (tids.indexOf(prp.typeId) === -1) {
                 tids.push(prp.typeId);
             }
             return tids;
         }, []);
 
-        typeIds = typeIds.filter(function(clsid) {
+        typeIds = typeIds.filter(function (clsid) {
             return visitedClassIds.indexOf(clsid) === -1
         });
         visitedClassIds.push(...typeIds)
 
-        var updatesType = Promise.map(typeIds, function(typeId) {
+        var updatesType = Promise.map(typeIds, function (typeId) {
             return getProfileUpdatesForClass(typeId, modelId, profile, include, true, false, ascendInheritanceTree, visitedClassIds)
         })
-            .then(function(classesOfType) {
+            .then(function (classesOfType) {
                 return [].concat.apply([], classesOfType);
             })
 
-        return Promise.join(updates, updatesType, function(updates1, updates2) {
+        return Promise.join(updates, updatesType, function (updates1, updates2) {
             return updates1.concat(updates2);
         })
     } else {
@@ -381,62 +534,62 @@ function buildPropertiesUpdate(properties, clsId, modelId, profile, include, pro
         // exclude types if not used elsewhere
         // see getProfileUpdatesForType for usage check
 
-        var reversePropertyFilter = function(prp) {
+        var reversePropertyFilter = function (prp) {
             return prp.profiles && prp.profiles.indexOf(profile) > -1 && !propertyFilter(prp);
         };
 
         var filteredProperties = propertyFilter ? properties.filter(propertyFilter) : properties;
         var remainingProperties = propertyFilter ? properties.filter(reversePropertyFilter) : [];
 
-        var typeIds = filteredProperties.reduce(function(tids, prp) {
+        var typeIds = filteredProperties.reduce(function (tids, prp) {
             if (tids.indexOf(prp.typeId) === -1) {
                 tids.push(prp.typeId);
             }
             return tids;
         }, []);
 
-        var usedTypeIds = remainingProperties.reduce(function(tids, prp) {
+        var usedTypeIds = remainingProperties.reduce(function (tids, prp) {
             if (!clsIsReason && tids.indexOf(prp.typeId) === -1) {
                 tids.push(prp.typeId);
             }
             return tids;
         }, []);
 
-        typeIds = typeIds.filter(function(clsid) {
+        typeIds = typeIds.filter(function (clsid) {
             return visitedClassIds.indexOf(clsid) === -1 && usedTypeIds.indexOf(clsid) === -1
         });
         visitedClassIds.push(...typeIds)
 
-        var updatesType = Promise.filter(typeIds, function(typeId) {
+        var updatesType = Promise.filter(typeIds, function (typeId) {
             return modelReader.getClass(typeId, modelId, clsIsReason ? {} : {
                 isMeta: 1,
                 isReason: 1
             })
-                .then(function(cls) {
+                .then(function (cls) {
                     return cls && (clsIsReason || (cls.isMeta || cls.isReason));
                 })
         })
-            .filter(function(typeId) {
+            .filter(function (typeId) {
                 console.log('ISMETAORREASON: ', typeId)
 
                 return modelReader.getAllOfType(typeId, modelId, {}, {
                     profiles: profile
                 })
-                    .then(function(classesOfType) {
+                    .then(function (classesOfType) {
                         return classesOfType.length === 0 || (classesOfType.length === 1 && classesOfType[0].localId === clsId);
                     })
             })
-            .then(function(unusedMetaOrReasonTypeIds) {
+            .then(function (unusedMetaOrReasonTypeIds) {
 
-                return Promise.map(unusedMetaOrReasonTypeIds, function(typeId) {
+                return Promise.map(unusedMetaOrReasonTypeIds, function (typeId) {
                     console.log('ISMETAORREASONANDUNUSED: ', typeId);
 
                     //return getProfileUpdatesForClass(typeId, modelId, profile, include, true, false, false, visitedClassIds)
-                    var propertyFilter = function(prp) {
+                    var propertyFilter = function (prp) {
                         return !true || !prp.optional;
                     };
 
-                    var propertyHandler = function(update, prp, index) {
+                    var propertyHandler = function (update, prp, index) {
                         if ((include && !prp.optional) || !include) {
                             //update['$addToSet']['properties.' + i + '.profiles'] = profile;
                             buildPropertyUpdate(update, profile, include, index)
@@ -448,12 +601,12 @@ function buildPropertiesUpdate(properties, clsId, modelId, profile, include, pro
                         isReason: 1,
                         editable: 1
                     })
-                        .then(function(cls) {
+                        .then(function (cls) {
                             console.log('ISMETAORREASONANDUNUSED: ', typeId, cls);
                             return cls && cls.editable ? [cls] : []
                         })
-                        .then(function(classes) {
-                            var classIds = classes.map(function(cls) {
+                        .then(function (classes) {
+                            var classIds = classes.map(function (cls) {
                                 return cls.localId;
                             })
                             visitedClassIds.push(...classIds);
@@ -463,13 +616,13 @@ function buildPropertiesUpdate(properties, clsId, modelId, profile, include, pro
 
 
                 })
-                    .then(function(classesOfType) {
+                    .then(function (classesOfType) {
                         console.log('ISMETAORREASONANDUNUSED: ', unusedMetaOrReasonTypeIds, classesOfType.length);
                         return [].concat.apply([], classesOfType);
                     })
             })
 
-        return Promise.join(updates, updatesType, function(updates1, updates2) {
+        return Promise.join(updates, updatesType, function (updates1, updates2) {
             return updates1.concat(updates2);
         })
     }
@@ -486,11 +639,11 @@ function buildClassUpdate(cls, modelId, profile, include, propertyHandler, prope
     };
 
     var updates = buildPropertiesUpdate(cls.properties || [], cls.localId, modelId, profile, include, propertyHandler.bind(this, update), propertyFilter, false, visitedClassIds, cls.isReason)
-        .then(function(updatesTypes) {
+        .then(function (updatesTypes) {
 
             var updatesClass = Promise.all([profileWriter.putClassUpdateProfile(cls.localId, modelId, update, projection)]);
 
-            return Promise.join(updatesClass, updatesTypes, function(updates1, updates2) {
+            return Promise.join(updatesClass, updatesTypes, function (updates1, updates2) {
                 return updates1.concat(updates2);
             })
         });
@@ -498,7 +651,7 @@ function buildClassUpdate(cls, modelId, profile, include, propertyHandler, prope
     if (!include) {
         var updatesType = getProfileUpdatesForType(cls.localId, modelId, profile, include)
 
-        return Promise.join(updates, updatesType, function(updates1, updates2) {
+        return Promise.join(updates, updatesType, function (updates1, updates2) {
             return updates1.concat(updates2);
         })
     }
@@ -507,7 +660,7 @@ function buildClassUpdate(cls, modelId, profile, include, propertyHandler, prope
 }
 
 function buildClassesUpdate(classes, modelId, profile, include, propertyHandler, propertyFilter, visitedClassIds, projection) {
-    var updates = Promise.mapSeries(classes, function(cls) {
+    var updates = Promise.mapSeries(classes, function (cls) {
         /*var update = include ? {
             $addToSet: {
                 profiles: profile
@@ -522,9 +675,9 @@ function buildClassesUpdate(classes, modelId, profile, include, propertyHandler,
 
         //cls.properties.forEach(propertyHandler.bind(this, update))
 
-    //return profileWriter.putClassUpdate(cls.localId, modelId, update, projection)
+        //return profileWriter.putClassUpdate(cls.localId, modelId, update, projection)
     })
-        .then(function(classesUpdate) {
+        .then(function (classesUpdate) {
             return [].concat.apply([], classesUpdate);
         })
 
@@ -555,24 +708,29 @@ function buildPropertyUpdate(update, profile, include, index) {
 }
 
 function buildPropertyParameterUpdate(parameter, profile, index) {
-    const key = Object.keys(parameter)[0];
-    let upd;
+    const update = {};
 
-    if (index || index === 0) {
-        upd = 'properties.' + index + '.profileParameters.' + profile + '.' + key;
-    } else {
-        upd = 'profileParameters.' + profile + '.' + key;
-    }
+    Object.keys(parameter).forEach(key => {
+
+        //const key = Object.keys(parameter)[0];
+        let upd;
+
+        if (index || index === 0) {
+            upd = 'properties.' + index + '.profileParameters.' + profile + '.' + key;
+            update[upd] = parameter[key];
+        } else {
+            upd = 'profileParameters.' + profile + '.' + key;
+            update[upd] = parameter[key];
+        }
+    });
 
     return {
-        $set: {
-            [upd]: parameter[key]
-        }
+        $set: update
     };
 }
 
 function joinUpdates(updates, joinedUpdates = {}) {
-    return updates.reduce(function(joined, upd) {
+    return updates.reduce(function (joined, upd) {
         return Object.assign(joined, upd);
     }, joinedUpdates);
 }

@@ -1,6 +1,7 @@
 var Promise = require("bluebird");
 var MongoClient = require("mongodb").MongoClient;
 var ObjectID = require('mongodb').ObjectID;
+const util = require('util')
 //var dbProfile = require('./db-profile');
 var profileEdit = require('./profile-edit');
 var mr = require('./model-reader');
@@ -95,7 +96,7 @@ function setConnection(connection) {
         },
         name: 'textSearchIndex'
     }*/ ])
-        .then(function(indexName) {
+        .then(function (indexName) {
             console.log('Created indexes ', indexName)
 
             return users.createIndexes([{
@@ -105,7 +106,7 @@ function setConnection(connection) {
                 unique: true
             }])
         })
-        .then(function(indexName) {
+        .then(function (indexName) {
             console.log('Created indexes ', indexName)
 
             return errors.createIndexes([
@@ -141,161 +142,161 @@ function setConnection(connection) {
                 }
             ])
         })
-        .then(function(indexName) {
+        .then(function (indexName) {
             console.log('Created indexes ', indexName)
         })
-        .catch(function(error) {
+        .catch(function (error) {
             console.log('Error on creating indexes: ', error)
         })
 
     return db;
 }
 
-exports.getModelReader = function() {
-return modelReader;
+exports.getModelReader = function () {
+    return modelReader;
 }
 
-exports.getProfileWriter = function() {
-return profileWriter;
+exports.getProfileWriter = function () {
+    return profileWriter;
 }
 
-exports.getUserReaderWriter = function() {
-return userReaderWriter;
+exports.getUserReaderWriter = function () {
+    return userReaderWriter;
 }
 
-exports.connect = function(url) {
-if (db) {
-    return Promise.resolve();
-}
+exports.connect = function (url) {
+    if (db) {
+        return Promise.resolve();
+    }
 
-return MongoClient
-    .connect(url, {
-        promiseLibrary: Promise,
-        poolSize: 5,
-        loggerLevel: 'error'
-    })
-    .then(setConnection);
-}
-
-exports.getModelCollection = function() {
-return model;
-}
-
-exports.getUserCollection = function() {
-return users;
-}
-
-exports.getModels = function(owner) {
-return Promise.resolve(
-    model
-        .find({
-            owner: owner,
-            type: 'mdl'
+    return MongoClient
+        .connect(url, {
+            promiseLibrary: Promise,
+            poolSize: 5,
+            loggerLevel: 'error'
         })
-        .project({
-            name: 1,
-            created: 1,
-            profilesInfo: 1
-        })
-        .sort({
-            created: -1
-        })
-)
+        .then(setConnection);
 }
 
-exports.getPackages = function(modelId, filter) {
-const query = {
-    type: 'pkg',
-    model: ObjectID(modelId)
+exports.getModelCollection = function () {
+    return model;
 }
 
-if (filter && filter !== '') {
-    query.$or = [
-        {
-            name: {
-                $regex: '(?i)' + filter
+exports.getUserCollection = function () {
+    return users;
+}
+
+exports.getModels = function (owner) {
+    return Promise.resolve(
+        model
+            .find({
+                owner: owner,
+                type: 'mdl'
+            })
+            .project({
+                name: 1,
+                created: 1,
+                profilesInfo: 1
+            })
+            .sort({
+                created: -1
+            })
+    )
+}
+
+exports.getPackages = function (modelId, filter) {
+    const query = {
+        type: 'pkg',
+        model: ObjectID(modelId)
+    }
+
+    if (filter && filter !== '') {
+        query.$or = [
+            {
+                name: {
+                    $regex: '(?i)' + filter
+                }
+            },
+            {
+                'descriptors.alias': {
+                    $regex: '(?i)' + filter
+                }
             }
-        },
-        {
-            'descriptors.alias': {
-                $regex: '(?i)' + filter
-            }
-        }
-    ]
+        ]
+    }
+
+    return Promise.resolve(
+        model
+            .find(query)
+            .project({
+                parent: 1,
+                name: 1,
+                type: 1,
+                editable: 1
+            })
+            .sort({
+                name: 1
+            })
+    );
 }
 
-return Promise.resolve(
-    model
-        .find(query)
-        .project({
-            parent: 1,
-            name: 1,
-            type: 1,
-            editable: 1
-        })
-        .sort({
-            name: 1
-        })
-);
+exports.getClasses = function (modelId) {
+    return Promise.resolve(
+        model
+            .find({
+                type: 'cls',
+                model: ObjectID(modelId)
+            })
+            .project({
+                element: 0,
+                'properties.element': 0
+            })
+    );
 }
 
-exports.getClasses = function(modelId) {
-return Promise.resolve(
-    model
-        .find({
-            type: 'cls',
-            model: ObjectID(modelId)
-        })
-        .project({
-            element: 0,
-            'properties.element': 0
-        })
-);
-}
+exports.getFilteredPackages = function (modelId, filter) {
 
-exports.getFilteredPackages = function(modelId, filter) {
+    if (!filter || filter === '') {
+        return exports.getPackages(modelId)
+            .then(function (pkgs) {
+                return pkgs.toArray();
+            })
+    }
 
-if (!filter || filter === '') {
-    return exports.getPackages(modelId)
-        .then(function(pkgs) {
+    var filteredPackageTree = exports.getPackages(modelId, filter)
+        .then(function (pkgs) {
             return pkgs.toArray();
         })
-}
-
-var filteredPackageTree = exports.getPackages(modelId, filter)
-    .then(function(pkgs) {
-        return pkgs.toArray();
-    })
-    .then(function(pkgs) {
-        return pkgs.map(function(pkg) {
-            return pkg._id
+        .then(function (pkgs) {
+            return pkgs.map(function (pkg) {
+                return pkg._id
+            })
         })
+        .then(function (pkgIds) {
+            return getParentsForPackages(modelId, pkgIds)
+        })
+
+
+    var packagesForFilteredClasses = getFilteredClasses(modelId, filter)
+        .then(function (classIds) {
+            return getPackagesForClasses(modelId, classIds)
+        })
+
+
+    return Promise.join(filteredPackageTree, packagesForFilteredClasses, function (pkgs, pkgs2) {
+        return pkgs.concat(pkgs2);
     })
-    .then(function(pkgIds) {
-        return getParentsForPackages(modelId, pkgIds)
-    })
 
-
-var packagesForFilteredClasses = getFilteredClasses(modelId, filter)
-    .then(function(classIds) {
-        return getPackagesForClasses(modelId, classIds)
-    })
-
-
-return Promise.join(filteredPackageTree, packagesForFilteredClasses, function(pkgs, pkgs2) {
-    return pkgs.concat(pkgs2);
-})
-
-    .then(function(pkgs) {
-        const ids = [];
-        return pkgs.filter(function(pkg) {
-            if (ids.indexOf(pkg._id.toHexString()) === -1) {
-                ids.push(pkg._id.toHexString())
-                return true
-            }
-            return false
-        });
-    })
+        .then(function (pkgs) {
+            const ids = [];
+            return pkgs.filter(function (pkg) {
+                if (ids.indexOf(pkg._id.toHexString()) === -1) {
+                    ids.push(pkg._id.toHexString())
+                    return true
+                }
+                return false
+            });
+        })
 }
 
 function getPackagesForClasses(modelId, classIds) {
@@ -341,9 +342,9 @@ function getPackagesForClasses(modelId, classIds) {
             }
         ])
         .toArray()
-        .then(function(pkgs) {
+        .then(function (pkgs) {
             const ids = [];
-            return pkgs.filter(function(pkg) {
+            return pkgs.filter(function (pkg) {
                 if (ids.indexOf(pkg._id.toHexString()) === -1) {
                     ids.push(pkg._id.toHexString())
                     return true
@@ -403,9 +404,9 @@ function getParentsForPackages(modelId, pkgIds) {
             }
         ])
         .toArray()
-        .then(function(pkgs) {
+        .then(function (pkgs) {
             const ids = [];
-            return pkgs.filter(function(pkg) {
+            return pkgs.filter(function (pkg) {
                 if (ids.indexOf(pkg._id.toHexString()) === -1) {
                     ids.push(pkg._id.toHexString())
                     return true
@@ -467,142 +468,143 @@ function getFilteredClasses(modelId, filter) {
             .project({
                 parent: 1
             })
-    ).then(function(classes) {
+    ).then(function (classes) {
         return classes.toArray()
-    }).then(function(classes) {
-        return classes.map(function(cls) {
+    }).then(function (classes) {
+        return classes.map(function (cls) {
             return cls._id //.toHexString()
         })
     });
 }
 
-exports.getPackagesForParent = function(parent) {
-return Promise.resolve(
-    model
-        .find({
-            type: 'pkg',
-            parent: ObjectID(parent)
-        })
-);
+exports.getPackagesForParent = function (parent) {
+    return Promise.resolve(
+        model
+            .find({
+                type: 'pkg',
+                parent: ObjectID(parent)
+            })
+    );
 }
 
-exports.getClassesForParent = function(parent) {
-return Promise.resolve(
-    model
-        .find({
-            type: 'cls',
-            parent: ObjectID(parent)
-        })
-);
+exports.getClassesForParent = function (parent) {
+    return Promise.resolve(
+        model
+            .find({
+                type: 'cls',
+                parent: ObjectID(parent)
+            })
+    );
 }
 
-exports.getAssociationsForParent = function(parent) {
-return Promise.resolve(
-    model
-        .find({
-            type: 'asc',
-            parent: ObjectID(parent)
-        })
-);
+exports.getAssociationsForParent = function (parent) {
+    return Promise.resolve(
+        model
+            .find({
+                type: 'asc',
+                parent: ObjectID(parent)
+            })
+    );
 }
 
-exports.getClassesForPackage = function(pkg, filter) {
-const query = {
-    type: 'cls',
-    parent: ObjectID(pkg)
+exports.getClassesForPackage = function (pkg, filter) {
+    const query = {
+        type: 'cls',
+        parent: ObjectID(pkg)
+    }
+
+    if (filter && filter !== '') {
+        query.$or = [
+            {
+                name: {
+                    $regex: '(?i)' + filter
+                }
+            },
+            {
+                'descriptors.alias': {
+                    $regex: '(?i)' + filter
+                }
+            },
+            {
+                'descriptors.description': {
+                    $regex: '(?i)' + filter
+                }
+            },
+            {
+                'descriptors.definition': {
+                    $regex: '(?i)' + filter
+                }
+            },
+            {
+                'properties.name': {
+                    $regex: '(?i)' + filter
+                }
+            },
+            {
+                'properties.descriptors.alias': {
+                    $regex: '(?i)' + filter
+                }
+            },
+            {
+                'properties.descriptors.description': {
+                    $regex: '(?i)' + filter
+                }
+            },
+            {
+                'properties.descriptors.definition': {
+                    $regex: '(?i)' + filter
+                }
+            }
+        ]
+    }
+
+    return Promise.resolve(
+        model
+            .find(query)
+            .project({
+                localId: 1,
+                parent: 1,
+                name: 1,
+                type: 1,
+                stereotypes: 1,
+                profiles: 1,
+                editable: 1,
+                isAbstract: 1,
+                isMeta: 1,
+                isReason: 1,
+                associationId: 1
+            })
+            .sort({
+                name: 1
+            })
+            .toArray()
+            .then(function (classes) {
+                if (filter && filter !== '') {
+                    return classes.map(function (cls) {
+                        cls.filterMatch = true;
+                        return cls;
+                    })
+                }
+                return classes;
+            })
+    );
 }
 
-if (filter && filter !== '') {
-    query.$or = [
-        {
-            name: {
-                $regex: '(?i)' + filter
-            }
-        },
-        {
-            'descriptors.alias': {
-                $regex: '(?i)' + filter
-            }
-        },
-        {
-            'descriptors.description': {
-                $regex: '(?i)' + filter
-            }
-        },
-        {
-            'descriptors.definition': {
-                $regex: '(?i)' + filter
-            }
-        },
-        {
-            'properties.name': {
-                $regex: '(?i)' + filter
-            }
-        },
-        {
-            'properties.descriptors.alias': {
-                $regex: '(?i)' + filter
-            }
-        },
-        {
-            'properties.descriptors.description': {
-                $regex: '(?i)' + filter
-            }
-        },
-        {
-            'properties.descriptors.definition': {
-                $regex: '(?i)' + filter
-            }
+exports.getDetails = function (id, modelId) {
+    var query = id.length === 24 ? {
+        _id: ObjectID(id)
+    } : {
+            localId: id
         }
-    ]
-}
+    if (modelId)
+        query.model = ObjectID(modelId)
 
-return Promise.resolve(
-    model
-        .find(query)
-        .project({
-            localId: 1,
-            parent: 1,
-            name: 1,
-            type: 1,
-            stereotypes: 1,
-            profiles: 1,
-            editable: 1,
-            isAbstract: 1,
-            isMeta: 1,
-            isReason: 1
+    return model
+        .findOne(query, {
+            element: 0,
+            'properties.element': 0
         })
-        .sort({
-            name: 1
-        })
-        .toArray()
-        .then(function(classes) {
-            if (filter && filter !== '') {
-                return classes.map(function(cls) {
-                    cls.filterMatch = true;
-                    return cls;
-                })
-            }
-            return classes;
-        })
-);
-}
-
-exports.getDetails = function(id, modelId) {
-var query = id.length === 24 ? {
-    _id: ObjectID(id)
-} : {
-    localId: id
-}
-if (modelId)
-    query.model = ObjectID(modelId)
-
-return model
-    .findOne(query, {
-        element: 0,
-        'properties.element': 0
-    })
-    .then(resolveIds)
+        .then(resolveIds)
 }
 
 // TODO: aggregate ???
@@ -615,15 +617,17 @@ function resolveIds(details, flattenOninas) {
         localids = localids.concat(details.subtypes);
     if (details && details.associationId)
         localids.push(details.associationId)
+    if (details && details.assocClassId)
+        localids.push(details.assocClassId)
     if (details && details.properties)
-        details.properties.reduce(function(ids, prp) {
+        details.properties.reduce(function (ids, prp) {
             if (prp.typeId) ids.push(prp.typeId)
             if (prp.associationId) ids.push(prp.associationId)
             return ids;
         }, localids);
     if (flattenOninas && details.metaReasonClasses)
-        details.metaReasonClasses.reduce(function(ids, cls) {
-            return cls.properties.reduce(function(ids, prp) {
+        details.metaReasonClasses.reduce(function (ids, cls) {
+            return cls.properties.reduce(function (ids, prp) {
                 if (prp.typeId) ids.push(prp.typeId)
                 return ids;
             }, ids);
@@ -659,46 +663,66 @@ function resolveIds(details, flattenOninas) {
                 isAbstract: 1,
                 isMeta: 1,
                 isReason: 1,
+                end1: 1,
+                end2: 1,
+                assocClassId: 1,
                 'properties.localId': 1,
                 'properties.name': 1
             })
             .toArray()
-            .then(function(resolvedIds) {
+            .then(function (resolvedIds) {
 
                 if (details.supertypes)
-                    details.supertypes = details.supertypes.map(function(st) {
-                        return resolvedIds.find(function(tid) {
+                    details.supertypes = details.supertypes.map(function (st) {
+                        return resolvedIds.find(function (tid) {
                             return tid.localId === st;
                         });
                     });
                 if (details.subtypes)
-                    details.subtypes = details.subtypes.map(function(st) {
-                        return resolvedIds.find(function(tid) {
+                    details.subtypes = details.subtypes.map(function (st) {
+                        return resolvedIds.find(function (tid) {
                             return tid.localId === st;
                         });
                     });
                 if (details.associationId)
-                    details.associationId = resolvedIds.find(function(tid) {
+                    details.associationId = resolvedIds.find(function (tid) {
                         return tid.localId === details.associationId;
+                    });
+                if (details.assocClassId)
+                    details.assocClassId = resolvedIds.find(function (tid) {
+                        return tid.localId === details.assocClassId;
                     });
                 if (details && details.end1 && details.end1.ref) {
                     var eid = details.end1.ref;
 
-                    details.end1 = resolvedIds.find(function(tid) {
+                    details.end1 = resolvedIds.find(function (tid) {
                         return tid.properties.some(prp => prp.localId === eid);
                     });
                     details.end1.properties = details.end1.properties.filter(prp => prp.localId === eid);
                 }
+                /*if (details && details.end1 && details.end1.parent && details.end1.parent === details.localId) {
+                    if (details.properties.length && details.properties[0].associationId === details.localId) {
+                        const { ...rest } = details;
+                        delete rest.properties;
+                        console.log('REST', rest)
+
+                        details.properties[0].associationId = rest;
+                    }
+
+                    const { end1, end2, ...rest } = details;
+                    console.log('REST2', rest)
+                    details.end1 = rest;
+                }*/
                 if (details && details.end2 && details.end2.ref) {
                     var eid = details.end2.ref;
-                    details.end2 = resolvedIds.find(function(tid) {
+                    details.end2 = resolvedIds.find(function (tid) {
                         return tid.properties.some(prp => prp.localId === eid);
                     });
                     details.end2.properties = details.end2.properties.filter(prp => prp.localId === eid);
                 }
                 if (details.properties) {
                     if (flattenOninas && details.metaReasonClasses) {
-                        resolvedIds = resolvedIds.concat(details.metaReasonClasses.map(function(t) {
+                        resolvedIds = resolvedIds.concat(details.metaReasonClasses.map(function (t) {
                             return {
                                 name: t.name,
                                 localId: t.localId,
@@ -708,19 +732,19 @@ function resolveIds(details, flattenOninas) {
                             }
                         }))
 
-                        details.properties = details.properties.map(function(prp) {
-                            var metaReason = details.metaReasonClasses.find(function(t) {
+                        details.properties = details.properties.map(function (prp) {
+                            var metaReason = details.metaReasonClasses.find(function (t) {
                                 return t.localId === prp.typeId
                             })
 
                             if (metaReason && metaReason.isMeta) {
-                                metaReason = details.metaReasonClasses.find(function(t) {
+                                metaReason = details.metaReasonClasses.find(function (t) {
                                     return metaReason.properties && t.localId === metaReason.properties[0].typeId
                                 })
                             }
 
                             if (metaReason && metaReason.isReason && metaReason.properties) {
-                                var value = metaReason.properties.find(function(p) {
+                                var value = metaReason.properties.find(function (p) {
                                     return !p.isNilReason
                                 })
 
@@ -737,19 +761,71 @@ function resolveIds(details, flattenOninas) {
                         delete details.metaReasonClasses
                     }
 
-                    details.properties = details.properties.map(function(prp) {
-                        if (prp.typeId)
-                            prp.typeId = resolvedIds.find(function(tid) {
+                    details.properties = details.properties.map(function (prp) {
+                        if (prp.typeId) {
+                            prp.typeId = resolvedIds.find(function (tid) {
                                 return tid.localId === prp.typeId;
                             });
-                        if (prp.associationId)
-                            prp.associationId = resolvedIds.find(function(tid) {
+                        }
+                        if (prp.associationId /*&& typeof details.associationId === 'string'*/) {
+                            console.log(prp.name, typeof prp.associationId, prp.associationId, resolvedIds)
+                            prp.associationId = resolvedIds.find(function (tid) {
                                 return tid.localId === prp.associationId;
                             });
+                        }
+                        /*if (prp.associationId && prp.associationId.end1 && prp.associationId.end1.ref) {
+                            var eid = prp.associationId.end1.ref;
+
+                            prp.associationId.end1 = resolvedIds.find(function (tid) {
+                                return tid.properties.some(prp => prp.localId === eid);
+                            });
+                            prp.associationId.end1.properties = prp.associationId.end1.properties.filter(prp => prp.localId === eid);
+                        }
+                        if (prp.associationId && prp.associationId.end2 && prp.associationId.end2.ref) {
+                            var eid = prp.associationId.end2.ref;
+
+                            prp.associationId.end2 = resolvedIds.find(function (tid) {
+                                return tid.properties.some(prp => prp.localId === eid);
+                            });
+                            prp.associationId.end2.properties = prp.associationId.end2.properties.filter(prp => prp.localId === eid);
+                        }*/
                         return prp;
                     });
                 }
 
+                //recurse
+                var recursions = [];
+
+                // for association class
+                if (details.associationId && typeof details.associationId === 'object') {
+                    const recursive = {
+                        model: details.model,
+                        ...details.associationId
+                    }
+                    recursions.push(resolveIds(recursive).then(function (recursiveDetails) {
+                        details.associationId = recursiveDetails;
+                        return details;
+                    }));
+                }
+                if (details.properties && details.properties.some(prp => prp.associationId && typeof prp.associationId === 'object')) {
+                    details.properties.forEach(prp => {
+                        if (prp.associationId) {
+                            const recursive = {
+                                model: details.model,
+                                ...prp.associationId
+                            }
+                            recursions.push(resolveIds(recursive).then(recursiveDetails => {
+                                prp.associationId = recursiveDetails;
+                                return details;
+                            }));
+                        }
+                    });
+                }
+
+                if (recursions.length) {
+                    return Promise.all(recursions).then(results => { console.log('DET2', util.inspect(details, false, null)); return results[0] });
+                }
+                console.log('DET', util.inspect(details, false, null))
                 return details
             })
     } else
@@ -765,29 +841,29 @@ function _mergeCardinalities(cardinality1, cardinality2) {
     return newMin + '..' + newMax
 }
 
-exports.getFlattenedClass = function(id, modelId, flattenInheritance, flattenOninas) {
-var aggregate = [
-    {
-        $match: {
-            localId: id,
-            model: ObjectID(modelId)
-        }
-    }
-]
-
-if (flattenInheritance) {
-    aggregate = aggregate.concat([{
-        $graphLookup: {
-            from: MODELS,
-            startWith: '$supertypes',
-            connectFromField: 'supertypes',
-            connectToField: 'localId',
-            as: "inheritanceTree",
-            restrictSearchWithMatch: {
+exports.getFlattenedClass = function (id, modelId, flattenInheritance, flattenOninas) {
+    var aggregate = [
+        {
+            $match: {
+                localId: id,
                 model: ObjectID(modelId)
             }
         }
-    },
+    ]
+
+    if (flattenInheritance) {
+        aggregate = aggregate.concat([{
+            $graphLookup: {
+                from: MODELS,
+                startWith: '$supertypes',
+                connectFromField: 'supertypes',
+                connectToField: 'localId',
+                as: "inheritanceTree",
+                restrictSearchWithMatch: {
+                    model: ObjectID(modelId)
+                }
+            }
+        },
         {
             $addFields: {
                 properties: {
@@ -814,106 +890,106 @@ if (flattenInheritance) {
                 }
             }
         }])
-}
-
-if (flattenOninas) {
-    aggregate = aggregate.concat([{
-        $graphLookup: {
-            from: MODELS,
-            startWith: '$properties.typeId',
-            connectFromField: 'properties.typeId',
-            connectToField: 'localId',
-            as: "metaReasonClasses",
-            restrictSearchWithMatch: {
-                model: ObjectID(modelId),
-                $or: [{
-                    isMeta: true
-                }, {
-                    isReason: true
-                }]
-            }
-        }
-    }])
-}
-
-aggregate.push({
-    $project: {
-        element: 0,
-        'properties.element': 0,
-        'metaReasonClasses.element': 0,
-        'metaReasonClasses.properties.element': 0,
-        inheritanceTree: 0
     }
-})
 
-return model
-    .aggregate(aggregate)
-    .toArray()
-    .then(function(details) {
-        return resolveIds(details[0], flattenOninas)
+    if (flattenOninas) {
+        aggregate = aggregate.concat([{
+            $graphLookup: {
+                from: MODELS,
+                startWith: '$properties.typeId',
+                connectFromField: 'properties.typeId',
+                connectToField: 'localId',
+                as: "metaReasonClasses",
+                restrictSearchWithMatch: {
+                    model: ObjectID(modelId),
+                    $or: [{
+                        isMeta: true
+                    }, {
+                        isReason: true
+                    }]
+                }
+            }
+        }])
+    }
+
+    aggregate.push({
+        $project: {
+            element: 0,
+            'properties.element': 0,
+            'metaReasonClasses.element': 0,
+            'metaReasonClasses.properties.element': 0,
+            inheritanceTree: 0
+        }
     })
+
+    return model
+        .aggregate(aggregate)
+        .toArray()
+        .then(function (details) {
+            return resolveIds(details[0], flattenOninas)
+        })
 }
 
-exports.getModel = function(id, owner) {
-return model
-    .findOne({
-        _id: ObjectID(id),
-        owner: owner
-    }, {
-        element: 0
-    })
-    .then(function(mdl) {
-        return errors
-            .find({
-                model: ObjectID(id)
+exports.getModel = function (id, owner) {
+    return model
+        .findOne({
+            _id: ObjectID(id),
+            owner: owner
+        }, {
+                element: 0
             })
-            .toArray()
-            .then(function(err) {
-                Object.keys(mdl.profilesInfo).forEach(function(prf) {
-                    mdl.profilesInfo[prf].errors = err.filter(e => e.profile === prf);
+        .then(function (mdl) {
+            return errors
+                .find({
+                    model: ObjectID(id)
                 })
-                return mdl;
-            })
-    })
+                .toArray()
+                .then(function (err) {
+                    Object.keys(mdl.profilesInfo).forEach(function (prf) {
+                        mdl.profilesInfo[prf].errors = err.filter(e => e.profile === prf);
+                    })
+                    return mdl;
+                })
+        })
 }
 
-exports.getFullModel = function(id) {
-return model
-    .findOne({
-        _id: ObjectID(id)
-    })
+exports.getFullModel = function (id) {
+    return model
+        .findOne({
+            _id: ObjectID(id)
+        })
 }
 
-exports.updatePackageProfile = function(clsId, modelId, profile, include, onlyMandatory, recursive) {
+exports.updatePackageProfile = function (clsId, modelId, profile, include, onlyMandatory, recursive) {
 
 
-return measure(dbEdit.getProfileUpdatesForPackage(clsId, modelId, profile, include, onlyMandatory, recursive));
-
-}
-
-exports.updateClassProfile = function(clsId, modelId, profile, include, onlyMandatory, onlyChildren, ascendInheritanceTree) {
-
-return measure(dbEdit.getProfileUpdatesForClass(clsId, modelId, profile, include, onlyMandatory, onlyChildren, ascendInheritanceTree));
-
-}
-
-exports.updatePropertyProfile = function(clsId, prpId, modelId, profile, include) {
-
-return measure(dbEdit.getProfileUpdatesForProperty(clsId, prpId, modelId, profile, include));
+    return measure(dbEdit.getProfileUpdatesForPackage(clsId, modelId, profile, include, onlyMandatory, recursive));
 
 }
 
-exports.updatePackageEditable = function(pkgId, modelId, editable, recursive) {
+exports.updateClassProfile = function (clsId, modelId, profile, include, onlyMandatory, onlyChildren, ascendInheritanceTree) {
 
-
-return measure(dbEdit.getEditableUpdatesForPackage(pkgId, modelId, editable, recursive));
+    return measure(dbEdit.getProfileUpdatesForClass(clsId, modelId, profile, include, onlyMandatory, onlyChildren, ascendInheritanceTree));
 
 }
 
-exports.updateProfileParameter = function(clsId, prpId, modelId, profile, parameter) {
+exports.updatePropertyProfile = function (clsId, prpId, modelId, profile, include) {
+
+    return measure(dbEdit.getProfileUpdatesForProperty(clsId, prpId, modelId, profile, include));
+
+}
+
+exports.updatePackageEditable = function (pkgId, modelId, editable, recursive) {
 
 
-return measure(dbEdit.getProfileParameterUpdates(clsId, prpId, modelId, profile, parameter));
+    return measure(dbEdit.getEditableUpdatesForPackage(pkgId, modelId, editable, recursive));
+
+}
+
+exports.updateProfileParameter = function (clsId, prpId, modelId, profile, parameter) {
+
+
+    return measure(dbEdit.getProfileParameterUpdates(clsId, prpId, modelId, profile, parameter));
 
 }
 
@@ -921,185 +997,185 @@ function measure(prms) {
     var start = Date.now();
 
     return prms
-        .then(function(results) {
+        .then(function (results) {
             console.log('took', Date.now() - start)
             return results;
         });
 }
 
-exports.close = function(force) {
-return db.close(force || false);
+exports.close = function (force) {
+    return db.close(force || false);
 }
 
-exports.deleteModel = function(id) {
-return model
-    .deleteOne({
-        _id: ObjectID(id)
-    })
-    .then(function(ret) {
-        console.log('DELETE', ret.result)
-        // do not wait for this, should happen async in the background
-        model
-            .deleteMany({
-                model: ObjectID(id)
-            })
-            .then(function(ret2) {
-                console.log('DELETE2', ret2.result)
-            })
+exports.deleteModel = function (id) {
+    return model
+        .deleteOne({
+            _id: ObjectID(id)
+        })
+        .then(function (ret) {
+            console.log('DELETE', ret.result)
+            // do not wait for this, should happen async in the background
+            model
+                .deleteMany({
+                    model: ObjectID(id)
+                })
+                .then(function (ret2) {
+                    console.log('DELETE2', ret2.result)
+                })
 
-        errors
-            .deleteMany({
-                model: ObjectID(id)
-            })
-            .then(function(ret3) {
-                console.log('DELETE3', ret3.result)
-            })
-    })
+            errors
+                .deleteMany({
+                    model: ObjectID(id)
+                })
+                .then(function (ret3) {
+                    console.log('DELETE3', ret3.result)
+                })
+        })
 }
 
-exports.deleteProfile = function(id, modelId) {
-var update = {
-    $unset: {
-        ['profilesInfo.' + id]: ''
-    }
-}
-
-return updateModel(modelId, update)
-    .then(function(ret) {
-        console.log('DELETE', ret)
-
-        errors
-            .deleteMany({
-                model: ObjectID(modelId),
-                profile: id
-            })
-            .then(function(ret2) {
-                console.log('DELETE2', ret2.result)
-            })
-
-        return ret.value;
-    })
-}
-
-exports.addProfile = function(id, description, modelId, errors) {
-var update = {
-    $set: {
-        ['profilesInfo.' + id]: {
-            _id: id,
-            name: id,
-            description: description,
-            errors: errors || []
+exports.deleteProfile = function (id, modelId) {
+    var update = {
+        $unset: {
+            ['profilesInfo.' + id]: ''
         }
     }
+
+    return updateModel(modelId, update)
+        .then(function (ret) {
+            console.log('DELETE', ret)
+
+            errors
+                .deleteMany({
+                    model: ObjectID(modelId),
+                    profile: id
+                })
+                .then(function (ret2) {
+                    console.log('DELETE2', ret2.result)
+                })
+
+            return ret.value;
+        })
 }
 
-return updateModel(modelId, update)
-    .then(function(ret) {
-        console.log('ADD', ret)
-        return ret.value;
-    })
+exports.addProfile = function (id, description, modelId, errors) {
+    var update = {
+        $set: {
+            ['profilesInfo.' + id]: {
+                _id: id,
+                name: id,
+                description: description,
+                errors: errors || []
+            }
+        }
+    }
+
+    return updateModel(modelId, update)
+        .then(function (ret) {
+            console.log('ADD', ret)
+            return ret.value;
+        })
 }
 
 
 
-exports.copyProfile = function(newProfile, description, modelId, copyFrom, errors) {
+exports.copyProfile = function (newProfile, description, modelId, copyFrom, errors) {
 
-return exports.addProfile(newProfile, description, modelId, errors)
-    .then(function(mdl) {
-        var cursor = model
-            .find({
-                model: ObjectID(modelId),
-                $or: [
-                    {
-                        profiles: copyFrom
-                    },
-                    {
-                        'properties.profiles': copyFrom
-                    }
-                ]
-            })
-            .project({
-                "profiles": 1,
-                "properties.profiles": 1,
-                ["profileParameters." + copyFrom]: 1,
-                ["properties.profileParameters." + copyFrom]: 1
-            })
-
-        var requests = [];
-
-        return new Promise(function(resolve, reject) {
-            cursor.forEach(function(doc) {
-                var update = {
-                    profiles: newProfile
-                }
-                var updateSet = {};
-                if (doc.profileParameters && doc.profileParameters[copyFrom])
-                    updateSet['profileParameters.' + newProfile] = doc.profileParameters[copyFrom];
-
-                doc.properties.reduce(function(upd, prp, i) {
-                    if (prp.profiles.indexOf(copyFrom) > -1) {
-                        upd['properties.' + i + '.profiles'] = newProfile
-                    }
-                    if (prp.profileParameters && prp.profileParameters[copyFrom])
-                        updateSet['properties.' + i + '.profileParameters.' + newProfile] = prp.profileParameters[copyFrom]
-                    return upd;
-                }, update)
-
-                requests.push({
-                    'updateOne': {
-                        'filter': {
-                            '_id': ObjectID(doc._id)
+    return exports.addProfile(newProfile, description, modelId, errors)
+        .then(function (mdl) {
+            var cursor = model
+                .find({
+                    model: ObjectID(modelId),
+                    $or: [
+                        {
+                            profiles: copyFrom
                         },
-                        'update': {
-                            '$addToSet': update
+                        {
+                            'properties.profiles': copyFrom
                         }
+                    ]
+                })
+                .project({
+                    "profiles": 1,
+                    "properties.profiles": 1,
+                    ["profileParameters." + copyFrom]: 1,
+                    ["properties.profileParameters." + copyFrom]: 1
+                })
+
+            var requests = [];
+
+            return new Promise(function (resolve, reject) {
+                cursor.forEach(function (doc) {
+                    var update = {
+                        profiles: newProfile
                     }
-                });
-                if (Object.keys(updateSet).length) {
+                    var updateSet = {};
+                    if (doc.profileParameters && doc.profileParameters[copyFrom])
+                        updateSet['profileParameters.' + newProfile] = doc.profileParameters[copyFrom];
+
+                    doc.properties.reduce(function (upd, prp, i) {
+                        if (prp.profiles.indexOf(copyFrom) > -1) {
+                            upd['properties.' + i + '.profiles'] = newProfile
+                        }
+                        if (prp.profileParameters && prp.profileParameters[copyFrom])
+                            updateSet['properties.' + i + '.profileParameters.' + newProfile] = prp.profileParameters[copyFrom]
+                        return upd;
+                    }, update)
+
                     requests.push({
                         'updateOne': {
                             'filter': {
                                 '_id': ObjectID(doc._id)
                             },
                             'update': {
-                                '$set': updateSet
+                                '$addToSet': update
                             }
                         }
                     });
-                }
+                    if (Object.keys(updateSet).length) {
+                        requests.push({
+                            'updateOne': {
+                                'filter': {
+                                    '_id': ObjectID(doc._id)
+                                },
+                                'update': {
+                                    '$set': updateSet
+                                }
+                            }
+                        });
+                    }
 
-                if (requests.length === 500) {
-                    //Execute per 500 operations and re-init
-                    model.bulkWrite(requests)
-                    requests = [];
-                }
+                    if (requests.length === 500) {
+                        //Execute per 500 operations and re-init
+                        model.bulkWrite(requests)
+                        requests = [];
+                    }
 
-            }, function(err) {
-                if (requests.length > 0) {
-                    model.bulkWrite(requests)
-                }
-                if (err)
-                    reject(err);
-                else
-                    resolve(mdl);
-            });
+                }, function (err) {
+                    if (requests.length > 0) {
+                        model.bulkWrite(requests)
+                    }
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(mdl);
+                });
+            })
         })
-    })
 }
 
-exports.renameProfile = function(id, name, description, modelId) {
-var update = {
-    $set: {
-        ['profilesInfo.' + id + '.name']: name,
-        ['profilesInfo.' + id + '.description']: description
+exports.renameProfile = function (id, name, description, modelId) {
+    var update = {
+        $set: {
+            ['profilesInfo.' + id + '.name']: name,
+            ['profilesInfo.' + id + '.description']: description
+        }
     }
-}
 
-return updateModel(modelId, update)
-    .then(function(ret) {
-        console.log('RENAME', ret)
-        return ret.value;
-    })
+    return updateModel(modelId, update)
+        .then(function (ret) {
+            console.log('RENAME', ret)
+            return ret.value;
+        })
 }
 
 function updateModel(id, update) {
@@ -1112,5 +1188,5 @@ function updateModel(id, update) {
             {
                 new: true
             }
-    )
+        )
 }

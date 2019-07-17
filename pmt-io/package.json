@@ -11,18 +11,18 @@
     "license": "GPL-3.0",
     "devDependencies": {
         "chai": "^3.5.0",
-        "chai-xml": "^0.3.1"
+        "chai-xml": "^0.3.2"
     },
     "dependencies": {
-        "bluebird": "^3.5.0",
-        "flush-write-stream": "^1.0.2",
+        "bluebird": "^3.5.5",
+        "flush-write-stream": "^1.1.1",
         "into-stream": "^3.1.0",
-        "mongodb": "^2.2.26",
+        "mongodb": "^2.2.36",
         "multipipe": "^1.0.2",
-        "read-xml": "^2.0.0",
-        "through2": "^2.0.3",
+        "read-xml": "^2.0.1",
+        "through2": "^2.0.5",
         "unzip-stream": "^0.1.2",
         "xml-reader": "^2.4.3",
-        "yazl": "^2.4.2"
+        "yazl": "^2.5.1"
     }
 }

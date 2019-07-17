@@ -42,10 +42,10 @@
     },
     "workspaces": [
         "./",
-        "./pmt-backend",
-        "./pmt-data-access",
-        "./pmt-io",
-        "./pmt-validation"
+        "../pmt-backend",
+        "../pmt-data-access",
+        "../pmt-io",
+        "../pmt-validation"
     ]
 
 }
