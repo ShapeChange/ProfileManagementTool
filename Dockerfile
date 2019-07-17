@@ -19,13 +19,13 @@ CMD [ "node", "server.js" ]
 
 # Build outside of container
 # Install app dependencies
-COPY pmt-backend /usr/src/pmt-backend/
-COPY pmt-data-access /usr/src/pmt-data-access/
-COPY pmt-io /usr/src/pmt-io/
-COPY pmt-validation /usr/src/pmt-validation/
 COPY dist /usr/src/app/
+COPY pmt-backend /usr/src/app/pmt-backend/
+COPY pmt-data-access /usr/src/app/pmt-data-access/
+COPY pmt-io /usr/src/app/pmt-io/
+COPY pmt-validation /usr/src/app/pmt-validation/
 RUN yarn --production install && \
-	yarn cache clean
+	yarn cache clean && pwd && ls -l node_modules
 
 # if node-gyp is needed, surround RUN with
 # apk add --no-cache python make g++ && \

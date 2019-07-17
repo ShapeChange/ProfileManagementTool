@@ -27,7 +27,7 @@ return webpackMerge(appConfig(env), {
                 to: '../../'
             },
             {
-                from: '../package2.json',
+                from: '../package.json',
                 to: '../../package.json'
             },
             {
