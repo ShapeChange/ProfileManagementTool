@@ -10,43 +10,43 @@ var xmlWriter = require('./xml-writer');
 // stream all elements from the db in the correct order into the xml-writer
 // xml-writer would still need to know that e.g. sc:classes is the entry point for db elements of type cls
 
-exports.createStream = function(modelId, options) {
-var writer;
-var opts = parseOptions(options, modelId);
+exports.createStream = function (modelId, options) {
+    var writer;
+    var opts = parseOptions(options, modelId);
 
-var toXml = through2({
-    writableObjectMode: true,
-    readableObjectMode: false,
-    highWaterMark: 16384,
-}, function(obj, enc, cb) {
-    var start;
-    if (!writer) {
-        start = Date.now();
-        writer = xmlWriter.create(this, opts);
-    }
+    var toXml = through2({
+        writableObjectMode: true,
+        readableObjectMode: false,
+        highWaterMark: 16384,
+    }, function (obj, enc, cb) {
+        var start;
+        if (!writer) {
+            start = Date.now();
+            writer = xmlWriter.create(this, opts);
+        }
 
-    if (obj && obj.type) {
-        profileInfosToElem(obj, opts.profiles);
-        writer.print(obj).then(function() {
-            opts.stats.duration = Date.now() - start;
+        if (obj && obj.type) {
+            profileInfosToElem(obj, opts.profiles);
+            writer.print(obj).then(function () {
+                opts.stats.duration = Date.now() - start;
+                cb();
+            });
+        }
+        else
             cb();
-        });
+    });
+
+    var oldRead = toXml._read;
+    toXml._read = function () {
+        if (writer && writer.resume) {
+            //console.log('TOXML RESUME')
+            writer.resume();
+        }
+
+        return oldRead.apply(toXml, arguments);
     }
-    else
-        cb();
-});
 
-var oldRead = toXml._read;
-toXml._read = function() {
-    if (writer && writer.resume) {
-        //console.log('TOXML RESUME')
-        writer.resume();
-    }
-
-    return oldRead.apply(toXml, arguments);
-}
-
-return toXml;
+    return toXml;
 }
 
 function parseOptions(options, modelId) {
@@ -64,19 +64,19 @@ function parseOptions(options, modelId) {
     if (options.setStats)
         options.setStats(stats);
 
-    var serialWrite = function(writer, depth, doSetParent, doSetCurrent) {
-        return function(elements) {
-            return elements.reduce(function(pr, el) {
+    var serialWrite = function (writer, depth, doSetParent, doSetCurrent) {
+        return function (elements) {
+            return elements.reduce(function (pr, el) {
                 //updateStats(el);
                 return pr
-                    .then(function() {
+                    .then(function () {
                         if (doSetParent)
                             parent = '' + el._id;
                         if (doSetCurrent)
                             current = el;
                         return writer.print(el.element, depth);
                     })
-                    .then(function(written) {
+                    .then(function (written) {
                         updateStats(el);
                         return written;
                     });
@@ -84,7 +84,7 @@ function parseOptions(options, modelId) {
         }
     }
 
-    var updateStats = function(el) {
+    var updateStats = function (el) {
         if (el && el.type) {
             if (el.type === 'pkg') {
                 stats.packages++;
@@ -97,19 +97,21 @@ function parseOptions(options, modelId) {
         }
     }
 
-    var profileToElem = function(profile, params) {
-        var parameters = params ? Object.keys(params).map(function(param) {
-            return {
-                name: 'sc:ProfileParameter',
-                type: 'element',
-                value: '',
-                attributes: {
-                    name: param,
-                    value: params[param]
-                },
-                children: []
-            }
-        }) : []
+    var profileToElem = function (profile, params) {
+        var parameters = params ? Object.keys(params)
+            .filter(param => params[param] !== null)
+            .map(function (param) {
+                return {
+                    name: 'sc:ProfileParameter',
+                    type: 'element',
+                    value: '',
+                    attributes: {
+                        name: param,
+                        value: params[param]
+                    },
+                    children: []
+                }
+            }) : []
 
         var parameter = parameters.length === 0 ? [] : [{
             name: 'sc:parameter',
@@ -132,8 +134,8 @@ function parseOptions(options, modelId) {
         }
     }
 
-    var profilesToElem = function(modelProfiles, profiles, profileParameters) {
-        return profiles.reduce(function(elems, profile) {
+    var profilesToElem = function (modelProfiles, profiles, profileParameters) {
+        return profiles.reduce(function (elems, profile) {
             if (modelProfiles[profile]) {
                 elems.push(profileToElem(modelProfiles[profile].name, profileParameters[profile]));
             }
@@ -141,8 +143,8 @@ function parseOptions(options, modelId) {
         }, [])
     }
 
-    var editableToElems = function(packages) {
-        packages.forEach(function(pkg) {
+    var editableToElems = function (packages) {
+        packages.forEach(function (pkg) {
             if (pkg.element.attributes.hasOwnProperty('editable') || pkg.editable === false)
                 pkg.element.attributes.editable = pkg.editable === false ? 'false' : 'true'
         });
@@ -152,24 +154,24 @@ function parseOptions(options, modelId) {
 
     return Object.assign(options, {
         handlers: {
-            'sc:packages': function(node, writer, depth) {
+            'sc:packages': function (node, writer, depth) {
                 return Promise.resolve(options.getPackages(parent))
                     .then(editableToElems)
                     .then(serialWrite(writer, depth, true));
             },
-            'sc:classes': function(node, writer, depth) {
+            'sc:classes': function (node, writer, depth) {
                 return Promise.resolve(options.getClasses(parent))
                     .then(serialWrite(writer, depth, false, true));
             },
-            'sc:associations': function(node, writer, depth) {
+            'sc:associations': function (node, writer, depth) {
                 return Promise.resolve(options.getAssociations(modelId))
                     .then(serialWrite(writer, depth));
             },
-            'sc:id': function(node, writer, depth, next) {
+            'sc:id': function (node, writer, depth, next) {
                 currentId = node.children[0].value;
                 return next();
             },
-            'sc:profiles': function(node, writer, depth) {
+            'sc:profiles': function (node, writer, depth) {
                 var profiles = [];
                 var profileParameters = {};
 
@@ -178,7 +180,7 @@ function parseOptions(options, modelId) {
                         profiles = current.profiles;
                         profileParameters = current.profileParameters;
                     } else {
-                        var prp = current.properties.find(function(prp) {
+                        var prp = current.properties.find(function (prp) {
                             return prp._id === currentId
                         });
                         if (prp) {
@@ -202,12 +204,12 @@ function profileInfosToElem(model, profilesInfo) {
         type: 'element',
         value: '',
         attributes: {},
-        children: Object.keys(profilesInfo).map(function(prf) {
+        children: Object.keys(profilesInfo).map(function (prf) {
             return profileInfoToElem(profilesInfo[prf])
         })
     }
 
-    var i = model.children.findIndex(function(child) {
+    var i = model.children.findIndex(function (child) {
         return child.name === 'sc:globalProfileInfos'
     })
 

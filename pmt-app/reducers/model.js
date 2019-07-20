@@ -434,8 +434,8 @@ const _extractDetails = (details) => {
         if (details && details.type === 'cls' && details.associationId.end2) {
             d.end2 = details.associationId.end2
         }
-        if (details && details.type === 'prp' && details.reversePropertyId) {
-            if (details.associationId.end1 && details.associationId.end1.parent) {
+        if (details && details.type === 'prp') {
+            if (details.associationId.end1 && details.associationId.end1.parent && details.associationId.end1.localId !== details.localId) {
                 d.reversePropertyId = {
                     localId: details.associationId.end1.parent,
                     properties: [
@@ -446,10 +446,10 @@ const _extractDetails = (details) => {
                     ]
                 }
             }
-            else if (details.associationId.end1 && details.associationId.end1.properties && details.associationId.end1.properties[0].localId === details.reversePropertyId) {
+            else if (details.associationId.end1 && details.associationId.end1.properties && details.associationId.end1.properties.length && details.associationId.end1.properties[0].localId !== details.localId) {
                 d.reversePropertyId = details.associationId.end1;
             }
-            if (details.associationId.end2 && details.associationId.end2.parent) {
+            if (details.associationId.end2 && details.associationId.end2.parent && details.associationId.end2.localId !== details.localId) {
                 d.reversePropertyId = {
                     localId: details.associationId.end2.parent,
                     properties: [
@@ -460,7 +460,7 @@ const _extractDetails = (details) => {
                     ]
                 }
             }
-            else if (details.associationId.end2 && details.associationId.end2.properties && details.associationId.end2.properties[0].localId === details.reversePropertyId) {
+            else if (details.associationId.end2 && details.associationId.end2.properties && details.associationId.end2.properties.length && details.associationId.end2.properties[0].localId !== details.localId) {
                 d.reversePropertyId = details.associationId.end2;
             }
         }

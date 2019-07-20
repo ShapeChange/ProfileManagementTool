@@ -75,7 +75,7 @@ class ModelElement extends Component {
             {depth > 0 && Array(depth).fill(0).map((v, i) => <span key={i} className="pl-4" />)}
             {elementIcon}
             {elementName}
-            {element.type === 'cls' && element.associationId && <Badge color={color || 'primary'} className={'badge-fw ml-1 px-0'}>
+            {element.type === 'cls' && (element.associationId || element.association) && <Badge color={color || 'primary'} className={'badge-fw ml-1 px-0'}>
                 {'AC'}
             </Badge>}
         </Tag>

@@ -21,28 +21,30 @@ exports.createStream = function (config, modelReader, errorWriter, profile, full
         if (!fullCheck) {
             Promise.map(prfs, prf => {
                 return errorWriter.clearErrors(null, obj.model, prf, {
-                    superId: obj.localId,
+                    roleId: obj.localId,
                     msg: 'associationClassNotIncluded'
                 });
             })
         }
 
         Promise.all(obj.properties
-            .filter(prp => prp.associationId)
-            .map(prp => modelReader.getClass(prp.associationId, obj.model, { assocClassId: 1 })))
+            //.filter(prp => prp.associationId)
+            .map(prp => prp.associationId ? modelReader.getClass(prp.associationId, obj.model, { assocClassId: 1 }) : null))
             .then(function (ass) {
                 console.log('ASS', ass)
-                return Promise.all(ass.map(a => modelReader.getClass(a.assocClassId, obj.model)))
+                return Promise.all(ass.map(a => a ? modelReader.getClass(a.assocClassId, obj.model) : null))
             })
             .then(function (classes) {
                 console.log('ASS2', classes)
                 return Promise.map(prfs, prf => {
                     return Promise.map(classes, (cls, index) => {
+                        if (!cls) return;
                         console.log('ASS3', cls)
                         if (!cls.profiles || cls.profiles.indexOf(prf) === -1) {
                             return errorWriter.appendError(obj.model, prf, {
                                 itemId: cls.localId,
                                 name: obj.name,
+                                roleId: obj.localId,
                                 roleName: obj.properties[index].name,
                                 className: cls.name,
                                 msg: 'associationClassNotIncluded'
@@ -70,7 +72,7 @@ function getClassByProperty(modelReader, id, modelId) {
 }
 
 exports.shouldSkip = function (cls, profile) {
-    console.log('CHECK', cls.name, cls.associationId)
+    console.log('CHECK', cls.name, cls.associationId, cls.properties.some(prp => prp.associationId))
     return (profile && (!cls.profiles || cls.profiles.indexOf(profile) === -1))
         || (!cls.profiles || cls.profiles.length === 0) || !cls.properties.some(prp => prp.associationId)
 }

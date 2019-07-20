@@ -14,6 +14,7 @@ class ModelBrowserInfos extends Component {
                 <tbody>
                     {Object.keys(infos).map((key, i) => {
                         let value = infos[key]
+                        let keyClassNames = 'pl-0';
                         if ((key === 'supertypes' || key === 'subtypes') && isFlattenInheritance) {
                             return;
                         }
@@ -52,10 +53,18 @@ class ModelBrowserInfos extends Component {
                                 {infos[key].name}
                             </Link>
                         } else if ((key === 'end1' || key === 'end2' || key === 'reversePropertyId') && infos[key] && infos[key].properties) {
-                            console.log('end', key, infos[key]);
-                            value = <Link href={`${baseUrlPrp}/${infos[key].localId}/${infos[key].properties[0].localId}/${urlSuffix || ''}`}>
-                                {infos[key].properties[0].name}
-                            </Link>
+                            if (infos[key].type === 'prp') {
+                                value = <Link href={`${baseUrlPrp}/${infos[key].parent}/${infos[key].localId}/${urlSuffix || ''}`}>
+                                    {infos[key].name}
+                                </Link>
+                            } else {
+                                value = <Link href={`${baseUrlPrp}/${infos[key].localId}/${infos[key].properties[0].localId}/${urlSuffix || ''}`}>
+                                    {infos[key].properties[0].name}
+                                </Link>
+                                if (infos.association && infos.stereotypes === 'featuretype') {
+                                    keyClassNames = 'pl-3'
+                                }
+                            }
                         } else if (filter && filter !== '' && infos[key]) {
                             if (key === 'alias' || key === 'description' || key === 'definition') {
                                 const start = infos[key].toLowerCase().indexOf(filter)
@@ -75,7 +84,7 @@ class ModelBrowserInfos extends Component {
                         }
 
                         return <tr key={key}>
-                            <th scope="row" className={'pl-0' + (i === 0 ? ' border-top-0' : '')}>
+                            <th scope="row" className={keyClassNames + (i === 0 ? ' border-top-0' : '')}>
                                 {key}
                             </th>
                             <td className={'pr-0' + (i === 0 ? ' border-top-0' : '')}>

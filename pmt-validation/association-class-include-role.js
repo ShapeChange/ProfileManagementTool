@@ -21,7 +21,7 @@ exports.createStream = function (config, modelReader, errorWriter, profile, full
         if (!fullCheck) {
             Promise.map(prfs, prf => {
                 return errorWriter.clearErrors(null, obj.model, prf, {
-                    superId: obj.localId,
+                    itemId: obj.localId + '/info',
                     msg: 'associationRoleNotIncluded'
                 });
             })

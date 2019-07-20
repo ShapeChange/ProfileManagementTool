@@ -108,6 +108,29 @@ class ModelBrowserParameters extends Component {
         updateProfileParameter(this.props, 'multiplicity', multiplicity)
     }
 
+    _updateIsOrdered = () => {
+        this._updateFlag('isOrdered');
+    }
+
+    _updateIsUnique = () => {
+        this._updateFlag('isUnique');
+    }
+
+    _updateIsAbstract = () => {
+        this._updateFlag('isAbstract');
+    }
+
+    _updateFlag = (flag) => {
+        const { profileParameters, selectedProfile, infos, updateProfileParameter } = this.props;
+        let value = null;
+        if (!profileParameters[selectedProfile] || !profileParameters[selectedProfile][flag]) {
+            value = `${!infos[flag]}`;
+        }
+
+        console.log(flag, profileParameters[selectedProfile] ? profileParameters[selectedProfile][flag] : null, infos[flag], value)
+        updateProfileParameter(this.props, flag, value)
+    }
+
     render() {
         const { _id, isClass, isProperty, disabled, infos, profileParameters, selectedProfile, allowedGeometries, updateProfileParameter, t } = this.props;
 
@@ -150,8 +173,8 @@ class ModelBrowserParameters extends Component {
                                 <td className="pl-0 border-0 py-0">
                                     <span className=""><Toggle name="isAbstract"
                                         disabled={disabled}
-                                        checked={profileParameters[selectedProfile] && profileParameters[selectedProfile].isAbstract === 'true'}
-                                        onToggle={e => updateProfileParameter(this.props, 'isAbstract', (profileParameters[selectedProfile] && profileParameters[selectedProfile].isAbstract === 'true') ? 'false' : 'true')} /></span>
+                                        checked={profileParameters[selectedProfile] ? profileParameters[selectedProfile].isAbstract === 'true' ? true : profileParameters[selectedProfile].isAbstract === 'false' ? false : infos.isAbstract === true : infos.isAbstract === true}
+                                        onToggle={this._updateIsAbstract} /></span>
                                 </td>
                             </tr>}
                         {isProperty && infos && !infos.isAttribute &&
@@ -226,8 +249,8 @@ class ModelBrowserParameters extends Component {
                                     <span className=""><Toggle name="isOrdered"
                                         label={` (model setting: ${infos.isOrdered === true})`}
                                         disabled={disabled || !(multiplicity.maxValue > 1 || multiplicity.maxValueUnbounded)}
-                                        checked={profileParameters[selectedProfile] && profileParameters[selectedProfile].isOrdered === 'true'}
-                                        onToggle={e => updateProfileParameter(this.props, 'isOrdered', !(profileParameters[selectedProfile] && profileParameters[selectedProfile].isOrdered === 'false') ? 'false' : 'true')} /></span>
+                                        checked={profileParameters[selectedProfile] ? profileParameters[selectedProfile].isOrdered === 'true' ? true : profileParameters[selectedProfile].isOrdered === 'false' ? false : infos.isOrdered === true : infos.isOrdered === true}
+                                        onToggle={this._updateIsOrdered} /></span>
                                 </td>
                             </tr>}
                         {isProperty && infos && (multiplicity.max > 1 || multiplicity.maxUnbounded) &&
@@ -247,8 +270,8 @@ class ModelBrowserParameters extends Component {
                                     <span className=""><Toggle name="isUnique"
                                         label={` (model setting: ${infos.isUnique !== false})`}
                                         disabled={disabled || !(multiplicity.maxValue > 1 || multiplicity.maxValueUnbounded)}
-                                        checked={!(profileParameters[selectedProfile] && profileParameters[selectedProfile].isUnique === 'false')}
-                                        onToggle={e => updateProfileParameter(this.props, 'isUnique', !(profileParameters[selectedProfile] && profileParameters[selectedProfile].isUnique === 'false') ? 'false' : 'true')} /></span>
+                                        checked={profileParameters[selectedProfile] ? profileParameters[selectedProfile].isUnique === 'true' ? true : profileParameters[selectedProfile].isUnique === 'false' ? false : infos.isUnique !== false : infos.isUnique !== false}
+                                        onToggle={this._updateIsUnique} /></span>
                                 </td>
                             </tr>}
                     </tbody>
