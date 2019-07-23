@@ -194,6 +194,29 @@ function parseOptions(options, modelId) {
                     .then(serialWrite(writer, depth));
             }
         },
+        ignoreCheckers: {
+            'sc:profiles': function () {
+                var profiles = [];
+                var profileParameters = {};
+
+                if (current) {
+                    if (current.localId === currentId) {
+                        profiles = current.profiles;
+                        profileParameters = current.profileParameters;
+                    } else {
+                        var prp = current.properties.find(function (prp) {
+                            return prp._id === currentId
+                        });
+                        if (prp) {
+                            profiles = prp.profiles
+                            profileParameters = prp.profileParameters
+                        }
+                    }
+                }
+
+                return !profiles || profiles.length == 0;
+            }
+        },
         stats: stats
     });
 }
@@ -246,7 +269,7 @@ function profileInfoToElem(profile) {
             children: [{
                 name: '',
                 type: 'text',
-                value: profile.description,
+                value: profile.description || '',
                 attributes: {},
                 children: []
             }]

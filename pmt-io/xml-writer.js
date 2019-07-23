@@ -67,7 +67,7 @@ var print = function print(stream, opts, ast, depth) {
     if (depth === 0)
         stream.push('<?xml version="1.0" encoding="UTF-8"?>');
 
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
         if (ast.type === 'text') {
             stream.push('' + (opts.escapeText ? escapeXmlText(ast.value) : ast.value));
             resolve(true);
@@ -75,8 +75,12 @@ var print = function print(stream, opts, ast, depth) {
 
             var attributes = serializeAttrs(ast.attributes, opts.escapeAttributes, opts.quote);
             var empty = (!ast.children || !ast.children.length) && !opts.handlers[ast.name];
+            var ignore = opts.ignoreCheckers[ast.name] && opts.ignoreCheckers[ast.name]();
 
-            if (empty && opts.selfClose) {
+            if (ignore) {
+                resolve();
+            }
+            else if (empty && opts.selfClose) {
                 indent(stream, opts, depth);
                 stream.push('<' + ast.name + attributes + '/>');
                 resolve();
@@ -86,9 +90,9 @@ var print = function print(stream, opts, ast, depth) {
                 stream.push('<' + ast.name + attributes + '>');
 
                 var recurse;
-                var next = function() {
-                    return ast.children.reduce(function(pr, astc) {
-                        return pr.then(function() {
+                var next = function () {
+                    return ast.children.reduce(function (pr, astc) {
+                        return pr.then(function () {
                             return print.call(this, stream, opts, astc, depth + 1);
                         }.bind(this));
                     }.bind(this), Promise.resolve());
@@ -101,7 +105,7 @@ var print = function print(stream, opts, ast, depth) {
                 }
 
                 recurse
-                    .then(function(noIndent) {
+                    .then(function (noIndent) {
                         !noIndent && indent(stream, opts, depth);
 
                         var pause = !stream.push('</' + ast.name + '>');
@@ -111,7 +115,7 @@ var print = function print(stream, opts, ast, depth) {
 
                         if (pause) {
                             //console.log('PAUSE WRITER')
-                            writer.resume = function() {
+                            writer.resume = function () {
                                 //console.log('RESUME WRITER')
                                 writer.resume = null;
                                 resolve();
@@ -119,7 +123,7 @@ var print = function print(stream, opts, ast, depth) {
                         } else
                             resolve()
                     })
-                    .catch(function(e) {
+                    .catch(function (e) {
                         reject(e)
                     })
             }
@@ -136,7 +140,9 @@ function create(stream, options) {
         quote: '"',
         tab: '\t',
         pretty: false,
-        handlers: {}
+        handlers: {},
+        ignoreCheckers: {},
+
     }, options);
 
     writer.print = print.bind(writer, stream, opts);

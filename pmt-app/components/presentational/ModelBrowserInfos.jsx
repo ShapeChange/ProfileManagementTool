@@ -52,7 +52,7 @@ class ModelBrowserInfos extends Component {
                             value = <Link href={`${baseUrl}/${infos[key].localId}/${urlSuffix || ''}`}>
                                 {infos[key].name}
                             </Link>
-                        } else if ((key === 'end1' || key === 'end2' || key === 'reversePropertyId') && infos[key] && infos[key].properties) {
+                        } else if ((key === 'end1' || key === 'end2' || key === 'reverseProperty') && infos[key] && infos[key].properties) {
                             if (infos[key].type === 'prp') {
                                 value = <Link href={`${baseUrlPrp}/${infos[key].parent}/${infos[key].localId}/${urlSuffix || ''}`}>
                                     {infos[key].name}
