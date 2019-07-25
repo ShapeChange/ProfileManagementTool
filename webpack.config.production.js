@@ -31,7 +31,7 @@ return webpackMerge(appConfig(env), {
                 to: '../../package.json'
             },
             {
-                from: '../npm-shrinkwrap.json',
+                from: '../yarn.lock',
                 to: '../../'
             }
         ])

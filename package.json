@@ -7,7 +7,7 @@
     "scripts": {
         "installDev": "yarn install",
         "start": "node server.js",
-        "installBuild": "yarn install && cd pmt-app && npm --only=dev install",
+        "installBuild": "yarn install && cd pmt-app && yarn install",
         "build": "webpack -p --env production --config webpack.config.production.js",
         "installProd": "cd dist && yarn --production install",
         "prod": "NODE_ENV=production node dist/server.js",
@@ -41,8 +41,14 @@
         "pmt-validation": "^1.0.0"
     },
     "workspaces": [
-        "./pmt-*",
-        "../pmt-*"
+        "./pmt-backend",
+        "./pmt-data-access",
+        "./pmt-io",
+        "./pmt-validation",
+        "../pmt-backend",
+        "../pmt-data-access",
+        "../pmt-io",
+        "../pmt-validation"
     ]
 
 }

@@ -14,9 +14,9 @@ before_install:
 - wget https://raw.githubusercontent.com/interactive-instruments/asciidoctor-theme-ii/master/stylesheets/ii.css -O docs/stylesheets/ii.css
 - docker pull asciidoctor/docker-asciidoctor
 install:
-- npm run installBuild && npm run installTest
+- yarn installBuild && yarn installTest
 script:
-- npm test && npm run build
+- yarn test && yarn build
 after_success:
 - docker build -t $REPO:$COMMIT .
 - docker login -u $DOCKER_USER -p $DOCKER_PASS
