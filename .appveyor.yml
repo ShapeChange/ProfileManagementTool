@@ -41,7 +41,7 @@ deploy:
   description: ''
   provider: GitHub
   auth_token:
-    secure: sNwZ6HVVCnYIswT35gP5uPl7CP15B56JvRMniWicIHf/poXfygDQycc/hw+FaBz9
+    secure: FIafpL9e4Va76x8euAHt8NGF5lJuOUnPuxsVQsWgJrmmUAF5mcfoSPGO68MjlmfE
   artifact: /.*/            # upload all packages to release assets
   draft: true
   on:
