@@ -1,18 +1,23 @@
 {
     "name": "pmt-win",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "",
     "private": true,
     "scripts": {
-        "build": "pack-zip ../pmt-win pmt-win-1.0.2.zip"
+        "build": "repack-zip ../pmt-win pmt-win-1.0.3.zip",
+        "postinstall": "patch-package"
     },
     "author": "interactive instruments GmbH",
     "license": "GPL-3.0",
     "devDependencies": {
-        "pack-zip": "^0.2.2"
+        "patch-package": "^6.1.2",
+        "postinstall-postinstall": "^2.0.0",
+        "repack-zip": "^0.2.2"
     },
     "dependencies": {
-        "pmt-win-srvc": "../pmt-win-srvc",
+        "pmt-win-srvc": "../pmt-win-srvc"
+    },
+    "_phantomChildren": {
         ".bin": ""
     }
 }

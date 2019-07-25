@@ -5,3 +5,5 @@
 *.code-workspace
 dist/
 node_modules/
+**/*.tgz
+**/*.zip

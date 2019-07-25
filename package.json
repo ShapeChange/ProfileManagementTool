@@ -13,7 +13,7 @@
         "prod": "NODE_ENV=production node dist/server.js",
         "installTest": "cd pmt-data-access && yarn install && cd .. && cd pmt-io && yarn install && cd .. && cd pmt-validation && yarn install",
         "test": "mocha --recursive ./pmt-io/test ./pmt-data-access/test ./pmt-validation/test",
-        "win": "cd dist && npmAddScript -k preinstall -v \"stop-service && uninstall-service\" -f && npmAddScript -k postinstall -v \"install-service && start-service\" -f && bundled-dependencies && rm npm-shrinkwrap.json"
+        "win": "cd dist && npmAddScript -k preinstall -v \"stop-service && uninstall-service\" -f && npmAddScript -k postinstall -v \"install-service && start-service\" -f && bundled-dependencies"
     },
     "author": "interactive instruments GmbH",
     "license": "GPL-3.0",
@@ -41,11 +41,8 @@
         "pmt-validation": "^1.0.0"
     },
     "workspaces": [
-        "./",
-        "./pmt-backend",
-        "./pmt-data-access",
-        "./pmt-io",
-        "./pmt-validation"
+        "./pmt-*",
+        "../pmt-*"
     ]
 
 }
