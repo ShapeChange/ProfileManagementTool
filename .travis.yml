@@ -11,7 +11,8 @@ cache:
 before_install:
 - mkdir -p docs/output
 - mkdir -p docs/stylesheets
-- wget https://raw.githubusercontent.com/interactive-instruments/asciidoctor-theme-ii/master/stylesheets/ii.css -O docs/stylesheets/ii.css
+- wget https://raw.githubusercontent.com/interactive-instruments/asciidoctor-theme-ii/master/stylesheets/ii.css
+  -O docs/stylesheets/ii.css
 - docker pull asciidoctor/docker-asciidoctor
 install:
 - yarn installBuild && yarn installTest
@@ -25,11 +26,13 @@ after_success:
 - docker tag $REPO:$COMMIT $REPO:$TAG
 - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
 - docker push $REPO
-- docker run -v $TRAVIS_BUILD_DIR/docs:/documents/ --name asciidoc-to-html asciidoctor/docker-asciidoctor asciidoctor -D /documents/output -a stylesheet=ii.css -a stylesdir=/documents/stylesheets index.adoc
+- docker run -v $TRAVIS_BUILD_DIR/docs:/documents/ --name asciidoc-to-html asciidoctor/docker-asciidoctor
+  asciidoctor -D /documents/output -a stylesheet=ii.css -a stylesdir=/documents/stylesheets
+  index.adoc
 - cd docs/output &&  cp -R ../**/img ./
 - git init && git config user.name "${GH_USER_NAME}" && git config user.email "{GH_USER_EMAIL}"
 - git add . ; git commit -m "Deploy to GitHub Pages"
-- git push --force --quiet "https://${GH_USER_NAME}:${GH_TOKEN}@${GH_REF}" master:gh-pages
+- git push --force --quiet "https://${GH_USER_NAME}:${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git" master:gh-pages
 env:
   global:
   - COMMIT=${TRAVIS_COMMIT::8}
@@ -40,3 +43,4 @@ env:
   - secure: Tp2C9WmQqsDUFjjH1RJSk+WDZ6YViduAHNxngzNFWwkTVo40cxsbwDo23JnR5yBudGkTm1lnADl/SyvM2cnWFNr3EPuGSzWnUqc4ng4yI0CHanlbbKB7toKKvUtTT/NpZfjLJmrJM0NE5TMpQ/rzEHzJhPigANVrQTKoLZ/vkgeHpNI5a4ZoTZGuwxt7fNoYP8pP16UbnSCvJXzqCTB/rQFzVjVFnbCb1x+kaQ4oExJEpVqbSi3HTpdeop75eZm0F7pRIgWiCwpBADGNvzVktQWeQQbzQ/2Lt9qw4UlP4Zh4tozx1Lq898PCPZdplG3b0Z+jF+o59PegZKfyDji7JaRL2p+ACgNOP+EcYD7yegypsX8bJQntaylFVuVPWskEVZb/ixOo8+C7P8vr6lY+u0M5Ul56c4raP8qpeg6CpEPEDFFy+VzGk/T4FOzoDpYlw+69/qma3Z6J92YTai30vMJl0cco4bnGrGcyxiZSS5ebQVKJhxsetvVG5AhPZTJK2zcsdih12ay9zqh1VkqDYcQfn8rBe8ZvAStlMu07pAsawK3cWBCAmHGtrHabxOncgtNT7eYHRDKy66op9ikEp+erDkmCBnwLAtWCefFcvnTixy+0NMleBams3w8V7oDYWF9PgSQ6uv5s5zw8I7LM8X0tf9DPRCLZX3vI5n2iYFE=
   - secure: StqyXNT7jDFU1YEbEAMrJl77arQNHJW74EyPFQx8FvEy/LSolF+fBHH7kRfG1sS1KnalwFFl2Do9D7G3XRaJIiuPopALiKPn6gQmUxpeqOvtn75n5d6I7Ldvh/JgWLNUT3n/MDhcp5Vkxuer1GSnDKbqQaQQH7tzVrM0flcW1bsPn3Xi30L4R9pXFLNCYrUEsdobnGxQfPU0xfqtnPHffykMdc30PPwU0j6gaaIwnQucbwB2/ogJe0fi/nJwspaGHkN6Mzkd1G84TepPRxLdoFL58Gg4KRVbW+UGKRiaosE/EfPEeGz8Hi9jjWKrz0T4wRW24xPdUSFcZfZGZ8j8P1hEDNzWKKCzyQa+Y+cVT2LrW21XtCoa68x1MXgS4OrPw/O8q5Z8bZieXYoZkIHg3yF0SE+2W5gFjIlkvyOlHT2SD4NjLnk6ZzSGMgWcJJgpZRS4sVSeqvj0D9g2DZKwHT02ZDQk+Z0HKbJctQjZ7tpI+vWMxwPHty6A/IKNh9J9S7BnkvZvzI+KVcjWMEmmdmeVSwedG6MZJNL2A2P1epm5y2U8EmldEMbPZKT1Gj0AXLcmeBW6Hei8HjF6JAq28b1zI8r4BpbQw3gPOvvWrOlWPoJwTwtCt753+7PHDTX2SYNdrh/ujaCnq3EEc4ylqVlQ/RHbaJDpPQ6X/K+nVYU=
   - secure: gMyaYcRKOA728jWs/fZbMFhf8JwGfWnJ8qNrRicOGgk9s8FFs8TMjvhWoK0xBn0frQja1BATg5AqbA9/cQ4xfssyvUr8KI354ulzwhWdW5VIVGl9GikOBVDCmpGWXZOZwikdrlt/JIUia+Fv8jCpWQ9+uaUV5qASHgr5cg+fAHHq8ilfRTR2s6ORHqMEVdawYQ5YhHRnHOzj7LHDnQ/JJqPW0/FEO0G604KxrilOMu4f5MQVix3RRQNNabTkzN56KrxQwlAuotZk1J2tZyCXDN8pur3qEWT+fG5E9knKw2vxExDS063OiZTe/rZHxIsFlqJMRMBiMssrfJ1v2yoL2aEakepKiKYnvlAoFKH8A5mu+D4YEWvXRFnYBPg8cLgCwovU6Z6oi0lh82Kqsv5d4LLUbh95ySitOCU8L/gQKk2kNREY0awuNTy29NXQYMzQNUmX+aQEo5/xPz0uZXXlGZRrrFCyzIGo9Cgjhmdtu4StoH0IDQNBiYPUM9T32j4S2oS9rpvpjaSUOgi5DIxreVfz9LdsxDRShajP48JlOz+Bv0dj4VL/Xe4jZbdCg2j+FtbES7rGmNhXKABT6GxGdOcggyoWVhn2nLPfKJSZjO+r7EdQowvRprl6GR22Iv0uKFaMO3ipb8ARavA4bRJvi52+9doALBvNDYhwQh34pE0=
+  - secure: QzwLoavLxiNDh0EcyY7k7Y0L1NP2BlP3G63i9G+GO+AVIG/2ZTtSWverF04xf/KKrz6dTqjGPLKi7FF6+Qdsu5K7DSDrLLpreSxa36n9XgdGqeARZ0tP+CyIBog0fmZWeTw4FI0/dZdhHeyh/IxXLOMMAvLLLCn7pnFbgjekOIPfVFJjKNEseNL6kKrYo2bOk+2lMLvZ6xMpBK1lajzGbCqvdj+LPwmSX0au0Tfd4MN8vm823q1hsg7ufvGree4KDAzxnQlKrn+0n2yUvWs06kPBquJkx4i337IPtmKpaa2F8t6AlqPLmQDEKhQZpZbKg+MmKCViabY4g59h93/9ogdmusR235a5TUd8Ti0OH2auZFR0E4i7F+HJsDO19Xl35xPlzUMZWLhEIXDxb/g6576j3g3bC3uGJWWgZUk29fLABDgKmrigmKivAYmV4W1JI59Gmx8Mi6ylENyPM6UAJ/tvE3JfEUHxwCL1fr03EcAttYTnjCRP76Ndp0QO9cAwZo0Frg97l/TqJ2VSIEUDqNHRdReKkbv77i5948RXsJTFEQ/8tCpSxSIuWy/L7em1rQMnhb7/bUOtzKjJRrd9coaR03CzfUxfyLIGUobY9UFBc2p4iyb+UjQ9T97pomIpsh/VTJM14BcbwS2QMDbhIqvxivK7Qf1KXsuSrRoZVZ8=
