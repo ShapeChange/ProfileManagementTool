@@ -1,11 +1,11 @@
 version: '2'
 
 services:
-#  web:
-#    image: iide/pmt:latest
-#    restart: always
-#    ports:
-#      - "8000:8000"
+  app:
+    image: iide/pmt:latest
+    restart: always
+    ports:
+      - "8000:8000"
   db:
     image: mvertes/alpine-mongo:latest
     restart: always
