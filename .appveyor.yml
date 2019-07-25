@@ -21,7 +21,7 @@ test_script:
   - yarn --production install
   - cd ..
   - yarn win
-  - npm pack dist
+  - npm pack ./dist
   - cd pmt-win
   - yarn build
   - cd ..
