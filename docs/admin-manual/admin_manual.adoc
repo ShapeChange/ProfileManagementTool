@@ -28,8 +28,8 @@ NOTE: The following instructions assume that _MongoDB_ is installed on the same 
 [[AM_Installation_NodeJS]]
 === Node.js
 
-1.	Download the latest LTS version of the 64-bit Windows Installer for Node.js version 6.x from: https://nodejs.org/dist/latest-v6.x/
-  ** The _PMT_ requires version 6.x of Node.js.
+1.	Download the latest LTS version of the 64-bit Windows Installer for Node.js from: https://nodejs.org/en/download/
+  ** The _PMT_ requires version 10.x of Node.js.
 2.	Execute the installer with the default settings and follow the instructions.
 3.	To verify the installation, open a command prompt and run "node -v". That should print the installed Node.js version.
 
@@ -48,8 +48,8 @@ Two options are available for installing the _PMT_:
 
 NOTE: Before installing the _PMT_, make sure that its prerequisites, <<AM_Installation_MongoDB,MongoDB>> and <<AM_Installation_NodeJS,Node.js>>, are installed.
 
-1.	Download the latest release (pmt-win-1.0.0.zip and pmt-{release}.tgz) from here: https://github.com/ShapeChange/ProfileManagementTool/releases/latest
-2.	Unzip pmt-win-1.0.0.zip to a directory of your choice, e.g. C:\Program Files\pmt. This file contains a wrapper for the application to run it as a windows service.
+1.	Download the latest release (pmt-win-1.0.3.zip and pmt-{release}.tgz) from here: https://github.com/ShapeChange/ProfileManagementTool/releases/latest
+2.	Unzip pmt-win-1.0.3.zip to a directory of your choice, e.g. C:\Program Files\pmt. This file contains a wrapper for the application to run it as a windows service.
 3.	Copy pmt-{release}.tgz to the installation directory.
 4.	Open a command prompt with administrative rights and go to the installation directory, e.g. C:\Program Files\pmt.
 5.	Run the command ``npm install pmt-{release}.tgz`` to install the application itself. It will automatically be registered as a windows service.
