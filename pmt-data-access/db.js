@@ -115,7 +115,7 @@ function setConnection(connection) {
         textIndex.key[`taggedValues.${index}`] = 'text';
         textIndex.key[`properties.taggedValues.${index}`] = 'text';
     })
-    console.log('FILTERABLE2', filterableDescriptors, filterableTaggedValues, textIndex);
+    //console.log('FILTERABLE2', filterableDescriptors, filterableTaggedValues, textIndex);
 
     return model.createIndexes(defaultIndexes)
         .then(function (indexName) {

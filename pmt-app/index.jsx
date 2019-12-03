@@ -14,12 +14,10 @@ import i18n from './i18n';
 const render = (Component, store, history) => {
     ReactDOM.render(
         <AppContainer>
-            <Provider store={ store }>
-                <RouterProvider store={ store }>
-                    <I18nextProvider i18n={ i18n }>
-                        <Component history={ history } />
-                    </I18nextProvider>
-                </RouterProvider>
+            <Provider store={store}>
+                <I18nextProvider i18n={i18n}>
+                    <Component history={history} />
+                </I18nextProvider>
             </Provider>
         </AppContainer>,
         document.getElementById('app-wrapper')
@@ -82,7 +80,7 @@ if (module && module.hot) {
     module.hot.accept('./components/container/App', () => {
         render(App, store, history)
     });
-/*module.hot.accept('./create-store', () => {
-    render(App, createStore())
-});*/
+    /*module.hot.accept('./create-store', () => {
+        render(App, createStore())
+    });*/
 }

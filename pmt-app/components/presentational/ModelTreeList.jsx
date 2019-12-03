@@ -10,23 +10,23 @@ import ModelElement from './ModelElement'
 class ModelTreeList extends Component {
 
     _renderTree = (leafList) => {
-        const {placeHolder, useSmallerFont} = this.props;
+        const { placeHolder, useSmallerFont } = this.props;
 
         let classNames = 'border-0 text-nowrap text-muted text-really-muted p-2 justify-content-center'
         if (useSmallerFont)
             classNames += ' small'
 
         return <ListGroup className="pb-5">
-                   { leafList && leafList.length
-                     ? leafList
-                     : <ListGroupItem tag="div" className={ classNames }>
-                           { placeHolder }
-                       </ListGroupItem> }
-               </ListGroup>
+            {leafList && leafList.length
+                ? leafList
+                : <ListGroupItem tag="div" className={classNames}>
+                    {placeHolder}
+                </ListGroupItem>}
+        </ListGroup>
     }
 
     _renderLeaf = (leaf, isFirst, isLast, isSelected, isExpanded, hasChildren, depth, onSelect, onExpand) => {
-        const {focus, showExpansionIcons, useSmallerFont, baseUrls, urlSuffix, selectedProfile, filter} = this.props;
+        const { focus, showExpansionIcons, useSmallerFont, baseUrls, urlSuffix, selectedProfile, filter } = this.props;
 
         let classNames = 'border-left-0 border-right-0 border-bottom-0 rounded-0 list-group-item-action text-nowrap'
         if (isFirst)
@@ -48,20 +48,20 @@ class ModelTreeList extends Component {
         else
             classNames += ' px-2 py-2'
 
-        return <ListGroupItem tag={ Link }
-                   href={ `${baseUrls[leaf.type]}/${leaf._id}/${urlSuffix ? urlSuffix : ''}${isExpanded && hasChildren ? '?closed=true' : ''}` }
-                   key={ leaf._id }
-                   title={ leaf.name }
-                   className={ classNames }>
-                   <ModelElement element={ leaf }
-                       depth={ depth }
-                       isExpanded={ isExpanded }
-                       filter={ filter } />
-               </ListGroupItem>
+        return <ListGroupItem tag={Link}
+            href={`${baseUrls[leaf.type]}/${encodeURIComponent(encodeURIComponent(encodeURIComponent(leaf._id)))}/${urlSuffix ? urlSuffix : ''}${isExpanded && hasChildren ? '?closed=true' : ''}`}
+            key={leaf._id}
+            title={leaf.name}
+            className={classNames}>
+            <ModelElement element={leaf}
+                depth={depth}
+                isExpanded={isExpanded}
+                filter={filter} />
+        </ListGroupItem>
     }
 
     render() {
-        return <TreeList {...this.props} renderTree={ this._renderTree } renderLeaf={ this._renderLeaf } />
+        return <TreeList {...this.props} renderTree={this._renderTree} renderLeaf={this._renderLeaf} />
     }
 }
 

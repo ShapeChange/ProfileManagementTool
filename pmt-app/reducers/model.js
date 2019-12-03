@@ -337,7 +337,7 @@ export const getSelectedModel = (state) => state.router.params.modelId //state.m
 export const getSelectedProfile = (state) => state.router.params.profileId
 export const getSelectedPackage = (state) => state.model.pendingPackage || state.model.fetchedPackage
 export const getSelectedClass = (state) => state.router.params.classId //state.model.pendingClass || state.model.fetchedClass
-export const getSelectedProperty = (state) => state.router.params.propertyId
+export const getSelectedProperty = (state) => state.router.params.propertyId && decodeURIComponent(decodeURIComponent(state.router.params.propertyId))
 export const getSelectedTab = (state) => state.router.params.tabId
 export const isFocusOnPackage = (state) => state.router.params.packageId
 export const isFocusOnClass = (state) => state.router.params.classId
