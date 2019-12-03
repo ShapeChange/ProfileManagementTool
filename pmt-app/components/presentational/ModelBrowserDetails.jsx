@@ -113,7 +113,7 @@ class ModelBrowserDetails extends Component {
     render() {
         const { _id, name, type, items, infos, taggedValues, parameters, selectedTab, baseUrls, urlSuffix, filter, isFlattenInheritance, isFlattenOninas, busy, t, cls, filterableInfoKeys } = this.props;
 
-        const baseUrl = `${baseUrls[type]}/${_id}`;
+        const baseUrl = `${baseUrls[type]}/${encodeURIComponent(encodeURIComponent(encodeURIComponent(_id)))}`;
         const isInfo = infos && selectedTab === 'info'
         const isItems = items && selectedTab === 'items'
         const isParameters = parameters && selectedTab === 'parameters'
