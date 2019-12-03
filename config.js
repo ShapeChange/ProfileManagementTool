@@ -69,6 +69,33 @@ var config = convict({
             doc: "Flatten model ONINAs",
             format: Boolean,
             default: false
+        },
+        search: {
+            descriptors: {
+                doc: "Search in values of these descriptors",
+                format: Array,
+                default: ["alias", "description", "definition"]
+            },
+            taggedValues: {
+                doc: "Search in values of these tagged values",
+                format: Array,
+                default: ["name"]
+            }
+        },
+        propertyInfos: {
+            defaultValues: {
+                doc: "Default values for missing info items for properties",
+                format: Object,
+                default: { "isOrdered": false, "isUnique": true, "isComposition": false, "isAggregation": false }
+            },
+            hidden: {
+                doc: "Hide info items for properties when condition is met",
+                format: Array,
+                default: [{
+                    keys: ["isOrdered", "isUnique", "isComposition", "isAggregation"],
+                    condition: "cls.stereotypes.includes('enumeration') || cls.stereotypes.includes('codelist')"
+                }]
+            }
         }
     }
 });

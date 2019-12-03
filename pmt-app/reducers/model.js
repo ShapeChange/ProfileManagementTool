@@ -343,7 +343,8 @@ export const isFocusOnPackage = (state) => state.router.params.packageId
 export const isFocusOnClass = (state) => state.router.params.classId
 export const isFocusOnProperty = (state) => state.router.params.propertyId
 export const isItemClosed = (state) => state.router.query && state.router.query.closed === 'true'
-export const getDetails = (state) => isFocusOnProperty(state) ? _extractDetails(getProperty(state)) : isFocusOnClass(state) ? _extractDetails(getClass(state)) : isFocusOnPackage(state) ? _extractDetails(getPackage(state)) : {}
+export const getDetails = (state) => isFocusOnProperty(state) ? _extractDetails(getProperty(state), getDefaultInfoValues(state)) : isFocusOnClass(state) ? _extractDetails(getClass(state)) : isFocusOnPackage(state) ? _extractDetails(getPackage(state)) : {}
+export const getDefaultInfoValues = (state) => state.app.defaultInfoValues.properties
 
 const _getExpandedItems = (state) => {
     const rootPackages = state.model.packages.filter(pkg => pkg.parent === getSelectedModel(state))
@@ -391,9 +392,33 @@ const _extractProperty = (properties, selectedProperty) => {
     return properties ? properties.find(child => child._id === selectedProperty) : null
 }
 
+const _getPropertyInfos = (details, defaults) => {
+    const infos = {};
+
+    for (var key of Object.keys(defaults)) {
+        infos[key] = _computeInfoValue(key, details, defaults);
+    }
+
+    return infos;
+}
+
+const _computeInfoValue = (key, details, defaults) => {
+    if (details.hasOwnProperty(key)
+        && details[key] !== null
+        && details[key] !== undefined) {
+        return details[key];
+    }
+    if (defaults.hasOwnProperty(key)) {
+        //console.log('DEFAULT', key, defaults[key])
+        return `${defaults[key]} (default)`;
+    }
+
+    return null;
+}
+
 // TODO: is called three times, once for every even unrelated action
 // move to backend or check reselect memorization
-const _extractDetails = (details) => {
+const _extractDetails = (details, defaults) => {
     const descriptors = details && details.descriptors && details.descriptors //&& details.element && details.element.children ? _reduceDescriptors(details.element.children.find(child => child.name === 'sc:descriptors')) : {}
     const taggedValues = details && details.taggedValues && details.taggedValues //&& details.element && details.element.children ? _reduceTaggedValues(details.element.children.find(child => child.name === 'sc:taggedValues')) : {}
     const stereotypes = details && details.stereotypes && details.stereotypes //&& details.element && details.element.children ? _reduceStereotypes(details.element.children.find(child => child && child.name === 'sc:stereotypes')) : []
@@ -417,8 +442,13 @@ const _extractDetails = (details) => {
         if (details.isNavigable) {
             d.isNavigable = details.isNavigable
         }
-        d.isOrdered = details.isOrdered === true
-        d.isUnique = details.isUnique !== false
+        //d.isOrdered = details.isOrdered === true
+        //d.isUnique = details.isUnique !== false
+
+        d = {
+            ...d,
+            ..._getPropertyInfos(details, defaults)
+        };
     }
     if (details && details.type === 'cls') {
         d.isAbstract = details.isAbstract === true

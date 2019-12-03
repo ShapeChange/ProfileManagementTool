@@ -390,6 +390,12 @@ function reduceNode(node, id, type) {
     var isUniqueIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:isUnique'
     })
+    var isCompositionIndex = node.children.findIndex(function (child) {
+        return child.name === 'sc:isComposition'
+    })
+    var isAggregationIndex = node.children.findIndex(function (child) {
+        return child.name === 'sc:isAggregation'
+    })
     var isOwnedIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:isOwned'
     })
@@ -455,8 +461,10 @@ function reduceNode(node, id, type) {
         cardinality: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value,
         isAttribute: isAttributeIndex === -1 || node.children[isAttributeIndex].children[0].value !== 'false',
         isNavigable: isNavigableIndex === -1 || node.children[isNavigableIndex].children[0].value !== 'false',
-        isOrdered: isOrderedIndex > -1 && node.children[isOrderedIndex].children[0].value === 'true',
-        isUnique: isUniqueIndex === -1 || node.children[isUniqueIndex].children[0].value !== 'false',
+        isOrdered: isOrderedIndex > -1 ? node.children[isOrderedIndex].children[0].value : undefined,
+        isUnique: isUniqueIndex > -1 ? node.children[isUniqueIndex].children[0].value : undefined,
+        isComposition: isCompositionIndex > -1 ? node.children[isCompositionIndex].children[0].value : undefined,
+        isAggregation: isAggregationIndex > -1 ? node.children[isAggregationIndex].children[0].value : undefined,
         isOwned: isOwnedIndex > -1 && node.children[isOwnedIndex].children[0].value === 'true',
         isAbstract: isAbstractIndex > -1 && node.children[isAbstractIndex].children[0].value === 'true',
         optional: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value && node.children[cardinalityIndex].children[0].value.indexOf('0') === 0,

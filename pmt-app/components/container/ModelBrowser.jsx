@@ -4,7 +4,7 @@ import { bindActionCreators } from 'redux';
 import { Card, CardHeader } from 'reactstrap';
 import { translate } from 'react-i18next';
 
-import { useThreePaneView, useSmallerFont, getPendingFilter, getFilter, getBrowserDisabled, isFlattenInheritance, isFlattenOninas, getAllowedGeometries, isBusy, Font, View, actions } from '../../reducers/app'
+import { useThreePaneView, useSmallerFont, getPendingFilter, getFilter, getBrowserDisabled, isFlattenInheritance, isFlattenOninas, getAllowedGeometries, getHiddenPropertyInfos, getFilterableInfoKeys, isBusy, Font, View, actions } from '../../reducers/app'
 import { getSelectedModel, getSelectedProfile, getSelectedPackage, getSelectedClass, getSelectedProperty, getSelectedTab, getDetails, getPackages, getPackage, getClasses, getClass, getProperties, getExpandedItems, actions as modelActions } from '../../reducers/model'
 
 import ModelBrowserPanes from '../presentational/ModelBrowserPanes'
@@ -50,6 +50,8 @@ import ModelElement from '../presentational/ModelElement'
             isFlattenInheritance: isFlattenInheritance(state),
             isFlattenOninas: isFlattenOninas(state),
             allowedGeometries: getAllowedGeometries(state),
+            hiddenPropertyInfos: getHiddenPropertyInfos(state),
+            filterableInfoKeys: getFilterableInfoKeys(state),
             busy: isBusy(state)
         }
     },
@@ -73,7 +75,7 @@ class ModelBrowser extends Component {
     }
 
     _setFont = (e, font) => {
-        const {setFont} = this.props;
+        const { setFont } = this.props;
 
         e.stopPropagation();
         e.currentTarget.blur();
@@ -90,7 +92,7 @@ class ModelBrowser extends Component {
     }
 
     _setView = (e, view) => {
-        const {setView} = this.props;
+        const { setView } = this.props;
 
         e.stopPropagation();
         e.currentTarget.blur();
@@ -99,7 +101,7 @@ class ModelBrowser extends Component {
     }
 
     _setFilter = (e) => {
-        const {selectedModel, setFilter, applyFilter} = this.props;
+        const { selectedModel, setFilter, applyFilter } = this.props;
 
         const filter = e ? e.target.value : '';
 
@@ -112,7 +114,7 @@ class ModelBrowser extends Component {
     }
 
     _getTrees = (separate) => {
-        const {pkg, packages, classes, properties, selectedPackage, selectedClass} = this.props;
+        const { pkg, packages, classes, properties, selectedPackage, selectedClass } = this.props;
 
         const classTree = selectedPackage && classes ? classes.filter(cls => cls.parent === selectedPackage).map(cls => Object.assign({}, cls, {
             editable: !pkg || pkg.editable
@@ -135,7 +137,7 @@ class ModelBrowser extends Component {
     }
 
     _getItems = () => {
-        const {details, selectedPackage, selectedClass, classes, properties} = this.props;
+        const { details, selectedPackage, selectedClass, classes, properties } = this.props;
 
         let items
         if (details.type === 'pkg') {
@@ -148,7 +150,7 @@ class ModelBrowser extends Component {
     }
 
     render() {
-        const {useThreePaneView, details, query, pendingFilter, isFilterPending, filter} = this.props;
+        const { useThreePaneView, details, query, pendingFilter, isFilterPending, filter } = this.props;
 
         const handlers = {
             onSetSinglePaneView: this._setSinglePaneView,
@@ -168,21 +170,21 @@ class ModelBrowser extends Component {
     }
 
     _render = (TreeComponent, trees, items, handlers, details, query, pendingFilter, isFilterPending, filter) => <TreeComponent {...this.props}
-                                                                                                                     {...handlers}
-                                                                                                                     {...trees}
-                                                                                                                     pendingFilter={ pendingFilter }
-                                                                                                                     isFilterPending={ isFilterPending }>
-                                                                                                                     <Card className="h-100 border-0">
-                                                                                                                         <CardHeader className="text-nowrap d-flex flex-row" style={ { minHeight: '50px', height: '50px' } }>
-                                                                                                                             { details.name && <ModelElement element={ { ...details.infos, ...details } } color="default" filter={ filter } /> }
-                                                                                                                         </CardHeader>
-                                                                                                                         { details._id &&
-                                                                                                                           <ModelBrowserDetails {...this.props}
-                                                                                                                               items={ items }
-                                                                                                                               urlSuffix={ query }
-                                                                                                                               {...details}/> }
-                                                                                                                     </Card>
-                                                                                                                 </TreeComponent>
+        {...handlers}
+        {...trees}
+        pendingFilter={pendingFilter}
+        isFilterPending={isFilterPending}>
+        <Card className="h-100 border-0">
+            <CardHeader className="text-nowrap d-flex flex-row" style={{ minHeight: '50px', height: '50px' }}>
+                {details.name && <ModelElement element={{ ...details.infos, ...details }} color="default" filter={filter} />}
+            </CardHeader>
+            {details._id &&
+                <ModelBrowserDetails {...this.props}
+                    items={items}
+                    urlSuffix={query}
+                    {...details} />}
+        </Card>
+    </TreeComponent>
 }
 ;
 

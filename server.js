@@ -16,13 +16,13 @@ var server = http.createServer(app);
 server = httpShutdown(server);
 server = Promise.promisifyAll(server);
 
-db.connect(config.get('db.url'))
-    .then(function() {
+db.connect(config.get('db.url'), config)
+    .then(function () {
         backend.addRoutes(server, app, config, db);
 
         return server.listenAsync(config.get('server.port'));
     })
-    .then(function() {
+    .then(function () {
         console.log('Started ProfileManagementTool Server - listening on port: ' + config.get('server.port'));
     });
 
@@ -33,17 +33,17 @@ process.on('SIGQUIT', shutdown);
 
 function shutdown() {
     return backend.onShutdown()
-        .then(function() {
+        .then(function () {
             return server.shutdownAsync();
         })
-        .then(function() {
+        .then(function () {
             return db.close(true);
         })
-        .then(function() {
+        .then(function () {
             console.log('Stopped ProfileManagementTool Server');
             process.exit(0);
         })
-        .catch(function(err) {
+        .catch(function (err) {
             console.error(err);
             console.log('Stopped ProfileManagementTool Server');
             process.exit(1);

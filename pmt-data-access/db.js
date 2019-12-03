@@ -18,6 +18,7 @@ var dbEdit;
 var modelReader;
 var profileWriter;
 var userReaderWriter;
+var cfg;
 
 function setConnection(connection) {
     db = connection;
@@ -31,7 +32,7 @@ function setConnection(connection) {
 
     dbEdit = profileEdit(modelReader, profileWriter);
 
-    return model.createIndexes([{
+    const defaultIndexes = [{
         key: {
             'parent': 1
         }
@@ -59,11 +60,11 @@ function setConnection(connection) {
         key: {
             'name': 1
         }
-    }, {
+    }, /*{
         key: {
             'descriptors.alias': 1
         }
-    }, {
+    },*/ {
         key: {
             'profiles': 1
         }
@@ -79,11 +80,11 @@ function setConnection(connection) {
         key: {
             'properties.name': 1
         }
-    }, {
+    },/* {
         key: {
             'properties.descriptors.alias': 1
         }
-    } /*, {
+    }*/ /*, {
         key: {
             'name': 'text',
             'descriptors.alias': 'text',
@@ -95,7 +96,49 @@ function setConnection(connection) {
             'properties.descriptors.description': 'text'
         },
         name: 'textSearchIndex'
-    }*/ ])
+    }*/ ]
+
+    const filterableDescriptors = cfg.get('app.search.descriptors');
+    const filterableTaggedValues = cfg.get('app.search.taggedValues');
+
+
+    const textIndex = {
+        key: {},
+        name: 'textSearchIndex',
+        default_language: 'none'
+    };
+    filterableDescriptors.forEach(index => {
+        textIndex.key[`descriptors.${index}`] = 'text';
+        textIndex.key[`properties.descriptors.${index}`] = 'text';
+    })
+    filterableTaggedValues.forEach(index => {
+        textIndex.key[`taggedValues.${index}`] = 'text';
+        textIndex.key[`properties.taggedValues.${index}`] = 'text';
+    })
+    console.log('FILTERABLE2', filterableDescriptors, filterableTaggedValues, textIndex);
+
+    return model.createIndexes(defaultIndexes)
+        .then(function (indexName) {
+            console.log('Created indexes ', indexName)
+
+            return model.createIndexes([textIndex])
+                .then(function (indexName) {
+                    return indexName
+                }, function (error) {
+                    console.log('RETRY', error)
+                    // try to recreate text index
+                    //if (error) {
+                    return model.dropIndex(textIndex.name)
+                        .then(function (indexName) {
+                            console.log('Dropped indexes ', indexName)
+
+                            return model.createIndexes([textIndex])
+                        })
+                    //}
+
+                    return indexName
+                })
+        })
         .then(function (indexName) {
             console.log('Created indexes ', indexName)
 
@@ -164,10 +207,11 @@ exports.getUserReaderWriter = function () {
     return userReaderWriter;
 }
 
-exports.connect = function (url) {
+exports.connect = function (url, config) {
     if (db) {
         return Promise.resolve();
     }
+    cfg = config;
 
     return MongoClient
         .connect(url, {
@@ -204,6 +248,30 @@ exports.getModels = function (owner) {
     )
 }
 
+function getFilters(term, prefix) {
+    const filterableDescriptors = cfg.get('app.search.descriptors');
+    const filterableTaggedValues = cfg.get('app.search.taggedValues');
+    //console.log('FILTERABLE2', filterableDescriptors, filterableTaggedValues);
+
+    const keyPrefix = prefix ? `${prefix}.` : ''
+    const regex = {
+        $regex: `(?i)${term}`
+    };
+
+    const nameFilter = [{
+        [`${keyPrefix}name`]: regex
+    }]
+    const descriptorFilters = filterableDescriptors.map(key => ({
+        [`${keyPrefix}descriptors.${key}`]: regex
+    }))
+    const taggedValueFilters = filterableTaggedValues.map(key => ({
+        [`${keyPrefix}taggedValues.${key}`]: regex
+    }))
+
+    return nameFilter.concat(descriptorFilters, taggedValueFilters);
+}
+
+//TODO: is descriptors.alias even set in the db for pkgs
 exports.getPackages = function (modelId, filter) {
     const query = {
         type: 'pkg',
@@ -211,7 +279,7 @@ exports.getPackages = function (modelId, filter) {
     }
 
     if (filter && filter !== '') {
-        query.$or = [
+        query.$or = getFilters(filter) /*[
             {
                 name: {
                     $regex: '(?i)' + filter
@@ -222,7 +290,7 @@ exports.getPackages = function (modelId, filter) {
                     $regex: '(?i)' + filter
                 }
             }
-        ]
+        ]*/
     }
 
     return Promise.resolve(
@@ -416,13 +484,14 @@ function getParentsForPackages(modelId, pkgIds) {
         })
 }
 
+//TODO: from config
 function getFilteredClasses(modelId, filter) {
     return Promise.resolve(
         model
             .find({
                 type: 'cls',
                 model: ObjectID(modelId),
-                $or: [
+                $or: getFilters(filter).concat(getFilters(filter, 'properties')) /*[
                     {
                         name: {
                             $regex: '(?i)' + filter
@@ -463,7 +532,7 @@ function getFilteredClasses(modelId, filter) {
                             $regex: '(?i)' + filter
                         }
                     }
-                ]
+                ]*/
             })
             .project({
                 parent: 1
@@ -507,6 +576,7 @@ exports.getAssociationsForParent = function (parent) {
     );
 }
 
+//TODO: from config
 exports.getClassesForPackage = function (pkg, filter) {
     const query = {
         type: 'cls',
@@ -514,7 +584,7 @@ exports.getClassesForPackage = function (pkg, filter) {
     }
 
     if (filter && filter !== '') {
-        query.$or = [
+        query.$or = getFilters(filter).concat(getFilters(filter, 'properties')) /*[
             {
                 name: {
                     $regex: '(?i)' + filter
@@ -555,7 +625,7 @@ exports.getClassesForPackage = function (pkg, filter) {
                     $regex: '(?i)' + filter
                 }
             }
-        ]
+        ]*/
     }
 
     return Promise.resolve(
@@ -936,8 +1006,8 @@ exports.getModel = function (id, owner) {
             _id: ObjectID(id),
             owner: owner
         }, {
-                element: 0
-            })
+            element: 0
+        })
         .then(function (mdl) {
             return errors
                 .find({

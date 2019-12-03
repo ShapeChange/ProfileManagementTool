@@ -82,7 +82,17 @@ const initialState = {
     filter: '',
     deleteRequested: [],
     profileEdit: {},
-    allowedGeometries: []
+    allowedGeometries: [],
+    defaultInfoValues: {
+        properties: {}
+    },
+    hiddenInfoKeys: {
+        properties: []
+    },
+    filterableInfoKeys: {
+        descriptors: [],
+        taggedValues: []
+    }
 }
 
 // reducer
@@ -148,17 +158,24 @@ function initApp(state, action) {
         ...state,
         allowedGeometries: action.payload.geometry,
         flattenInheritance: action.payload.flattenInheritance || false,
-        flattenOninas: action.payload.flattenOninas || false
+        flattenOninas: action.payload.flattenOninas || false,
+        defaultInfoValues: {
+            properties: action.payload.propertyInfos.defaultValues
+        },
+        hiddenInfoKeys: {
+            properties: action.payload.propertyInfos.hidden
+        },
+        filterableInfoKeys: action.payload.search
     }
 }
 
 function initUser(state, action) {
     return state
-/*return {
-    ...state,
-    flattenInheritance: action.payload.user.flattenInheritance || false,
-    flattenOninas: action.payload.user.flattenOninas || false
-}*/
+    /*return {
+        ...state,
+        flattenInheritance: action.payload.user.flattenInheritance || false,
+        flattenOninas: action.payload.user.flattenOninas || false
+    }*/
 }
 
 function selectModel(state, action) {
@@ -556,6 +573,8 @@ export const isBusy = (state) => state.app.busy
 export const getDeleteRequested = (state) => state.app.deleteRequested
 export const getProfileEdit = (state) => state.app.profileEdit
 export const getAllowedGeometries = (state) => state.app.allowedGeometries
+export const getHiddenPropertyInfos = (state) => state.app.hiddenInfoKeys.properties
+export const getFilterableInfoKeys = (state) => state.app.filterableInfoKeys
 
 // is backend sync needed
 const doesChangeSelectedPackage = (state, action) => state.app.selectedPackage !== action.payload

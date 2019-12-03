@@ -93,14 +93,32 @@ class ModelBrowserDetails extends Component {
         });
     }
 
+    _filterInfos = (type, cls, infos) => {
+        const { hiddenPropertyInfos } = this.props;
+
+        const ignorableInfoKeys = [];
+
+        if (infos && type === 'prp' && cls) {
+            return Object.keys(infos)
+                .filter(key => !hiddenPropertyInfos.some(filter => eval(filter.condition) && filter.keys.includes(key)))
+                .reduce((newInfos, key) => {
+                    newInfos[key] = infos[key];
+                    return newInfos;
+                }, {});
+        }
+
+        return infos;
+    }
+
     render() {
-        const { _id, name, type, items, infos, taggedValues, parameters, selectedTab, baseUrls, urlSuffix, filter, isFlattenInheritance, isFlattenOninas, busy, t } = this.props;
+        const { _id, name, type, items, infos, taggedValues, parameters, selectedTab, baseUrls, urlSuffix, filter, isFlattenInheritance, isFlattenOninas, busy, t, cls, filterableInfoKeys } = this.props;
 
         const baseUrl = `${baseUrls[type]}/${_id}`;
         const isInfo = infos && selectedTab === 'info'
         const isItems = items && selectedTab === 'items'
         const isParameters = parameters && selectedTab === 'parameters'
         const isProfile = !selectedTab || (!isInfo && !isItems && !isParameters) || selectedTab === 'profile'
+        const filteredInfos = this._filterInfos(type, cls, infos);
 
         return (_id &&
             <div className="p-3" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
@@ -135,7 +153,7 @@ class ModelBrowserDetails extends Component {
                         updateEditableForChildren={this._updateEditableForChildren}
                         updateProfileParameter={this._updateProfileParameter} />}
                 {isInfo &&
-                    <ModelBrowserInfos infos={infos}
+                    <ModelBrowserInfos infos={filteredInfos}
                         taggedValues={taggedValues}
                         baseUrl={baseUrls['cls']}
                         baseUrlPrp={baseUrls['prp2']}
@@ -143,7 +161,8 @@ class ModelBrowserDetails extends Component {
                         filter={filter}
                         isFlattenInheritance={isFlattenInheritance}
                         isFlattenOninas={isFlattenOninas}
-                        t={t} />}
+                        t={t}
+                        filterableInfoKeys={filterableInfoKeys} />}
                 {isItems &&
                     <ModelBrowserItems {...this.props} urlSuffix={selectedTab} updateProfile={this._updateProfileForElement} />}
                 {isParameters &&

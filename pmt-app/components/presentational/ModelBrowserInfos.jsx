@@ -7,7 +7,7 @@ import TooltipIcon from '../common/TooltipIcon'
 class ModelBrowserInfos extends Component {
 
     render() {
-        const { infos, taggedValues, baseUrl, baseUrlPrp, urlSuffix, filter, isFlattenInheritance, isFlattenOninas } = this.props;
+        const { infos, taggedValues, baseUrl, baseUrlPrp, urlSuffix, filter, isFlattenInheritance, isFlattenOninas, filterableInfoKeys } = this.props;
 
         return (infos &&
             <Table>
@@ -66,7 +66,9 @@ class ModelBrowserInfos extends Component {
                                 }
                             }
                         } else if (filter && filter !== '' && infos[key]) {
-                            if (key === 'alias' || key === 'description' || key === 'definition') {
+                            //TODO: from config
+                            //console.log('FILTERABLE', filterableInfoKeys);
+                            if (filterableInfoKeys.descriptors && filterableInfoKeys.descriptors.includes(key) /*key === 'alias' || key === 'description' || key === 'definition'*/) {
                                 const start = infos[key].toLowerCase().indexOf(filter)
                                 if (start > -1) {
                                     const end = start + filter.length
@@ -102,6 +104,18 @@ class ModelBrowserInfos extends Component {
                     {taggedValues &&
                         Object.keys(taggedValues).map((key, i) => {
                             let value = taggedValues[key]
+
+                            if (filter && filter !== '' && filterableInfoKeys.taggedValues && filterableInfoKeys.taggedValues.includes(key)) {
+                                //console.log('FILTERABLE2', filterableInfoKeys);
+                                const start = value.toLowerCase().indexOf(filter)
+                                if (start > -1) {
+                                    const end = start + filter.length
+                                    value = <span>{value.substring(0, start)}<span className="bg-highlight">{value.substring(start, end)}</span>
+                                        {value.substring(end)}
+                                    </span>
+                                }
+                            }
+
                             return <tr key={key}>
                                 <td className={'pl-0' + (i === 0 ? ' border-top-0' : '')}>
                                     {key}
