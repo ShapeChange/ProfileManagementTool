@@ -3,6 +3,7 @@
     "view": "View",
     "flattenInheritance": "Flatten inheritance tree",
     "flattenOninas": "Flatten ONINAs",
+    "showDefaultValues": "Display default values",
     "modelFiles": "Model Files",
     "addFile": "Add File",
     "import": "Import",

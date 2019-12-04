@@ -8,8 +8,8 @@ import * as reducers from '../reducers'
 import { actions as appActions } from '../reducers/app'
 import createSyncIoMiddleware from './sync.io.js';
 
-export default function(routes, data) {
-    const {reducer: routerReducer, middleware: routerMiddleware, enhancer: routerEnhancer} = routerForBrowser({
+export default function (routes, data) {
+    const { reducer: routerReducer, middleware: routerMiddleware, enhancer: routerEnhancer } = routerForBrowser({
         routes,
         basename: '/pmt'
     })
@@ -35,7 +35,7 @@ export default function(routes, data) {
         composeWithDevTools(
             routerEnhancer,
             applyMiddleware(...middleware),
-        // other store enhancers if any
+            // other store enhancers if any
         )
     );
 
@@ -46,7 +46,7 @@ export default function(routes, data) {
         transforms: [
             createFilter(
                 'app',
-                ['useThreePaneView', 'useSmallerFont', 'menuOpen', 'flattenInheritance', 'flattenOninas', 'busy']
+                ['useThreePaneView', 'useSmallerFont', 'menuOpen', 'flattenInheritance', 'flattenOninas', 'showDefaultValues', 'busy']
             )
         ]
     }, () => {
@@ -54,7 +54,7 @@ export default function(routes, data) {
         const initialLocation = store.getState().router;
         if (initialLocation) {
             //TODO
-            setTimeout(function() {
+            setTimeout(function () {
                 store.dispatch(initializeCurrentLocation(initialLocation));
             }, 500)
 

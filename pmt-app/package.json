@@ -52,7 +52,9 @@
     "socket.io-stream": "^0.9.1",
     "style-loader": "^0.18.2"
   },
-  "dependencies": {},
+  "dependencies": {
+    "immutable": "^4.0.0-rc.12"
+  },
   "peerDependencies": {
     "webpack": "2.x"
   }

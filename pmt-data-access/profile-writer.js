@@ -203,7 +203,7 @@ function finishBulk() {
     return checkBulk(true);
 }
 
-
+//TODO: do we need to add new properties here???
 var minProjection = ['localId', 'parent', 'name', 'type', 'profiles', 'profileParameters', 'properties.profiles', 'properties.profileParameters', 'properties._id', 'properties.name', 'properties.typeId', 'properties.isAttribute', 'properties.isNavigable', 'properties.optional', 'properties.reversePropertyId', 'properties.cardinality', 'taggedValues', 'stereotypes', 'model', 'editable', 'associationId'];
 
 function getProjection() {

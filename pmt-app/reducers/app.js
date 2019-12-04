@@ -36,6 +36,7 @@ export const actions = {
     setSubmenusOpen: createAction('submenus/set'),
     toggleFlattenInheritance: createAction('flatten/inheritance/toggle'),
     toggleFlattenOninas: createAction('flatten/oninas/toggle'),
+    toggleShowDefaultValues: createAction('show/defaultValues/toggle'),
     createFileImport: createAction('file/import/create'),
     startFileImport: createAction('file/import/start'),
     endFileImport: createAction('file/import/done'),
@@ -73,6 +74,7 @@ const initialState = {
     },
     flattenInheritance: false,
     flattenOninas: false,
+    showDefaultValues: false,
     fileImport: {},
     fileExport: {},
     pendingFilter: {
@@ -84,7 +86,8 @@ const initialState = {
     profileEdit: {},
     allowedGeometries: [],
     defaultInfoValues: {
-        properties: {}
+        properties: {},
+        classes: {}
     },
     hiddenInfoKeys: {
         properties: []
@@ -110,6 +113,7 @@ export default handleActions({
     [actions.setSubmenusOpen]: setSubmenusOpen,
     [actions.toggleFlattenInheritance]: toggleFlattenInheritance,
     [actions.toggleFlattenOninas]: toggleFlattenOninas,
+    [actions.toggleShowDefaultValues]: toggleShowDefaultValues,
     [actions.createFileImport]: createFileImport,
     [actions.startFileImport]: startFileImport,
     [actions.endFileImport]: endFileImport,
@@ -159,8 +163,10 @@ function initApp(state, action) {
         allowedGeometries: action.payload.geometry,
         flattenInheritance: action.payload.flattenInheritance || false,
         flattenOninas: action.payload.flattenOninas || false,
+        showDefaultValues: action.payload.showDefaultValues || false,
         defaultInfoValues: {
-            properties: action.payload.propertyInfos.defaultValues
+            properties: action.payload.propertyInfos.defaultValues,
+            classes: action.payload.classInfos.defaultValues
         },
         hiddenInfoKeys: {
             properties: action.payload.propertyInfos.hidden
@@ -286,6 +292,13 @@ function toggleFlattenOninas(state) {
     return {
         ...state,
         flattenOninas: !state.flattenOninas
+    }
+}
+
+function toggleShowDefaultValues(state) {
+    return {
+        ...state,
+        showDefaultValues: !state.showDefaultValues
     }
 }
 
@@ -560,6 +573,7 @@ export const isErrorsOpen = (state) => state.app.errorsOpen
 export const getSubmenusOpen = (state) => state.app.submenusOpen
 export const isFlattenInheritance = (state) => state.app.flattenInheritance
 export const isFlattenOninas = (state) => state.app.flattenOninas
+export const isShowDefaultValues = (state) => state.app.showDefaultValues
 export const hasFileImport = (state) => state.app.fileImport.name ? true : false
 export const hasPendingFileImport = (state) => state.app.fileImport.pending && state.app.fileImport.stats ? true : false
 export const getFileImport = (state) => state.app.fileImport

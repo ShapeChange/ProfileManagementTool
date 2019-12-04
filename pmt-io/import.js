@@ -378,11 +378,17 @@ function reduceNode(node, id, type) {
     var cardinalityIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:cardinality'
     })
-    var isAttributeIndex = node.children.findIndex(function (child) {
-        return child.name === 'sc:isAttribute'
-    })
     var isNavigableIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:isNavigable'
+    })
+    var isDerivedIndex = node.children.findIndex(function (child) {
+        return child.name === 'sc:isDerived'
+    })
+    var isReadOnlyIndex = node.children.findIndex(function (child) {
+        return child.name === 'sc:isReadOnly'
+    })
+    var isAttributeIndex = node.children.findIndex(function (child) {
+        return child.name === 'sc:isAttribute'
     })
     var isOrderedIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:isOrdered'
@@ -410,6 +416,9 @@ function reduceNode(node, id, type) {
     })
     var isAbstractIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:isAbstract'
+    })
+    var isLeafIndex = node.children.findIndex(function (child) {
+        return child.name === 'sc:isLeaf'
     })
     var typeIndex = node.children.findIndex(function (child) {
         return child.name === 'sc:typeId'
@@ -458,15 +467,18 @@ function reduceNode(node, id, type) {
             return pr.attributes.name;
         }) : [],
         profileParameters: profilesIndex > -1 ? _reduceProfiles(node.children[profilesIndex]) : {},
-        cardinality: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value,
-        isAttribute: isAttributeIndex === -1 || node.children[isAttributeIndex].children[0].value !== 'false',
-        isNavigable: isNavigableIndex === -1 || node.children[isNavigableIndex].children[0].value !== 'false',
-        isOrdered: isOrderedIndex > -1 ? node.children[isOrderedIndex].children[0].value : undefined,
-        isUnique: isUniqueIndex > -1 ? node.children[isUniqueIndex].children[0].value : undefined,
-        isComposition: isCompositionIndex > -1 ? node.children[isCompositionIndex].children[0].value : undefined,
-        isAggregation: isAggregationIndex > -1 ? node.children[isAggregationIndex].children[0].value : undefined,
-        isOwned: isOwnedIndex > -1 && node.children[isOwnedIndex].children[0].value === 'true',
-        isAbstract: isAbstractIndex > -1 && node.children[isAbstractIndex].children[0].value === 'true',
+        cardinality: cardinalityIndex > -1 ? node.children[cardinalityIndex].children[0].value : undefined,
+        isNavigable: isNavigableIndex > -1 ? node.children[isNavigableIndex].children[0].value === 'true' : undefined,
+        isDerived: isDerivedIndex > -1 ? node.children[isDerivedIndex].children[0].value === 'true' : undefined,
+        isReadOnly: isReadOnlyIndex > -1 ? node.children[isReadOnlyIndex].children[0].value === 'true' : undefined,
+        isAttribute: isAttributeIndex > -1 ? node.children[isAttributeIndex].children[0].value === 'true' : undefined,
+        isOrdered: isOrderedIndex > -1 ? node.children[isOrderedIndex].children[0].value === 'true' : undefined,
+        isUnique: isUniqueIndex > -1 ? node.children[isUniqueIndex].children[0].value === 'true' : undefined,
+        isComposition: isCompositionIndex > -1 ? node.children[isCompositionIndex].children[0].value === 'true' : undefined,
+        isAggregation: isAggregationIndex > -1 ? node.children[isAggregationIndex].children[0].value === 'true' : undefined,
+        isOwned: isOwnedIndex > -1 ? node.children[isOwnedIndex].children[0].value === 'true' : undefined,
+        isAbstract: isAbstractIndex > -1 ? node.children[isAbstractIndex].children[0].value === 'true' : undefined,
+        isLeaf: isLeafIndex > -1 ? node.children[isLeafIndex].children[0].value === 'true' : undefined,
         optional: cardinalityIndex > -1 && node.children[cardinalityIndex].children[0].value && node.children[cardinalityIndex].children[0].value.indexOf('0') === 0,
         reversePropertyId: reversePropertyIdIndex > -1 && node.children[reversePropertyIdIndex].children[0].value,
         end1: end1Index > -1 && _reduceEnd(node.children[end1Index], node.children[localIdIndex].children[0].value),
@@ -499,7 +511,7 @@ function _reduceProperty(prop, id) {
     p._id = p.localId;
     p.element = prop;
     p.type = 'prp';
-    p.cardinality = p.cardinality || '1..1'
+    //p.cardinality = p.cardinality || '1..1'
 
     return p;
 }

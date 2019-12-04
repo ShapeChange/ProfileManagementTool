@@ -4,7 +4,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux'
 import { translate } from 'react-i18next';
 
-import { isMenuOpen, getSubmenusOpen, hasFileImport, hasPendingFileImport, getFileImport, hasFileExport, hasPendingFileExport, getFileExport, isFlattenInheritance, isFlattenOninas, getDeleteRequested, getProfileEdit, actions } from '../../reducers/app'
+import { isMenuOpen, getSubmenusOpen, hasFileImport, hasPendingFileImport, getFileImport, hasFileExport, hasPendingFileExport, getFileExport, isFlattenInheritance, isFlattenOninas, isShowDefaultValues, getDeleteRequested, getProfileEdit, actions } from '../../reducers/app'
 import { getModels, getSelectedModel, getSelectedProfile } from '../../reducers/model'
 import { actions as authActions, getUser } from '../../reducers/auth'
 
@@ -29,6 +29,7 @@ import styles from './SideMenu.scss'
             submenusOpen: getSubmenusOpen(state),
             isFlattenInheritance: isFlattenInheritance(state),
             isFlattenOninas: isFlattenOninas(state),
+            isShowDefaultValues: isShowDefaultValues(state),
             models: getModels(state),
             selectedModel: getSelectedModel(state),
             selectedProfile: getSelectedProfile(state),
@@ -75,15 +76,15 @@ class SideMenu extends Component {
     }
 
     onAccordionLoad = (accordion) => {
-        const {hasImport} = this.props;
+        const { hasImport } = this.props;
 
         if (accordion)
             this.accordion = accordion
     }
 
     render() {
-        const {isMenuOpen, submenusOpen, setSubmenusOpen, toggleMenu, isFlattenInheritance, toggleFlattenInheritance, isFlattenOninas, toggleFlattenOninas, models, selectedModel, selectedProfile, user, logoutUser, t} = this.props;
-        const {createFileImport, startFileImport, clearFileImport, isImporting, hasImport, importStats, startFileExport, clearFileExport, isExporting, hasExport, exportStats, deleteRequested, requestDelete, confirmDelete, cancelDelete, profileEdit, requestProfileEdit, confirmProfileEdit, cancelProfileEdit} = this.props;
+        const { isMenuOpen, submenusOpen, setSubmenusOpen, toggleMenu, isFlattenInheritance, toggleFlattenInheritance, isFlattenOninas, toggleFlattenOninas, isShowDefaultValues, toggleShowDefaultValues, models, selectedModel, selectedProfile, user, logoutUser, t } = this.props;
+        const { createFileImport, startFileImport, clearFileImport, isImporting, hasImport, importStats, startFileExport, clearFileExport, isExporting, hasExport, exportStats, deleteRequested, requestDelete, confirmDelete, cancelDelete, profileEdit, requestProfileEdit, confirmProfileEdit, cancelProfileEdit } = this.props;
 
         let expanded = []
         if (selectedModel) expanded.push(selectedModel)
@@ -96,85 +97,88 @@ class SideMenu extends Component {
         return (
             <ModalSideMenu side="left"
                 size="sm"
-                isOpen={ isMenuOpen }
-                onToggle={ toggleMenu }
+                isOpen={isMenuOpen}
+                onToggle={toggleMenu}
                 className="sidemenu">
                 <ModalBody className="sidemenu-content h-100 p-0">
-                    <Card inverse className="h-100 border-top-0 border-bottom-0 border-left-0 rounded-0" style={ { overflowY: 'auto', overflowX: 'hidden' } }>
+                    <Card inverse className="h-100 border-top-0 border-bottom-0 border-left-0 rounded-0" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
                         <CardHeader className="sidemenu-header rounded-0 my-3 py-4 px-4">
                             <div className="d-flex flex-row">
                                 <div>
                                     <FontAwesome name="user"
                                         size='lg'
-                                        fixedWidth={ true }
+                                        fixedWidth={true}
                                         className="pr-4 text-info" />
-                                    <span className="">{ user.name }</span>
+                                    <span className="">{user.name}</span>
                                 </div>
                                 <div className="ml-auto">
-                                    <Link href={ '/login' } title={ t('logout') } onClick={ e => logoutUser({
-                                                                                                dummy: null
-                                                                                            }) }>
-                                    <FontAwesome name="sign-out" size='lg' fixedWidth={ true } />
+                                    <Link href={'/login'} title={t('logout')} onClick={e => logoutUser({
+                                        dummy: null
+                                    })}>
+                                        <FontAwesome name="sign-out" size='lg' fixedWidth={true} />
                                     </Link>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardBlock className="px-0 pt-0">
-                            <Accordion multi={ true }
-                                open={ submenusOpen }
-                                onChange={ setSubmenusOpen }
-                                ref={ this.onAccordionLoad }>
-                                <AccordionItem header={ <div className="w-100 d-flex flex-row">
-                                                            <FontAwesome name="eye" fixedWidth={ true } className="mr-2 align-self-center" />
-                                                            <span className="">{ t('view') }</span>
-                                                        </div> } title="View">
-                                    <ModelViewSettings isFlattenInheritance={ isFlattenInheritance }
-                                        isFlattenOninas={ isFlattenOninas }
-                                        toggleFlattenInheritance={ toggleFlattenInheritance }
-                                        toggleFlattenOninas={ toggleFlattenOninas }
-                                        t={ t } />
+                            <Accordion multi={true}
+                                open={submenusOpen}
+                                onChange={setSubmenusOpen}
+                                ref={this.onAccordionLoad}>
+                                <AccordionItem header={<div className="w-100 d-flex flex-row">
+                                    <FontAwesome name="eye" fixedWidth={true} className="mr-2 align-self-center" />
+                                    <span className="">{t('view')}</span>
+                                </div>} title="View">
+                                    <ModelViewSettings
+                                        isFlattenInheritance={isFlattenInheritance}
+                                        isFlattenOninas={isFlattenOninas}
+                                        isShowDefaultValues={isShowDefaultValues}
+                                        toggleFlattenInheritance={toggleFlattenInheritance}
+                                        toggleFlattenOninas={toggleFlattenOninas}
+                                        toggleShowDefaultValues={toggleShowDefaultValues}
+                                        t={t} />
                                 </AccordionItem>
-                                <AccordionItem header={ <div className="w-100 d-flex flex-row justify-content-between">
-                                                            <span><FontAwesome name="sitemap" fixedWidth={ true } className="pr-4" />{ t('modelFiles') }</span>
-                                                            <Button size="sm"
-                                                                color="info"
-                                                                className="rounded-0 py-0"
-                                                                disabled={ hasImport || hasExport }
-                                                                onClick={ this.chooseFile }>
-                                                                { t('addFile') }
-                                                            </Button>
-                                                        </div> } title="Model Files">
-                                    <ModelFileImport models={ models }
-                                        createFileImport={ createFileImport }
-                                        startFileImport={ startFileImport }
-                                        clearFileImport={ clearFileImport }
-                                        isImporting={ isImporting }
-                                        hasImport={ hasImport }
-                                        importStats={ importStats }
-                                        t={ t }
-                                        ref={ this.onFileImportLoad } />
-                                    <ModelFileBrowser models={ models }
-                                        selectedModel={ selectedModel }
-                                        selectedProfile={ selectedProfile }
-                                        expanded={ expanded }
-                                        selected={ selected }
-                                        toggleMenu={ toggleMenu }
-                                        startFileExport={ startFileExport }
-                                        isExporting={ isExporting }
-                                        hasImport={ hasImport }
-                                        hasExport={ hasExport }
-                                        exportStats={ exportStats }
-                                        deleteRequested={ deleteRequested }
-                                        profileEdit={ profileEdit }
-                                        requestDelete={ requestDelete }
-                                        confirmDelete={ confirmDelete }
-                                        cancelDelete={ cancelDelete }
-                                        requestProfileEdit={ requestProfileEdit }
-                                        confirmProfileEdit={ confirmProfileEdit }
-                                        cancelProfileEdit={ cancelProfileEdit }
-                                        clearFileExport={ clearFileExport }
-                                        user={ user }
-                                        t={ t } />
+                                <AccordionItem header={<div className="w-100 d-flex flex-row justify-content-between">
+                                    <span><FontAwesome name="sitemap" fixedWidth={true} className="pr-4" />{t('modelFiles')}</span>
+                                    <Button size="sm"
+                                        color="info"
+                                        className="rounded-0 py-0"
+                                        disabled={hasImport || hasExport}
+                                        onClick={this.chooseFile}>
+                                        {t('addFile')}
+                                    </Button>
+                                </div>} title="Model Files">
+                                    <ModelFileImport models={models}
+                                        createFileImport={createFileImport}
+                                        startFileImport={startFileImport}
+                                        clearFileImport={clearFileImport}
+                                        isImporting={isImporting}
+                                        hasImport={hasImport}
+                                        importStats={importStats}
+                                        t={t}
+                                        ref={this.onFileImportLoad} />
+                                    <ModelFileBrowser models={models}
+                                        selectedModel={selectedModel}
+                                        selectedProfile={selectedProfile}
+                                        expanded={expanded}
+                                        selected={selected}
+                                        toggleMenu={toggleMenu}
+                                        startFileExport={startFileExport}
+                                        isExporting={isExporting}
+                                        hasImport={hasImport}
+                                        hasExport={hasExport}
+                                        exportStats={exportStats}
+                                        deleteRequested={deleteRequested}
+                                        profileEdit={profileEdit}
+                                        requestDelete={requestDelete}
+                                        confirmDelete={confirmDelete}
+                                        cancelDelete={cancelDelete}
+                                        requestProfileEdit={requestProfileEdit}
+                                        confirmProfileEdit={confirmProfileEdit}
+                                        cancelProfileEdit={cancelProfileEdit}
+                                        clearFileExport={clearFileExport}
+                                        user={user}
+                                        t={t} />
                                 </AccordionItem>
                             </Accordion>
                         </CardBlock>

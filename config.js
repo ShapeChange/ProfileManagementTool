@@ -17,7 +17,7 @@ var config = convict({
     },
     server: {
         port: {
-            doc: "The port to bind.",
+            doc: "The port to bind to.",
             format: "port",
             default: 8000,
             env: "PORT"
@@ -70,6 +70,11 @@ var config = convict({
             format: Boolean,
             default: false
         },
+        showDefaultValues: {
+            doc: "Display default values",
+            format: Boolean,
+            default: false
+        },
         search: {
             descriptors: {
                 doc: "Search in values of these descriptors",
@@ -86,15 +91,47 @@ var config = convict({
             defaultValues: {
                 doc: "Default values for missing info items for properties",
                 format: Object,
-                default: { "isOrdered": false, "isUnique": true, "isComposition": false, "isAggregation": false }
+                default: {
+                    cardinality: '1..1',
+                    isNavigable: true,
+                    isDerived: false,
+                    isReadOnly: false,
+                    isAttribute: true,
+                    isOrdered: false,
+                    isUnique: true,
+                    isComposition: false,
+                    isAggregation: false,
+                    isOwned: false
+                }
             },
             hidden: {
                 doc: "Hide info items for properties when condition is met",
                 format: Array,
                 default: [{
-                    keys: ["isOrdered", "isUnique", "isComposition", "isAggregation"],
+                    keys: [
+                        "cardinality",
+                        "isNavigable",
+                        "isDerived",
+                        "isReadOnly",
+                        "isAttribute",
+                        "isOrdered",
+                        "isUnique",
+                        "isComposition",
+                        "isAggregation",
+                        "isOwned"
+                    ],
                     condition: "cls.stereotypes.includes('enumeration') || cls.stereotypes.includes('codelist')"
                 }]
+            }
+        },
+        classInfos: {
+            defaultValues: {
+                doc: "Default values for missing info items for classes",
+                format: Object,
+                default: {
+                    isAbstract: false,
+                    isLeaf: false
+                }
             }
         }
     }

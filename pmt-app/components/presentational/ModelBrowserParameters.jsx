@@ -7,7 +7,7 @@ import TooltipIcon from '../common/TooltipIcon'
 class ModelBrowserParameters extends Component {
 
     _parseMultiplicity = () => {
-        const { isProperty, infos, profileParameters, selectedProfile } = this.props;
+        const { isProperty, details, profileParameters, selectedProfile } = this.props;
 
         let multiplicity = {
             min: 0,
@@ -18,8 +18,8 @@ class ModelBrowserParameters extends Component {
             maxValueUnbounded: false
         }
 
-        if (isProperty && infos && infos.cardinality) {
-            let bounds = infos.cardinality.split('..')
+        if (isProperty && details && details.cardinality) {
+            let bounds = details.cardinality.split('..')
             multiplicity.min = multiplicity.minValue = parseInt(bounds[0])
             multiplicity.max = multiplicity.maxValue = parseInt(bounds[1])
             multiplicity.maxUnbounded = multiplicity.maxValueUnbounded = bounds[1] === '*'
@@ -74,7 +74,7 @@ class ModelBrowserParameters extends Component {
     }
 
     _updateMaxCardinality = (e) => {
-        const { updateProfileParameter, infos } = this.props;
+        const { updateProfileParameter, details } = this.props;
         const multiplicity = this._parseMultiplicity();
 
         if (e.target.type === 'checkbox' && e.target.checked)
@@ -94,8 +94,8 @@ class ModelBrowserParameters extends Component {
             });
         } else if ((multiplicity.max > 1 || multiplicity.maxUnbounded) && (multiplicity.maxValueUnbounded || multiplicity.maxValue > 1)) {
             updateProfileParameter(this.props, {
-                isOrdered: `${infos.isOrdered}`,
-                isUnique: `${infos.isUnique}`,
+                isOrdered: `${details.isOrdered}`,
+                isUnique: `${details.isUnique}`,
                 multiplicity: this._writeMultiplicity(multiplicity)
             });
         } else {
@@ -121,28 +121,32 @@ class ModelBrowserParameters extends Component {
     }
 
     _updateFlag = (flag) => {
-        const { profileParameters, selectedProfile, infos, updateProfileParameter } = this.props;
+        const { profileParameters, selectedProfile, details, updateProfileParameter } = this.props;
         let value = null;
         if (!profileParameters[selectedProfile] || !profileParameters[selectedProfile][flag]) {
-            value = `${!infos[flag]}`;
+            value = `${!details[flag]}`;
         }
 
-        console.log(flag, profileParameters[selectedProfile] ? profileParameters[selectedProfile][flag] : null, infos[flag], value)
+        console.log(flag, profileParameters[selectedProfile] ? profileParameters[selectedProfile][flag] : null, details[flag], value)
         updateProfileParameter(this.props, flag, value)
     }
 
     render() {
-        const { _id, isClass, isProperty, disabled, infos, profileParameters, selectedProfile, allowedGeometries, updateProfileParameter, t } = this.props;
+        const { _id, isClass, isProperty, disabled, infos, details, profileParameters, selectedProfile, allowedGeometries, updateProfileParameter, t } = this.props;
 
         const multiplicity = isProperty && this._parseMultiplicity();
 
         const geometries = isClass && this._parseGeometries();
 
+        const hideCardinality = multiplicity.min === multiplicity.max && multiplicity.max === 1;
+        const hideIsNavigable = details && details.isAttribute
+        const hideHeader = isProperty && hideCardinality && hideIsNavigable
+
         return (
             <div>
-                <div className="font-weight-bold py-1">
+                {!hideHeader && <div className="font-weight-bold py-1">
                     {t('parameter')}
-                </div>
+                </div>}
                 <Table size="sm" reflow>
                     <tbody>
                         {isClass && infos && infos.stereotypes === 'featuretype' &&
@@ -165,7 +169,7 @@ class ModelBrowserParameters extends Component {
                                     </Input>
                                 </td>
                             </tr>}
-                        {isClass && infos && !infos.isAbstract &&
+                        {isClass && details && !details.isAbstract &&
                             <tr>
                                 <td className="pl-0 pr-3 border-0">
                                     <span className="align-self-center">{t('isAbstract')}</span>
@@ -173,23 +177,23 @@ class ModelBrowserParameters extends Component {
                                 <td className="pl-0 border-0 py-0">
                                     <span className=""><Toggle name="isAbstract"
                                         disabled={disabled}
-                                        checked={profileParameters[selectedProfile] ? profileParameters[selectedProfile].isAbstract === 'true' ? true : profileParameters[selectedProfile].isAbstract === 'false' ? false : infos.isAbstract === true : infos.isAbstract === true}
+                                        checked={profileParameters[selectedProfile] ? profileParameters[selectedProfile].isAbstract === 'true' ? true : profileParameters[selectedProfile].isAbstract === 'false' ? false : details.isAbstract === true : details.isAbstract === true}
                                         onToggle={this._updateIsAbstract} /></span>
                                 </td>
                             </tr>}
-                        {isProperty && infos && !infos.isAttribute &&
+                        {isProperty && !hideIsNavigable &&
                             <tr>
                                 <td className="pl-0 pr-3 border-0">
                                     <span className="align-self-center">{t('isNavigable')}</span>
                                 </td>
                                 <td className="pl-0 border-0 py-0">
                                     <span className=""><Toggle name="isNavigable"
-                                        disabled={disabled || !infos.isNavigable}
-                                        checked={infos.isNavigable && !(profileParameters[selectedProfile] && profileParameters[selectedProfile].isNavigable === 'false')}
+                                        disabled={disabled || !details.isNavigable}
+                                        checked={details.isNavigable && !(profileParameters[selectedProfile] && profileParameters[selectedProfile].isNavigable === 'false')}
                                         onToggle={e => updateProfileParameter(this.props, 'isNavigable', !(profileParameters[selectedProfile] && profileParameters[selectedProfile].isNavigable === 'false') ? 'false' : 'true')}> </Toggle></span>
                                 </td>
                             </tr>}
-                        {isProperty &&
+                        {isProperty && !hideCardinality &&
                             <tr>
                                 <td className="pl-0 pr-3 border-0">
                                     {t('cardinality')}
@@ -229,10 +233,10 @@ class ModelBrowserParameters extends Component {
                                             </FormGroup>
                                         </FormGroup>
                                     </Form>
-                                    { /* profileParameters[selectedProfile] ? profileParameters[selectedProfile].multiplicity : infos.cardinality */}
+                                    { /* profileParameters[selectedProfile] ? profileParameters[selectedProfile].multiplicity : details.cardinality */}
                                 </td>
                             </tr>}
-                        {isProperty && infos && (multiplicity.max > 1 || multiplicity.maxUnbounded) &&
+                        {isProperty && details && (multiplicity.max > 1 || multiplicity.maxUnbounded) &&
                             <tr>
                                 <td className="pl-0 pr-3 border-0">
                                     <span className="align-self-center">{t('isOrdered')}</span>
@@ -247,13 +251,13 @@ class ModelBrowserParameters extends Component {
                                 </td>
                                 <td className="pl-0 border-0 py-0">
                                     <span className=""><Toggle name="isOrdered"
-                                        label={` (model setting: ${infos.isOrdered === true})`}
+                                        label={` (model setting: ${details.isOrdered === true})`}
                                         disabled={disabled || !(multiplicity.maxValue > 1 || multiplicity.maxValueUnbounded)}
-                                        checked={profileParameters[selectedProfile] ? profileParameters[selectedProfile].isOrdered === 'true' ? true : profileParameters[selectedProfile].isOrdered === 'false' ? false : infos.isOrdered === true : infos.isOrdered === true}
+                                        checked={profileParameters[selectedProfile] ? profileParameters[selectedProfile].isOrdered === 'true' ? true : profileParameters[selectedProfile].isOrdered === 'false' ? false : details.isOrdered === true : details.isOrdered === true}
                                         onToggle={this._updateIsOrdered} /></span>
                                 </td>
                             </tr>}
-                        {isProperty && infos && (multiplicity.max > 1 || multiplicity.maxUnbounded) &&
+                        {isProperty && details && (multiplicity.max > 1 || multiplicity.maxUnbounded) &&
                             <tr>
                                 <td className="pl-0 pr-3 border-0">
                                     <span className="align-self-center">{t('isUnique')}</span>
@@ -268,9 +272,9 @@ class ModelBrowserParameters extends Component {
                                 </td>
                                 <td className="pl-0 border-0 py-0">
                                     <span className=""><Toggle name="isUnique"
-                                        label={` (model setting: ${infos.isUnique !== false})`}
+                                        label={` (model setting: ${details.isUnique !== false})`}
                                         disabled={disabled || !(multiplicity.maxValue > 1 || multiplicity.maxValueUnbounded)}
-                                        checked={profileParameters[selectedProfile] ? profileParameters[selectedProfile].isUnique === 'true' ? true : profileParameters[selectedProfile].isUnique === 'false' ? false : infos.isUnique !== false : infos.isUnique !== false}
+                                        checked={profileParameters[selectedProfile] ? profileParameters[selectedProfile].isUnique === 'true' ? true : profileParameters[selectedProfile].isUnique === 'false' ? false : details.isUnique !== false : details.isUnique !== false}
                                         onToggle={this._updateIsUnique} /></span>
                                 </td>
                             </tr>}
