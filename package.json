@@ -1,6 +1,6 @@
 {
     "name": "pmt",
-    "version": "1.1.0-rc1",
+    "version": "1.1.0-rc2",
     "description": "",
     "private": true,
     "main": "server.js",
@@ -50,5 +50,4 @@
         "../pmt-io",
         "../pmt-validation"
     ]
-
 }
