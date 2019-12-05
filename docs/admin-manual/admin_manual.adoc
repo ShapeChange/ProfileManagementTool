@@ -143,7 +143,7 @@ NOTE: The value needs to be a valid _MongoDB_ Connection String URI, see https:/
 === Application Settings
 
 [[AM_Configuration_AppSettings_geometry]]
-==== geometry
+==== Geometry
 
 To change the allowed geometries for featuretypes, update the setting of app.geometry in the configuration file.
 
@@ -151,7 +151,7 @@ To change the allowed geometries for featuretypes, update the setting of app.geo
 [[AM_Configuration_AppSettings_Search]]
 ==== Search
 
-You can change which descriptors or tagged values are taken into consideration by the search function. To do so adjust app.search.descriptors or app.search.taggedValues in the configuration files.
+You can change which descriptors or tagged values are taken into consideration by the search function. To do so adjust app.search.descriptors or app.search.taggedValues in the configuration file.
 
 
 [[AM_Configuration_AppSettings_Hidepropertyinfos]]
@@ -161,13 +161,13 @@ You can hide certain property infos depending on the class stereotype. To do so 
 
 
 [[AM_Configuration_AppSettings_Defaultpropertyinfos]]
-==== Hide property infos
+==== Default property infos
 
 If you want to display additional default property infos in the <<UG_ModelViews_DisplayDefaultValues,Display default values view>>, you can add them to app.propertyInfos.defaultValues in the configuration file.
 
 
 [[AM_Configuration_AppSettings_Defaultclassinfos]]
-==== Hide property infos
+==== Default class infos
 
 If you want to display additional default class infos in the <<UG_ModelViews_DisplayDefaultValues,Display default values view>>, you can add them to app.classInfos.defaultValues in the configuration file.
 
