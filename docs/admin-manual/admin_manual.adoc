@@ -80,7 +80,46 @@ The default configuration looks like this:
         "url": "mongodb://localhost/pmt01"
     },
     "app": {
-      "geometry": ["P", "C", "S", "So", "MP", "MC", "MS", "MSo"]
+        "geometry": ["P", "C", "S", "So", "MP", "MC", "MS", "MSo"],
+        "search": {
+            "descriptors": ["alias", "description", "definition"],
+            "taggedValues": ["name"]
+        },
+        "propertyInfos": {
+            "defaultValues": {
+                "cardinality": "1..1",
+                "isNavigable": true,
+                "isDerived": false,
+                "isReadOnly": false,
+                "isAttribute": true,
+                "isOrdered": false,
+                "isUnique": true,
+                "isComposition": false,
+                "isAggregation": false,
+                "isOwned": false
+            },
+            "hidden": [{
+                "keys": [
+                    "cardinality",
+                    "isNavigable",
+                    "isDerived",
+                    "isReadOnly",
+                    "isAttribute",
+                    "isOrdered",
+                    "isUnique",
+                    "isComposition",
+                    "isAggregation",
+                    "isOwned"
+                ],
+                "condition": "cls.stereotypes.includes('enumeration') || cls.stereotypes.includes('codelist')"
+            }]
+        },
+        "classInfos": {
+            "defaultValues": {
+                "isAbstract": false,
+                "isLeaf": false
+            }
+        }
     }
 }
 ------
@@ -107,6 +146,30 @@ NOTE: The value needs to be a valid _MongoDB_ Connection String URI, see https:/
 ==== geometry
 
 To change the allowed geometries for featuretypes, update the setting of app.geometry in the configuration file.
+
+
+[[AM_Configuration_AppSettings_Search]]
+==== Search
+
+You can change which descriptors or tagged values are taken into consideration by the search function. To do so adjust app.search.descriptors or app.search.taggedValues in the configuration files.
+
+
+[[AM_Configuration_AppSettings_Hidepropertyinfos]]
+==== Hide property infos
+
+You can hide certain property infos depending on the class stereotype. To do so adjust app.propertyInfos.hidden in the configuration file.
+
+
+[[AM_Configuration_AppSettings_Defaultpropertyinfos]]
+==== Hide property infos
+
+If you want to display additional default property infos in the <<UG_ModelViews_DisplayDefaultValues,Display default values view>>, you can add them to app.propertyInfos.defaultValues in the configuration file.
+
+
+[[AM_Configuration_AppSettings_Defaultclassinfos]]
+==== Hide property infos
+
+If you want to display additional default class infos in the <<UG_ModelViews_DisplayDefaultValues,Display default values view>>, you can add them to app.classInfos.defaultValues in the configuration file.
 
 
 [[AM_Internationalization]]

@@ -87,6 +87,12 @@ NOTE: If a profile editing action behaves different when this view is enabled, a
 This view will hide the special _Meta_ and _Reason_ classes. Whenever the type of a property _P_ is a _Meta_ or _Reason_ class, the type of the _value_ (or _values_) property of the _Reason_ class will be used as the value type of property _P_.
 
 
+[[UG_ModelViews_DisplayDefaultValues]]
+=== Display default values
+
+This view will show items in the info tab for classes and properties that are not set in the model, but have a default value in the SCXML schema.
+
+
 [[UG_ModelFiles]]
 == Model files and profiles
 
